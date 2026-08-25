@@ -1,0 +1,10 @@
+Mello
+
+O Mello é um planejador pessoal de atividades inspirado no Trello,
+criado para reunir em um só lugar dois recursos que normalmente ficam
+presos em planos pagos: organização por quadros Kanban e visualização em calendário.
+É um projeto de uso pessoal, pensado para rodar como aplicativo desktop (Electron) em um único computador,
+com todos os dados salvos localmente em um banco SQLite — sem depender de servidores externos ou assinaturas.
+
+O código-fonte é público no GitHub, mas o banco de dados e as informações registradas permanecem apenas
+na máquina de quem usa o app.
