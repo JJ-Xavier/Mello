@@ -1,0 +1,105 @@
+/* Cabeçalho de 56 px do protótipo (Main, Quadro, Calendário e Configurações). */
+.header {
+  position: relative;
+  height: 56px;
+  flex: none;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--top);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--strong);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* No Início o campo tem a borda mais clara (Main.dc.html). */
+.searchHome {
+  border-color: var(--field-line);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--strong);
+  font: inherit;
+}
+
+.searchInput::placeholder {
+  color: var(--muted);
+}
+
+.search:focus-within {
+  border-color: var(--accent);
+}
+
+.create {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-txt);
+  font:
+    600 14px Inter,
+    sans-serif;
+}
+
+.create:hover {
+  filter: brightness(1.08);
+}
+
+.gear {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+.gear:hover {
+  background: var(--btn);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  text-decoration: none;
+  color: var(--txt);
+}
+
+.back:hover {
+  color: var(--strong);
+}

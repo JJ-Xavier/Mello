@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento concluído e aprovado em 21/10/2026: plano, propostas P1 a P17 e telas novas 10 a 16. Aguardando a ordem para começar a etapa 1. Nenhum código de produção foi escrito ainda.
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapa 1 concluída em 21/10/2026**, aguardando o commit. A etapa 2 começa quando for liberada.
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -25,8 +25,8 @@
 
 | Assunto | Decisão | Origem |
 |---|---|---|
-| Tipo de app | Monólito local: Electron + SQLite, um usuário, um computador, sem rede | `Docs/Arquitetura.md` |
-| Plataforma | Só Windows (instalador NSIS) | `Docs/Arquitetura.md` |
+| Tipo de app | Monólito local: Electron + SQLite, um usuário, um computador, sem rede | `Docs/Arquitetura.txt` |
+| Plataforma | Só Windows (instalador NSIS) | `Docs/Arquitetura.txt` |
 | Front-end | React + TypeScript, com Vite (electron-vite) | `Docs/Definicao-da-Stack.txt` |
 | Fora do escopo | Caixa de entrada, Planejador, Membros, Compartilhar, comentários | Briefing |
 | Navegação | Quadro, Calendário e "Mudar de quadros" só na barra flutuante de baixo | Briefing |
@@ -40,6 +40,9 @@
 | Licença | MIT (arquivo `LICENSE` na etapa 1) | 21/10 |
 | Primeira abertura | Início vazio, com o convite "Criar seu primeiro quadro" (`QUA-09`) | 21/10 |
 | Telas sem protótipo | Desenhadas no canvas do protótipo, numa área separada ("Telas novas"), e aprovadas por você (telas 10 a 16, aprovadas em 21/10) | 21/10 |
+| Dados no desenvolvimento | `npm run dev` usa `%APPDATA%\Mello-dev`; o app instalado usa `%APPDATA%\Mello` | Etapa 1, 21/10 |
+| Barra de título | Barra nativa do Windows, no tema escuro, acima do cabeçalho de 56 px | Etapa 1, 21/10 |
+| Instalação do Electron | Script próprio (`scripts/instalar-electron.mjs`), sem exigir o Visual C++ Redistributable (ver `Pipeline.txt`) | Etapa 1, 21/10 |
 
 ### 1.2 Propostas (aprovadas em 21/10/2026)
 
@@ -101,27 +104,32 @@ Mello/
 ├── Docs/                      # documentação, inclusive este PLANO.md (já existe)
 ├── build/                     # ícone do instalador
 ├── scripts/
-│   └── capturar-telas.ts      # abre o app com dados fictícios e salva as capturas (Playwright)
+│   ├── instalar-electron.mjs  # postinstall: baixa o Electron sem exigir o VC++ Redistributable
+│   └── capturar-telas.mts     # abre o app com dados fictícios e salva as capturas (Playwright)
 ├── src/
 │   ├── main/                  # processo principal (Node.js)
 │   │   ├── index.ts           # ciclo de vida, janela, instância única
+│   │   ├── paths.ts           # pastas de dados (banco, arquivos, backups, logs)
 │   │   ├── tray.ts            # ícone e menu da bandeja
 │   │   ├── protocol.ts        # mello-arquivo:// → serve só arquivos de %APPDATA%\Mello\arquivos
 │   │   ├── scheduler.ts       # relógio: repetições, lembretes, backup, recálculo do envelhecimento
 │   │   ├── db/
 │   │   │   ├── client.ts      # conexão, pragmas, função unaccent para a busca
 │   │   │   ├── schema.ts      # tabelas (Drizzle)
+│   │   │   ├── migrate.ts     # aplica as migrações (tabela _migrations)
+│   │   │   ├── open.ts        # abre o banco: backup se preciso, depois migra
 │   │   │   └── migrations/    # SQL gerado pelo drizzle-kit
 │   │   ├── modules/           # regras + consultas, um arquivo por assunto
 │   │   │   ├── boards.ts  lists.ts  cards.ts  labels.ts  checklists.ts
 │   │   │   ├── activity.ts  files.ts  attachments.ts  covers.ts
 │   │   │   ├── recurrence.ts  reminders.ts  calendar.ts  search.ts
 │   │   │   ├── templates.ts  settings.ts  backup.ts  export.ts
-│   │   └── ipc/               # liga cada canal a um módulo (valida → chama → Result)
+│   │   └── ipc/               # handler.ts (Zod + Result) e index.ts (liga cada canal a um módulo)
 │   ├── preload/
 │   │   └── index.ts           # expõe window.mello
 │   ├── shared/                # código puro, usado pelo main, pela tela e pelos testes
-│   │   ├── ipc/               # contratos: schemas Zod + tipos, por domínio
+│   │   ├── result.ts  text.ts # Result/AppError e removeAccents
+│   │   ├── ipc/               # contratos: canais, tipos e schemas Zod, por domínio
 │   │   └── rules/             # aging.ts finished.ts priority.ts recurrence.ts
 │   │                          # calendar.ts dates.ts background.ts tone.ts filter.ts
 │   └── renderer/
@@ -140,7 +148,8 @@ Mello/
 │           ├── components/    # Popover, Modal, Button, PriorityIcon, Logo, DatePicker…
 │           ├── lib/           # fog.ts (do protótipo), api.ts, queryKeys.ts, format.ts
 │           └── styles/        # themes.css (paletas literais), base.css, fonts.css
-├── electron.vite.config.ts  electron-builder.yml  drizzle.config.ts  package.json
+├── electron.vite.config.ts  vitest.config.mts  electron-builder.yml  drizzle.config.ts
+├── eslint.config.mjs  tsconfig*.json  package.json  LICENSE  README.md
 ```
 
 Os testes ficam ao lado do código (`aging.test.ts` junto de `aging.ts`). As regras de `shared/rules/` são funções puras, sem banco e sem relógio próprio (o "agora" chega por parâmetro), e por isso são testadas isoladamente.
@@ -174,6 +183,7 @@ Tela (React)  →  window.mello (preload)  →  ipc/ (Zod)  →  modules/  →  
 | Busca | `search:query` |
 | Modelos | `templates:setCard`, `templates:listCards`, `templates:createCard`, `templates:setBoard`, `templates:createBoard` |
 | Configurações | `settings:get`, `settings:set` |
+| App | `app:info` (versão, pasta de dados, se é desenvolvimento; criado na etapa 1) |
 | Dados | `data:backupNow`, `data:listBackups`, `data:restore`, `data:export`, `data:openFolder`, `data:chooseBackupFolder`, `data:deleteAll` |
 | Eventos (main → tela) | `data:changed`, `app:openCard` (clique na notificação), `theme:changed`, `reminders:missed` |
 
@@ -304,8 +314,9 @@ O arquivo físico fica em `%APPDATA%\Mello\arquivos\<sha256>.<ext>`. Fundo, capa
 
 ### Migrações
 
-- O schema completo acima entra como **migração 0001** na etapa 1. O que mudar depois vira uma migração nova (0002, 0003…), mesmo durante o desenvolvimento, para praticar o fluxo real.
-- As migrações são geradas pelo drizzle-kit em SQL, vão junto com o app e rodam na abertura, dentro de uma transação, **depois de um backup automático** (DAD-01).
+- O schema completo acima entrou como a migração **`0000_esquema_inicial`** na etapa 1 (o drizzle-kit numera a partir de 0000). O que mudar depois vira uma migração nova (0001, 0002…), mesmo durante o desenvolvimento, para praticar o fluxo real.
+- Na etapa 1 entraram também índices nas colunas de chave estrangeira que não tinham índice (`card_label.label_id`, `attachment.file_id`, `recurrence.board_id`, `recurrence.target_list_id`, `recurrence_occurrence.card_id` e `notice_card_id`), para as exclusões em cascata não varrerem tabelas inteiras.
+- As migrações são geradas pelo drizzle-kit em SQL, entram no código do app no build e rodam na abertura, dentro de uma transação, **depois de um backup automático** quando o banco já tem dados (DAD-01).
 - Uma migração aplicada nunca é editada. Os detalhes ficam em `Docs/Modelo-de-Dados.txt`.
 
 ---
@@ -385,9 +396,10 @@ Casos de teste obrigatórios: cada frequência (inclusive mensal dia 31 em fever
 
 São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visual, documentação atualizada e um aviso de "pronto" para você fazer o commit (seção 8). Os códigos de tela são os títulos do canvas: 1 Início, 2 Quadro, 3 Arrasto, 4 Modal, 5 Calendário, 6 Fundo, 6b Repetição, 7 Configurações, 8 Quadro claro e 9 Estados, mais as telas novas: 10 Início vazio, 11 Modelos de quadro, 12 Modelos de card, 13 Calendário de todos os quadros, 14 Modal com capa e anexos, 15 Configurações novas e 16 Estados e menus novos.
 
-### Etapa 1 — Base do app e banco
+### Etapa 1 — Base do app e banco ✅ concluída em 21/10/2026
 
-- **Entrega:** projeto electron-vite (React + TS) com ESLint, Prettier e Vitest; estrutura de pastas; conexão SQLite com pragmas e a função `unaccent`; schema completo e migração 0001; backup antes de migrar; utilitário de IPC (Zod + `Result`); protocolo `mello-arquivo://`; temas com as paletas literais e a fonte Inter local; casca do app (cabeçalho com o logo do protótipo, busca, "Criar" e engrenagem; barra flutuante de baixo; rotas vazias); `.gitignore`; `LICENSE` (MIT); `README.md` curto para a página do GitHub; `electron-builder.yml`; script de capturas.
+- **Resultado:** tudo da entrega abaixo foi feito; 46 testes, lint e tipos limpos; capturas das 5 rotas nos dois temas conferidas com o protótipo. Decisões da etapa: dados do dev em `%APPDATA%\Mello-dev`, barra de título nativa escura e instalação do Electron por script próprio (seção 1.1). O better-sqlite3 13 traz binário N-API, e o risco do módulo nativo (seção 9) deixou de existir. Detalhes no `Changelog.txt`.
+- **Entrega:** projeto electron-vite (React + TS) com ESLint, Prettier e Vitest; estrutura de pastas; conexão SQLite com pragmas e a função `unaccent`; schema completo e migração inicial (0000); backup antes de migrar; utilitário de IPC (Zod + `Result`); protocolo `mello-arquivo://`; temas com as paletas literais e a fonte Inter local; casca do app (cabeçalho com o logo do protótipo, busca, "Criar" e engrenagem; barra flutuante de baixo; rotas vazias); `.gitignore`; `LICENSE` (MIT); `README.md` curto para a página do GitHub; `electron-builder.yml`; script de capturas.
 - **Telas:** o cabeçalho e a barra flutuante comuns a 1, 2 e 5.
 - **Aceite:** `npm run dev` abre a janela com o cabeçalho igual ao protótipo (56 px, cores, logo); o banco é criado em `%APPDATA%\Mello\mello.db` com todas as tabelas; reabrir não recria nada; `npm test`, `npm run lint` e `npm run typecheck` passam limpos; o better-sqlite3 abre dentro do Vitest.
 - **Testes:** a migração roda do zero e é idempotente; chaves estrangeiras ligadas; `Result` de sucesso e de erro; Zod recusa entrada inválida; o protocolo recusa caminhos fora da pasta de arquivos (`..`, caminho absoluto, hash inválido).
@@ -495,7 +507,8 @@ Se uma funcionalidade não ficar boa, a etapa inteira é revertida (voltando ao 
 
 | Risco | Mitigação |
 |---|---|
-| O better-sqlite3 é módulo nativo: o binário do Electron pode não abrir no Node dos testes, e vice-versa | Conferir na etapa 1 se a versão atual traz binário N-API, que serve aos dois. Se não trouxer, rodar o Vitest com o binário do Electron (`ELECTRON_RUN_AS_NODE=1`). O electron-builder usa `asarUnpack` para o módulo. |
+| ~~O better-sqlite3 é módulo nativo: o binário do Electron pode não abrir no Node dos testes, e vice-versa~~ | **Resolvido na etapa 1:** o better-sqlite3 13 traz binário N-API, o mesmo para o Electron e para o Vitest, sem compilar nada. O electron-builder usa `asarUnpack` para o `.node`. |
+| O instalador oficial do Electron exige o Visual C++ Redistributable, que não está nesta máquina | Script próprio de instalação (`scripts/instalar-electron.mjs`), com o mesmo download e checksum oficiais. Se o Electron mudar a instalação, o script é ajustado (`Pipeline.txt`, seção 3). |
 | O `fog()` gera dezenas de gradientes por card, e pode pesar com muitos cards | Memorizar o resultado por (nível, id, tema, tom, tamanho); recalcular só quando algum desses muda; teste de desempenho com 200 e 500 cards. Plano B: desenhar a máscara uma vez num canvas e reaproveitar como imagem. |
 | O `fog()` do protótipo assume card de 252 × 100 px | Passar a largura e a altura reais (medidas com ResizeObserver), mantendo o algoritmo e as constantes. Conferir visualmente cards de 1, 3 e 8 linhas. |
 | Arrastar com o visual exato do protótipo e a regra do "mesmo lugar" | dnd-kit com DragOverlay (card inclinado); a comparação de vizinhos antes e depois decide se grava. Teste de componente do arraste. |

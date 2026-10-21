@@ -1,0 +1,105 @@
+Testes — Mello
+
+Status: criado na etapa 1 (21/10/2026). Atualizado a cada etapa.
+
+
+1. COMO RODAR
+
+npm test ............... todos os testes, uma vez (Vitest)
+npm run test:watch ..... roda de novo a cada alteração
+npx vitest run --project main ....... só os testes do main e do shared (Node)
+npx vitest run --project renderer ... só os testes da tela (jsdom)
+npm run capturas ....... abre o app de verdade e salva as capturas (seção 4)
+
+Os testes rodam no Node 24 do computador. O better-sqlite3 13 traz um binário N-API que serve tanto
+ao Node quanto ao Electron, então o banco real abre dentro do Vitest sem recompilar nada.
+
+
+2. ONDE FICAM
+
+Ao lado do código testado (backup.test.ts junto de backup.ts). Dois projetos no
+vitest.config.mts:
+- main: src/main/**/*.test.ts e src/shared/**/*.test.ts, ambiente Node, banco SQLite real (em
+  memória ou numa pasta temporária apagada no fim);
+- renderer: src/renderer/**/*.test.{ts,tsx}, ambiente jsdom com Testing Library; o window.mello é
+  substituído por uma versão falsa.
+
+Os nomes dos testes citam o código da regra do Regras.txt quando existe (ex.: "DAD-01: …").
+
+
+3. O QUE É TESTADO
+
+Etapa 1 — 46 testes
+
+src/main/db/db.test.ts
+- A migração inicial cria as 13 tabelas (e a _migrations) num banco vazio.
+- Reabrir o banco não reaplica nada e mantém os dados.
+- O banco novo é criado no arquivo, em modo WAL.
+- DAD-01: faz backup antes de migrar um banco que já tem dados; o backup é o estado de antes.
+- Um banco novo não gera backup.
+- Uma migração com erro não aplica nada (transação) e as chaves estrangeiras voltam a ficar
+  ligadas.
+- Recusa um banco criado por uma versão mais nova do app.
+- As chaves estrangeiras estão ligadas; excluir um quadro apaga as listas (CASCADE).
+- A prioridade do card só aceita 1 a 5 ou nada (CHECK).
+- BUS-01: a função unaccent ignora acentos e cedilha ("acao util" acha "Ação Útil").
+
+src/main/modules/backup.test.ts
+- DAD-02: nome mello-AAAA-MM-DD_HHmm.db no horário local.
+- DAD-02: o backup é uma cópia consistente do banco aberto.
+- Dois backups no mesmo minuto não se sobrescrevem (sufixo -2).
+
+src/main/ipc/handler.test.ts
+- Result de sucesso com o retorno da função (síncrona e assíncrona).
+- O Zod recusa entrada inválida sem chamar a função e diz quais campos falharam.
+- AppError vira Result de erro com o mesmo código e mensagem.
+- Erro inesperado vira INTERNAL e é registrado no log.
+
+src/main/protocol.test.ts
+- Entrega um arquivo da pasta de arquivos pelo hash.
+- Recusa (17 casos): "..", ".." codificado, barra codificada, barra invertida, caminho absoluto
+  (direto e codificado), subpasta, hash curto, hash com letra fora do hexadecimal, hash em
+  maiúsculas, sem extensão, extensão inválida, outro host, host com usuário, host com porta,
+  outro protocolo e endereço inválido.
+
+src/shared/text.test.ts
+- removeAccents tira acentos, til e cedilha e não mexe no resto.
+
+src/renderer/src/app/App.test.tsx
+- O Início tem o cabeçalho do protótipo (logo, busca, Criar, Configurações) e o menu lateral, com
+  "Quadros" marcado.
+- O quadro tem a barra flutuante (Quadro, Calendário, Mudar de quadros), com "Quadro" marcado.
+- O calendário do quadro marca "Calendário" na barra.
+- As Configurações mostram a versão vinda do main pelo IPC.
+- O "Voltar" das Configurações leva para a tela de onde elas foram abertas.
+- Um endereço desconhecido volta ao Início.
+
+
+4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
+
+O script scripts/capturar-telas.mts compila o app, abre o Electron com uma pasta de dados
+temporária (MELLO_DATA_DIR) e:
+1. confere que o banco foi criado e que o IPC responde (app:info);
+2. salva uma captura de cada tela da etapa, nos temas escuro e claro, em capturas/etapa-N/
+   (pasta ignorada pelo Git);
+3. apaga a pasta temporária.
+
+As capturas são comparadas com o .dc.html correspondente do protótipo (cores, medidas, textos,
+ícones e estados). Numa tela com escala de 125% do Windows, a captura sai 1,25 vez maior
+(1800 × 1125 para uma janela de 1440 × 900).
+
+
+5. ROTEIRO MANUAL
+
+Etapa 1 (conferido em 21/10/2026)
+[x] npm run dev abre a janela com o cabeçalho de 56 px, o logo, a busca, "Criar" e a engrenagem.
+[x] O console da tela não mostra erros, nem de CSP.
+[x] O banco é criado em %APPDATA%\Mello-dev\mello.db com as 13 tabelas e a _migrations.
+[x] Fechar e abrir de novo não reaplica a migração (o log mostra "Migrações aplicadas" só na
+    primeira vez).
+[x] Um banco "de versão mais nova" mostra o aviso "Não foi possível abrir o Mello", registra o
+    erro no log e não é alterado.
+[x] Todas as rotas abrem no app real (capturas). Os cliques no menu lateral, na barra flutuante e
+    no "Voltar" das Configurações são conferidos pelos testes de tela (App.test.tsx).
+
+O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

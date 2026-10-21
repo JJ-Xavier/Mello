@@ -1,0 +1,286 @@
+Arquitetura — Mello
+
+Status: atualizado na etapa 1 (21/10/2026), com o que já existe no código. As partes que ainda vão
+ser construídas estão marcadas com a etapa em que entram.
+Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
+Ver também: Docs/PLANO.md, Docs/Modelo-de-Dados.txt, Docs/Definicao-da-Stack.txt,
+Docs/Pipeline.txt, Docs/LGPD.txt.
+
+
+1. VISÃO GERAL: MONÓLITO LOCAL
+
+O Mello é um programa só, que guarda tudo num arquivo só, num único computador com Windows:
+
+    ┌──────────────── Mello (um programa só) ────────────────┐
+    │   Tela (React)  ──►  Lógica + acesso ao banco (main)    │ ──►  mello.db
+    └─────────────────────────────────────────────────────────┘      (um arquivo no PC)
+
+- Um usuário, uma máquina. Sem servidor, login, sincronização nem rede.
+- Os mesmos dados aparecem no quadro Kanban e no calendário.
+- Não precisa de: API REST, controle de usuários, microsserviços, Docker, banco em servidor,
+  sincronização nem preocupação com escala (mesmo com milhares de cards o SQLite responde na hora).
+- Continua importante: backup (o disco é o único lugar onde os dados existem), separar a tela dos
+  dados, migrações do banco sem perda e a segurança básica do Electron.
+
+Princípios
+1. Simplicidade: uma camada ou ferramenta só entra se resolver um problema real deste app.
+2. Os dados do usuário vêm primeiro: backup antes de migrar, backups automáticos e exportação em
+   formato aberto.
+3. Tipagem de ponta a ponta: o mesmo contrato TypeScript vale do banco até a tela.
+
+
+2. PROCESSOS E CAMADAS
+
+    Tela (React)  →  window.mello (preload)  →  ipc/ (Zod)  →  modules/  →  SQLite
+                                                   ↑
+                              agendador (main) ────┘  → avisa a tela: "data:changed" (etapa 8)
+
+Camada     Onde roda               Faz                                      Pode acessar
+---------  ----------------------  ---------------------------------------  -------------------
+renderer   Chromium, em sandbox    Telas, interação, estado da interface    só window.mello
+preload    ponte isolada           Expõe window.mello (uma função por       ipcRenderer, sem
+                                   canal) pelo contextBridge                expô-lo à tela
+main       Node.js                 Janela, ciclo de vida, banco, arquivos,  tudo
+                                   backup, protocolo de arquivos
+shared     importado pelos três    Tipos, contratos do IPC, Result, regras  nada (código puro)
+                                   puras
+
+Regra de dependência: main, preload e renderer podem importar de shared. O renderer nunca importa
+de main, e shared não importa de ninguém. O preload importa só tipos e constantes de shared (roda
+em sandbox, sem bibliotecas).
+
+Dentro do main, a direção é uma só: ipc/ → modules/ → db/.
+- ipc/: valida a entrada com Zod, chama o módulo e devolve um Result. Sem regra de negócio.
+- modules/: regras e consultas de um assunto (um arquivo por assunto). Não conhece o Electron, por
+  isso é testado com um banco em memória.
+- db/: conexão, pragmas, schema e migrações.
+
+
+3. PASTAS DO PROJETO
+
+Estado na etapa 1. A estrutura completa prevista está no PLANO.md, seção 3.
+
+Mello/
+├── Assets/                  identidade visual e imagens de referência
+├── Docs/                    documentação
+├── scripts/
+│   ├── instalar-electron.mjs   baixa o Electron no npm install (ver Pipeline.txt, seção 3)
+│   └── capturar-telas.mts      capturas das telas para a conferência visual
+├── src/
+│   ├── main/
+│   │   ├── index.ts         ciclo de vida, janela, instância única, inicialização
+│   │   ├── paths.ts         pastas de dados (banco, arquivos, backups, logs)
+│   │   ├── protocol.ts      protocolo mello-arquivo://
+│   │   ├── db/
+│   │   │   ├── client.ts    conexão, pragmas, função unaccent
+│   │   │   ├── schema.ts    as 13 tabelas (Drizzle)
+│   │   │   ├── migrate.ts   aplica as migrações
+│   │   │   ├── open.ts      abre o banco: backup se preciso, depois migra
+│   │   │   └── migrations/  SQL gerado pelo drizzle-kit
+│   │   ├── modules/
+│   │   │   └── backup.ts    backup pela API do SQLite (etapa 1: antes de migrar)
+│   │   └── ipc/
+│   │       ├── handler.ts   utilitário: Zod + Result (sem Electron, testável)
+│   │       └── index.ts     registra os canais
+│   ├── preload/index.ts     window.mello
+│   ├── shared/
+│   │   ├── result.ts        Result, ok, fail, AppError
+│   │   ├── text.ts          removeAccents
+│   │   └── ipc/api.ts       nomes dos canais e o tipo MelloApi
+│   └── renderer/
+│       ├── index.html       com a política de segurança (CSP)
+│       └── src/
+│           ├── app/         rotas, layouts, cabeçalho, barra flutuante
+│           ├── features/    uma pasta por área (home, board, calendar, settings…)
+│           ├── components/  Icon, Logo e outros reaproveitados
+│           ├── lib/         api.ts (unwrap), queryKeys.ts, cx.ts
+│           └── styles/      themes.css (paletas literais), fonts.css, base.css
+├── electron.vite.config.ts  vitest.config.mts  drizzle.config.ts  eslint.config.mjs
+├── electron-builder.yml     tsconfig*.json     package.json
+└── LICENSE  README.md
+
+Os testes ficam ao lado do código (backup.test.ts junto de backup.ts).
+
+
+4. INICIALIZAÇÃO (src/main/index.ts)
+
+Antes de o app ficar pronto:
+1. Define a pasta de dados (seção 9) e registra o esquema mello-arquivo como privilegiado.
+2. Pede o bloqueio de instância única: abrir o Mello de novo só traz a janela atual para a frente.
+
+Quando o app fica pronto:
+3. Remove o menu da janela e liga o tema escuro do Windows (a escolha de tema entra na etapa 10).
+4. Cria as pastas de dados e o arquivo de log.
+5. Abre o banco (src/main/db/open.ts): se houver migração pendente num banco que já tem dados, faz
+   um backup antes (DAD-01) e então migra.
+6. Recusa todas as permissões do navegador, registra o protocolo de arquivos e os canais de IPC.
+7. Cria a janela (1440 × 900, ou menor se a tela for menor; mínimo 1024 × 640).
+
+Se algo falhar na abertura (por exemplo, um banco criado por uma versão mais nova do Mello), o erro
+vai para o log, aparece um aviso "Não foi possível abrir o Mello" e o app fecha sem mexer no banco.
+
+Ao fechar a última janela o app encerra e fecha o banco. A bandeja do Windows, que mantém o app
+vivo para lembretes e repetições, entra na etapa 8 (P4).
+
+
+5. BANCO DE DADOS
+
+Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
+
+- better-sqlite3 (síncrono) + Drizzle ORM. Cada consulta leva frações de milissegundo no volume de
+  um uso pessoal, então o código síncrono no main é aceitável e bem mais simples.
+- Pragmas na abertura: journal_mode = WAL, synchronous = NORMAL, foreign_keys = ON.
+- Função unaccent registrada no SQLite, para a busca ignorar acentos (BUS-01):
+  WHERE lower(unaccent(titulo)) LIKE lower(unaccent(?)).
+- Migrações: geradas pelo drizzle-kit (npm run db:generate) e aplicadas pelo próprio app
+  (src/main/db/migrate.ts). Os .sql entram no código do app no build, então o app instalado não
+  depende de uma pasta de migrações ao lado do executável. O que já foi aplicado fica na tabela
+  _migrations. Tudo roda numa transação, com as chaves estrangeiras desligadas durante a troca e
+  conferidas (foreign_key_check) antes do commit, como recomenda a documentação do SQLite.
+- Um banco com migrações que o app não conhece (de uma versão mais nova) é recusado.
+
+
+6. COMUNICAÇÃO ENTRE A TELA E O MAIN (IPC)
+
+- Os canais seguem o padrão entidade:ação (boards:list, cards:move…). Lista completa prevista:
+  PLANO.md, seção 4. Na etapa 1 existe só app:info (versão, pasta de dados, se é desenvolvimento),
+  usado nas Configurações e pelo script de capturas para conferir a ponte de ponta a ponta.
+- Todo canal é requisição e resposta (invoke/handle).
+- A resposta é sempre um Result:
+      { ok: true, data }  ou  { ok: false, error: { code, message, details? } }
+  Códigos: INVALID_INPUT (o Zod recusou a entrada), NOT_FOUND, CONFLICT, INTERNAL.
+- src/main/ipc/handler.ts (createHandler): valida a entrada com o schema Zod, chama a função do
+  módulo e transforma o retorno em Result. Um AppError lançado pelo módulo vira Result com o mesmo
+  código e mensagem; qualquer outro erro vira INTERNAL e vai para o log.
+- A tela usa unwrap() (src/renderer/src/lib/api.ts), que devolve o valor ou lança ApiError, que é o
+  que o TanStack Query espera.
+
+Exemplo (como os canais das próximas etapas serão escritos):
+
+    // src/shared/ipc/api.ts — contrato
+    export const CHANNELS = { appInfo: 'app:info' } as const
+    export interface MelloApi { app: { info(): Promise<Result<AppInfo>> } }
+
+    // src/preload/index.ts — ponte
+    const api: MelloApi = { app: { info: () => ipcRenderer.invoke(CHANNELS.appInfo) } }
+    contextBridge.exposeInMainWorld('mello', api)
+
+    // src/main/ipc/index.ts — valida, chama, embrulha
+    handle(CHANNELS.appInfo, z.undefined(), () => ({ version: app.getVersion(), ... }))
+
+    // na tela
+    useQuery({ queryKey: queryKeys.appInfo, queryFn: () => unwrap(api().app.info()) })
+
+
+7. TELA (RENDERER)
+
+Rotas (HashRouter, porque o app instalado carrega a tela por file://):
+
+    #/                          Início (menu lateral: Quadros, Calendário, Configurações)
+    #/calendar                  Calendário de todos os quadros (CAL-02)
+    #/boards/:boardId           Quadro, com a barra flutuante de baixo
+    #/boards/:boardId/calendar  Calendário do quadro, com a barra flutuante
+    #/settings                  Configurações ("Voltar" leva para a tela de onde veio)
+    qualquer outro              volta ao Início
+
+Layouts (src/renderer/src/app/Layouts.tsx): HomeLayout (cabeçalho + menu lateral), BoardLayout
+(cabeçalho + conteúdo + barra flutuante) e SettingsLayout (cabeçalho com "Voltar").
+
+Cabeçalho de 56 px, em três variações, como no protótipo:
+- home (Início e calendário de todos): busca "Pesquisar cards, tarefas e quadros", com a borda
+  mais clara, e a engrenagem cheia;
+- board (quadro e calendário do quadro): busca "Pesquisar" e a engrenagem de raios;
+- settings: só o logo e o "Voltar".
+A busca e o botão "Criar" ganham função nas etapas 11 e 2.
+
+Estado:
+- Dados do banco: TanStack Query, com staleTime infinito e sem recarregar ao focar a janela. Os
+  dados só mudam quando o próprio app os altera, e então a chave correspondente é invalidada.
+- Estado de interface: useState ou Zustand (entra quando houver estado compartilhado).
+- Estado na URL: o quadro e a tela abertos.
+
+Estilo:
+- CSS Modules por componente, usando as variáveis das paletas do protótipo
+  (src/renderer/src/styles/themes.css). A classe tema-escuro ou tema-claro vai no <html>.
+- A paleta é a união das variáveis de todas as telas do protótipo, sem alterar nenhum valor
+  (TEM-02). Onde o protótipo só mostra o tema escuro (Início, calendário), o tema claro usa a
+  variável clara equivalente.
+- Fonte Inter local (@fontsource/inter, pesos 400 a 700, latin e latin-ext).
+- Ícones: SVGs copiados do protótipo (components/Icon.tsx); o logo é o SVG literal do protótipo
+  (components/Logo.tsx).
+
+
+8. ARQUIVOS: PROTOCOLO mello-arquivo://
+
+Imagens de fundo, capas e anexos ficam em <pasta de dados>\arquivos\<sha256>.<ext> (etapas 5 e 9).
+A tela os carrega por:
+
+    mello-arquivo://arquivos/<sha256>.<ext>
+
+O protocolo (src/main/protocol.ts) só entrega um arquivo se o endereço tiver exatamente esse
+formato: host "arquivos", nome com 64 caracteres hexadecimais minúsculos, um ponto e uma extensão
+simples. Qualquer outra coisa (.., barras, caminho absoluto, codificação com %, outro host, porta
+ou usuário) vira 404. Depois de montar o caminho, ele ainda confere que o arquivo está direto na
+pasta de arquivos.
+
+
+9. ONDE FICAM OS DADOS
+
+- App instalado: %APPDATA%\Mello (mello.db, arquivos\, backups\, logs\).
+- npm run dev: %APPDATA%\Mello-dev, para o desenvolvimento nunca mexer nos dados reais (decisão de
+  21/10/2026).
+- MELLO_DATA_DIR: variável que aponta para outra pasta. Só vale fora do app instalado; o script de
+  capturas a usa com uma pasta temporária e dados fictícios.
+- Logs: <pasta de dados>\logs\main.log (electron-log), só eventos técnicos, nunca o conteúdo dos
+  cards.
+- Backups: <pasta de dados>\backups\mello-AAAA-MM-DD_HHmm.db (DAD-02). Na etapa 1 só existe o
+  backup antes de migrar; o automático, a rotação e a restauração entram na etapa 10.
+
+
+10. SEGURANÇA
+
+O Mello não carrega nada da internet. A segurança é o básico do Electron, ligado por padrão:
+- contextIsolation, sandbox e nodeIntegration desligado na janela.
+- O preload expõe funções específicas, nunca o ipcRenderer inteiro.
+- Política de segurança (CSP) no index.html: default-src 'self'; script-src 'self';
+  style-src 'self' 'unsafe-inline'; img-src 'self' data: mello-arquivo:; font-src 'self' data:;
+  connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'.
+  O 'unsafe-inline' de estilos é o que o Vite usa em desenvolvimento; scripts de fora não rodam.
+- A janela não navega para fora do app, não abre janelas novas, e links https vão para o navegador
+  padrão.
+- Todas as permissões do navegador (câmera, microfone, notificações web…) são recusadas. Os
+  lembretes usam a notificação nativa do main (etapa 8).
+- Sem menu na janela. No desenvolvimento, F12 abre as ferramentas de desenvolvedor.
+- O HTML da nota e da descrição é filtrado no main antes de salvar (NOT-04, etapa 4 e 5).
+
+Ficam de fora, por não haver ameaça correspondente num app pessoal e offline: Electron Fuses,
+assinatura de código e verificação do remetente de cada mensagem de IPC.
+
+
+11. DATAS E HORÁRIOS
+
+- Datas de entrega e de tarefas são "horário de relógio" local, sem fuso: "2026-10-20" (dia
+  inteiro) ou "2026-10-20T14:30". Não há conversão para UTC, o que evita o prazo de dia inteiro
+  que "pula" para o dia anterior.
+- Esses textos ficam em ordem cronológica quando comparados como texto, então a consulta de um mês
+  é só due_at >= '2026-10-01' AND due_at < '2026-11-01'.
+- Campos de auditoria (created_at, updated_at, *_at numéricos) são instantes: epoch em
+  milissegundos (UTC).
+- O "agora" sempre chega por parâmetro às regras e aos módulos, para os testes controlarem o
+  relógio.
+
+
+12. PRÓXIMAS PARTES
+
+- Agendador (repetições, lembretes, recálculo do envelhecimento, backup de hora em hora) e bandeja
+  do Windows: etapas 6, 8 e 10.
+- Evento "data:changed" do main para a tela, quando o agendador alterar dados: etapa 8.
+
+
+HISTÓRICO
+
+20/10/2026 — v0.2 em Docs/Arquitetura.md: monólito local, camadas, modelo de dados inicial, IPC.
+21/10/2026 — etapa 1: convertido para Arquitetura.txt e atualizado com o código real (migrações
+             aplicadas pelo app, protocolo de arquivos, rotas, layouts, pastas de dados de
+             desenvolvimento, barra de título nativa escura). O modelo de dados saiu daqui e foi
+             para Modelo-de-Dados.txt; o calendário passou a ser próprio e só mensal (P11).

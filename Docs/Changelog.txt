@@ -1,0 +1,35 @@
+Changelog — Mello
+
+O que mudou em cada etapa e em cada versão. A versão do package.json sobe a cada etapa (0.N.0 na
+etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
+
+
+0.1.0 — Etapa 1: base do app e banco (21/10/2026)
+
+Adicionado
+- Projeto Electron + React + TypeScript com electron-vite, ESLint, Prettier e Vitest.
+- Banco SQLite (better-sqlite3 + Drizzle) com o schema completo das 13 tabelas, a migração
+  0000_esquema_inicial e o aplicador de migrações do próprio app, com backup antes de migrar
+  (DAD-01, DAD-02).
+- Função unaccent no SQLite, base da busca sem acentos (BUS-01).
+- Utilitário de IPC com validação Zod e resposta Result; primeiro canal: app:info.
+- Protocolo mello-arquivo:// para servir os arquivos do app com segurança.
+- Temas escuro e claro com as paletas literais do protótipo e a fonte Inter local.
+- Casca do app: cabeçalho de 56 px com o logo do protótipo, busca, "Criar" e engrenagem; menu
+  lateral do Início; barra flutuante do quadro; rotas do Início, quadro, calendário (de todos e do
+  quadro) e Configurações, ainda com o aviso "Em construção".
+- Script de capturas (npm run capturas), que também confere banco e IPC de ponta a ponta.
+- Script próprio de instalação do Electron (scripts/instalar-electron.mjs), que dispensa o
+  Microsoft Visual C++ Redistributable.
+- .gitignore, .gitattributes (finais de linha LF), electron-builder.yml, LICENSE (MIT), README.md.
+
+Decisões tomadas na etapa (21/10/2026)
+- Dados do desenvolvimento em %APPDATA%\Mello-dev, separados do app instalado.
+- Barra de título nativa do Windows, no tema escuro.
+- Instalação do Electron pelo script próprio, em vez de instalar o VC++ Redistributable.
+
+Documentação
+- Novos: Arquitetura.txt (substitui Arquitetura.md), Modelo-de-Dados.txt, Testes.txt, este
+  Changelog.txt.
+- Atualizados: PLANO.md, Pipeline.txt (comandos reais), Definicao-da-Stack.txt (versões fixadas),
+  LGPD.txt (pasta do desenvolvimento), Regras.txt (TEM-02), Apresentacao.txt, To-do-list.txt.

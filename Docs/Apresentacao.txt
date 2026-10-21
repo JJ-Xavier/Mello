@@ -76,5 +76,8 @@ ONDE ESTÁ CADA COISA
 - Regras de negócio: Docs/Regras.txt
 - Stack: Docs/Definicao-da-Stack.txt
 - Plano de implementação: Docs/PLANO.md
+- Arquitetura e modelo de dados: Docs/Arquitetura.txt e Docs/Modelo-de-Dados.txt
+- Como rodar e testar: README.md (na raiz), Docs/Pipeline.txt e Docs/Testes.txt
+- O que mudou em cada etapa: Docs/Changelog.txt
 - Dados pessoais e privacidade: Docs/LGPD.txt
-- Licença do código: MIT (arquivo LICENSE na raiz, criado na etapa 1)
+- Licença do código: MIT (arquivo LICENSE na raiz)

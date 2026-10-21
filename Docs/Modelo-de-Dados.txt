@@ -1,0 +1,145 @@
+Modelo de dados — Mello
+
+Status: criado na etapa 1 (21/10/2026). Fonte no código: src/main/db/schema.ts.
+Qualquer migração nova atualiza este documento (seções 3 e 4).
+
+
+1. CONVENÇÕES
+
+- IDs: UUID em texto, gerados no main. Exceção: file.id é o SHA-256 do conteúdo do arquivo.
+- created_at, updated_at e os demais *_at numéricos: epoch em milissegundos (UTC).
+- Datas de entrega e de tarefas: texto local sem fuso, "AAAA-MM-DD" ou "AAAA-MM-DDTHH:mm".
+- Booleanos: INTEGER 0/1 (no Drizzle, mode 'boolean').
+- position: chave de fractional indexing (ordem manual, ORDER BY position).
+- Textos com lista fechada de valores (bg_kind, reminder, freq…): a lista é conferida pelo Zod na
+  entrada do IPC, não por CHECK no banco, para não exigir recriar tabelas quando um valor novo
+  entrar. A única restrição CHECK é a da prioridade (1 a 5).
+- Chaves estrangeiras ligadas (PRAGMA foreign_keys = ON), banco em modo WAL.
+
+
+2. TABELAS
+
+board — quadros
+  id TEXT PK | title TEXT NOT NULL (QUA-01) | position TEXT NOT NULL
+  is_favorite INTEGER NOT NULL DEFAULT 0 (QUA-06) | is_template INTEGER NOT NULL DEFAULT 0 (MOD-04)
+  closed_at INTEGER NULL (QUA-04)
+  bg_kind TEXT NOT NULL DEFAULT 'gradient' (image | color | gradient)
+  bg_value TEXT NOT NULL DEFAULT 'mello' (hex, id do gradiente ou id do arquivo)
+  bg_auto INTEGER NOT NULL DEFAULT 1 | bg_focus INTEGER NOT NULL DEFAULT 4 (0–8, grade 3 × 3)
+  bg_zoom INTEGER NOT NULL DEFAULT 100 (100–200) | bg_dim INTEGER NOT NULL DEFAULT 0 (0–70)
+  bg_blur INTEGER NOT NULL DEFAULT 0 (0–20) | bg_tone TEXT NOT NULL (tom do envelhecimento, FUN-09)
+  created_at, updated_at INTEGER NOT NULL
+
+list — listas
+  id TEXT PK | board_id → board ON DELETE CASCADE | title TEXT NOT NULL | position TEXT NOT NULL
+  freezes_aging INTEGER NOT NULL DEFAULT 0 ("Não envelhece")
+  is_done_list INTEGER NOT NULL DEFAULT 0 ("Lista de conclusão", P1)
+  archived_at INTEGER NULL | created_at, updated_at
+
+card — cards
+  id TEXT PK (também é a semente do fog()) | list_id → list ON DELETE CASCADE
+  title TEXT NOT NULL | position TEXT NOT NULL
+  description_html, description_text, note_html, note_text TEXT NOT NULL DEFAULT ''
+  is_done INTEGER NOT NULL DEFAULT 0 (o ✓ circular) | done_at INTEGER NULL
+  priority INTEGER NULL, CHECK (priority BETWEEN 1 AND 5) — NULL = sem prioridade
+  due_at TEXT NULL | reminder TEXT NOT NULL DEFAULT 'none' (none | at_time | day_before)
+  reminder_fired_at INTEGER NULL (volta a NULL quando a data ou o lembrete mudam)
+  cover_kind TEXT NULL (color | image) | cover_value TEXT NULL
+  is_template INTEGER NOT NULL DEFAULT 0 (MOD-01)
+  recurrence_id → recurrence ON DELETE SET NULL | occurrence_date TEXT NULL
+  last_activity_at INTEGER NOT NULL (base do envelhecimento, ENV-01)
+  archived_at INTEGER NULL | created_at, updated_at
+
+label — etiquetas
+  id TEXT PK | board_id → board ON DELETE CASCADE | name TEXT NULL | color TEXT NOT NULL
+  position TEXT NOT NULL
+
+card_label — etiquetas de cada card
+  card_id → card ON DELETE CASCADE | label_id → label ON DELETE CASCADE
+  PRIMARY KEY (card_id, label_id)
+
+checklist
+  id TEXT PK | card_id → card ON DELETE CASCADE | title TEXT NOT NULL | position TEXT NOT NULL
+  hide_checked INTEGER NOT NULL DEFAULT 0
+
+checklist_item
+  id TEXT PK | checklist_id → checklist ON DELETE CASCADE | text TEXT NOT NULL
+  is_done INTEGER NOT NULL DEFAULT 0 | due_date TEXT NULL ("AAAA-MM-DD")
+  show_in_calendar INTEGER NOT NULL DEFAULT 1 | position TEXT NOT NULL | created_at, updated_at
+
+activity — histórico do card
+  id TEXT PK | card_id → card ON DELETE CASCADE
+  kind TEXT NOT NULL (created, moved, done, undone, archived, restored, copied, from_template,
+                      from_recurrence, recurrence_skipped, recurrence_missed)
+  data TEXT NOT NULL (JSON: nomes das listas, datas…) | created_at
+
+file — arquivos guardados em <pasta de dados>\arquivos\<id>.<ext>
+  id TEXT PK (SHA-256) | ext TEXT NOT NULL | mime TEXT NOT NULL | size INTEGER NOT NULL
+  width, height INTEGER NULL | avg_color TEXT NULL (imagens) | created_at
+
+attachment — anexos
+  id TEXT PK | card_id → card ON DELETE CASCADE | file_id → file ON DELETE RESTRICT
+  name TEXT NOT NULL (nome original) | created_at
+
+recurrence — repetição de um card
+  id TEXT PK | board_id → board ON DELETE CASCADE
+  freq TEXT NOT NULL (daily | weekly | monthly | every_n)
+  weekdays INTEGER NOT NULL DEFAULT 0 (máscara: dom = 1, seg = 2, … sáb = 64)
+  month_day INTEGER NULL (1–31) | interval_days INTEGER NULL (1–365)
+  anchor_date TEXT NOT NULL | time TEXT NOT NULL ("HH:mm")
+  target_list_id → list ON DELETE SET NULL (NULL = pausada, REP-16)
+  copy_labels_priority, copy_description, copy_checklist, copy_due_date INTEGER NOT NULL (REP-04)
+  if_previous_open TEXT NOT NULL DEFAULT 'skip' (skip | create)
+  ends_kind TEXT NOT NULL DEFAULT 'never' (never | on_date | after_count)
+  ends_on TEXT NULL | ends_after INTEGER NULL | due_count INTEGER NOT NULL DEFAULT 0 (REP-06)
+  last_processed TEXT NULL | created_at, updated_at
+
+recurrence_occurrence — cada vez que uma repetição venceu
+  id TEXT PK | recurrence_id → recurrence ON DELETE CASCADE | occurrence_date TEXT NOT NULL
+  status TEXT NOT NULL (created | skipped | missed | created_anyway)
+  card_id → card ON DELETE SET NULL (card criado)
+  notice_card_id → card ON DELETE SET NULL (card que mostra o aviso)
+  dismissed_at INTEGER NULL | created_at
+  UNIQUE (recurrence_id, occurrence_date) — rodar o agendador duas vezes não duplica nada
+
+setting — configurações
+  key TEXT PK | value TEXT NOT NULL (JSON)
+  Chaves: theme, aging.enabled, calendar.showTasks, calendar.strikeDone, calendar.weekStart,
+  tray.keep, app.autoStart, backup.folder, backup.lastAt.
+
+_migrations — controle das migrações (criada pelo app, fora do schema do Drizzle)
+  tag TEXT PK (nome da migração) | applied_at INTEGER NOT NULL
+
+
+3. ÍNDICES
+
+Do plano (PLANO.md, seção 5):
+  list(board_id, position)             card(list_id, position)       card(due_at)
+  card(recurrence_id)                  card(is_template)             label(board_id)
+  checklist(card_id, position)         checklist_item(checklist_id, position)
+  checklist_item(due_date)             activity(card_id, created_at) attachment(card_id)
+  recurrence_occurrence(recurrence_id, occurrence_date)  — UNIQUE
+
+Acrescentados na etapa 1, nas colunas de chave estrangeira que não tinham índice. Sem eles, cada
+exclusão em cascata (de um quadro, de um card, de uma etiqueta) precisaria varrer a tabela filha
+inteira:
+  card_label(label_id)                 attachment(file_id)           recurrence(board_id)
+  recurrence(target_list_id)           recurrence_occurrence(card_id)
+  recurrence_occurrence(notice_card_id)
+
+
+4. MIGRAÇÕES
+
+Como funcionam
+- O schema fica em src/main/db/schema.ts. Depois de mudá-lo: npm run db:generate (drizzle-kit
+  generate) cria o SQL em src/main/db/migrations/ e atualiza meta/_journal.json.
+- O app aplica as pendentes ao abrir (src/main/db/migrate.ts), em ordem, numa transação só, com as
+  chaves estrangeiras desligadas durante a troca e conferidas antes do commit.
+- Se o banco já tem dados, é feito um backup antes de migrar (DAD-01).
+- Um banco com migrações que o app não conhece (de uma versão mais nova) é recusado.
+- Uma migração já aplicada nunca é editada. Toda mudança vira uma migração nova, mesmo durante o
+  desenvolvimento.
+- O drizzle-kit numera a partir de 0000. O plano chamava a primeira de "0001"; vale o 0000.
+
+Histórico
+  0000_esquema_inicial ... etapa 1 (21/10/2026): as 13 tabelas e os índices acima.

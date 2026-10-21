@@ -1,0 +1,41 @@
+/* Barra flutuante de baixo (Quadro.dc.html e Calendario.dc.html). */
+.nav {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--top);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--txt);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.item:hover {
+  background: var(--btn);
+}
+
+.active,
+.active:hover {
+  background: var(--nav-active);
+  color: var(--accent);
+  font-weight: 600;
+}

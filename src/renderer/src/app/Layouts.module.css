@@ -1,0 +1,61 @@
+.screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--txt);
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* Área do quadro e do calendário do quadro: a barra flutuante fica por cima, embaixo. */
+.boardArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+
+/* Menu lateral do Início (Main.dc.html) */
+.sidebar {
+  width: 256px;
+  flex: none;
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--divider);
+}
+
+.sideItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--txt);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.sideItem:hover {
+  background: var(--btn);
+}
+
+.sideActive,
+.sideActive:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}

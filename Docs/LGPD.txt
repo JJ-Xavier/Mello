@@ -1,7 +1,8 @@
 Referente as boas praticas da LGPD e aplicacões em desenvolvimentos de softwere
 
-Status: aprovado em 21/10/2026. Este documento é revisado nas etapas 5 (anexos),
-10 (backup, exportação e apagar tudo) e 12 (versão final).
+Status: aprovado em 21/10/2026; revisado na etapa 1 (pasta do modo de desenvolvimento). Este
+documento é revisado também nas etapas 5 (anexos), 10 (backup, exportação e apagar tudo) e 12
+(versão final).
 
 
 1. RESUMO
@@ -41,6 +42,10 @@ Tudo fica na pasta de dados do usuário do Windows:
 - %APPDATA%\Mello\logs\ ........... registros técnicos (erros e eventos do app, nunca o conteúdo
                                     dos cards)
 - Outras pastas do Electron em %APPDATA%\Mello (cache do Chromium), sem conteúdo seu.
+
+No modo de desenvolvimento (npm run dev) a pasta é %APPDATA%\Mello-dev, com a mesma estrutura.
+Ela só existe no computador de quem desenvolve o app e é separada de propósito, para que os testes
+do desenvolvimento nunca mexam nos dados reais.
 
 A pasta do programa instalado não guarda dados. Por isso, desinstalar ou reinstalar não apaga
 nada. Para apagar, use "Apagar tudo" (seção 5).

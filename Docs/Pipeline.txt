@@ -1,7 +1,6 @@
 Pipeline — Mello
 
-Status: versão inicial (21/10/2026). Os comandos da seção 4 passam a existir na etapa 1 e serão
-conferidos e completados nela.
+Status: atualizado na etapa 1 (21/10/2026). Os comandos da seção 4 existem e foram conferidos.
 
 
 1. QUEM FAZ O QUÊ
@@ -41,26 +40,46 @@ Necessário (já instalado na máquina em 21/10/2026):
 Internet só é preciso para instalar as dependências (npm install baixa os pacotes e o Electron).
 Depois disso, desenvolver, testar e gerar o instalador funcionam sem internet.
 
-Não deve ser necessário: Python e Visual Studio Build Tools. Eles só seriam exigidos se o
-better-sqlite3 precisasse ser compilado na máquina. A etapa 1 confere se a versão escolhida traz
-o binário pronto para Windows; se não trouxer, esta seção é atualizada.
+Não são necessários (conferido na etapa 1):
+- Python e Visual Studio Build Tools: o better-sqlite3 13 já traz o binário pronto para Windows
+  (N-API), que serve ao Electron e aos testes sem compilar nada.
+- Microsoft Visual C++ Redistributable: o instalador oficial do Electron passou a usar um
+  descompactador nativo que exige esse componente, e ele não está instalado nesta máquina. Por
+  decisão de 21/10/2026, o postinstall usa um script próprio (scripts/instalar-electron.mjs), que
+  baixa o mesmo zip oficial pelo @electron/get, confere o checksum e descompacta com o tar.exe do
+  Windows. Se o Electron mudar a forma de instalar numa versão futura, é esse script que precisa
+  de ajuste.
+- GitHub CLI, contas ou tokens de serviço nenhum.
 
-Não é necessário: GitHub CLI, contas ou tokens de serviço nenhum.
+Cuidado com ELECTRON_RUN_AS_NODE: alguns terminais de dentro do VS Code (como o do Claude Code)
+herdam essa variável, que faz o Electron rodar como se fosse o Node e o app não abre. Num
+terminal normal ela não existe. Se "npm run dev" não abrir a janela, confira com
+"echo %ELECTRON_RUN_AS_NODE%" (cmd) ou "$env:ELECTRON_RUN_AS_NODE" (PowerShell) e, se houver
+valor, apague a variável ou use outro terminal. O script de capturas já a remove sozinho.
+
+Pastas de dados: o "npm run dev" usa %APPDATA%\Mello-dev; o app instalado usa %APPDATA%\Mello.
+Assim, o desenvolvimento nunca mexe nos dados reais.
 
 
-4. COMANDOS (previstos; confirmados na etapa 1)
+4. COMANDOS
 
-npm install ............ instala as dependências (uma vez, e quando o package.json mudar)
-npm run dev ............ abre o app em modo de desenvolvimento, com recarga automática
-npm test ............... roda todos os testes uma vez
+npm install ............ instala as dependências e baixa o Electron (uma vez, e quando o
+                         package.json mudar)
+npm run dev ............ abre o app em modo de desenvolvimento, com recarga automática; F12 abre
+                         as ferramentas de desenvolvedor
+npm start .............. abre o app já compilado (electron-vite preview)
+npm run build .......... compila main, preload e tela em out/
+npm test ............... roda todos os testes uma vez (Vitest)
 npm run test:watch ..... roda os testes a cada alteração
 npm run lint ........... confere o padrão de código (ESLint)
 npm run format ......... formata o código (Prettier)
-npm run typecheck ...... confere os tipos do TypeScript
-npm run capturas ....... abre o app com dados fictícios e salva capturas de cada tela em
-                         capturas/ (pasta ignorada pelo Git)
+npm run typecheck ...... confere os tipos do TypeScript (main/preload e tela)
+npm run capturas ....... compila, abre o app com uma pasta de dados temporária, confere banco e
+                         IPC e salva capturas de cada tela em capturas/etapa-N/ (pasta ignorada
+                         pelo Git)
 npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit)
-npm run build:win ...... gera o instalador do Windows em dist/
+npm run build:win ...... confere os tipos, compila e gera o instalador do Windows em dist/
+                         (conferido na etapa 12)
 
 
 5. VERIFICAÇÕES ANTES DE CADA AVISO DE "PRONTO"
@@ -70,6 +89,9 @@ npm run build:win ...... gera o instalador do Windows em dist/
 - npm test ............. todos os testes passando
 - Conferência visual ... telas da etapa iguais ao protótipo (cores, medidas, textos, ícones)
 - git status ........... nenhum arquivo de dados (.db, arquivos, backups, capturas) na lista
+- npm audit --omit=dev . sem vulnerabilidades no que vai dentro do app. Avisos só de ferramentas
+                         de desenvolvimento são avaliados caso a caso (na etapa 1: um esbuild
+                         antigo usado pelo drizzle-kit e o sprintf-js; nenhum vai para o app)
 
 
 6. INSTALADOR
@@ -84,9 +106,12 @@ npm run build:win ...... gera o instalador do Windows em dist/
 
 7. VERSÕES
 
-- Versionamento semântico no package.json: MAIOR.MENOR.CORREÇÃO. A primeira versão completa,
-  ao fim da etapa 12, é a 1.0.0.
-- O que mudou em cada etapa e em cada versão fica no Docs/Changelog.txt (criado na etapa 1).
+- Versionamento semântico no package.json: MAIOR.MENOR.CORREÇÃO. Durante a construção, a etapa N
+  é a versão 0.N.0 (a etapa 1 é a 0.1.0). A primeira versão completa, ao fim da etapa 12, é a
+  1.0.0.
+- As dependências ficam com a versão exata no package.json (sem ^), e o package-lock.json, gerado
+  pelo npm, registra a versão e o checksum de cada pacote. Ele é commitado e nunca é editado à mão.
+- O que mudou em cada etapa e em cada versão fica no Docs/Changelog.txt.
 
 
 8. CI (INTEGRAÇÃO CONTÍNUA)
@@ -112,7 +137,10 @@ de cada aviso de "pronto". Se um dia fizer falta, basta um arquivo .github/workf
 
 O .gitignore (criado na etapa 1) bloqueia:
 - node_modules/, out/, dist/ (dependências e builds);
-- *.db, *.db-wal, *.db-shm (bancos de dados);
-- arquivos/, backups/, exportações e capturas/ (dados e imagens geradas);
+- *.db, *.db-wal, *.db-shm, *.db-journal (bancos de dados);
+- arquivos/, backups/, exportações (Mello-exportacao-*) e capturas/ (dados e imagens geradas);
 - .env e arquivos de chave, por precaução (o app não usa nenhum segredo);
-- logs.
+- logs e caches (.eslintcache, *.tsbuildinfo).
+
+O .gitattributes guarda todos os textos com final de linha LF, igual ao .editorconfig e ao
+Prettier, mesmo com o Git do Windows configurado para CRLF.

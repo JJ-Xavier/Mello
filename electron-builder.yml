@@ -1,0 +1,29 @@
+# Instalador do Windows (npm run build:win → dist/). O ícone (build/icon.ico) entra na etapa 12.
+appId: com.jjxavier.mello
+productName: Mello
+copyright: Copyright © 2026 Jackson Junio
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**
+  - package.json
+asarUnpack:
+  # Binário do better-sqlite3 (N-API): precisa ficar fora do .asar para ser carregado.
+  - '**/*.node'
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  executableName: Mello
+nsis:
+  artifactName: Mello-Setup-${version}.${ext}
+  shortcutName: Mello
+  uninstallDisplayName: Mello
+  createDesktopShortcut: always
+  # Os dados ficam em %APPDATA%\Mello e sobrevivem à desinstalação (ver Docs/LGPD.txt).
+  deleteAppDataOnUninstall: false
+# O better-sqlite3 já traz o binário pronto; não há nada para recompilar.
+npmRebuild: false
+publish: null

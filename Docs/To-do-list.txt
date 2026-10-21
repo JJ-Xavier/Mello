@@ -1,8 +1,8 @@
 To-do list — Mello
 
 Atualizado em: 21/10/2026
-Situação: planejamento concluído e aprovado em 21/10/2026 (plano e telas novas 10 a 16).
-          Aguardando a ordem do Jackson para começar a etapa 1.
+Situação: etapa 1 concluída em 21/10/2026, aguardando o commit do Jackson. A etapa 2 começa
+          quando for liberada.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -25,19 +25,20 @@ PLANEJAMENTO
 [x] Aprovação das telas novas (21/10/2026)
 
 
-ETAPA 1 — BASE DO APP E BANCO
-[ ] Projeto electron-vite (React + TypeScript), ESLint, Prettier, Vitest
-[ ] Estrutura de pastas (main, preload, renderer, shared)
-[ ] SQLite: conexão, pragmas, função unaccent
-[ ] Schema completo + migração 0001 + backup antes de migrar
-[ ] Utilitário de IPC (Zod + Result) e protocolo mello-arquivo://
-[ ] Temas (paletas literais do protótipo) e fonte Inter local
-[ ] Casca do app: cabeçalho com logo, barra flutuante de baixo, rotas
-[ ] .gitignore, electron-builder.yml, script de capturas
-[ ] LICENSE (MIT) e README.md
-[ ] Converter Docs/Arquitetura.md em Docs/Arquitetura.txt
-[ ] Criar Modelo-de-Dados.txt, Testes.txt e Changelog.txt; preencher Pipeline.txt
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 1 — BASE DO APP E BANCO (concluída em 21/10/2026)
+[x] Projeto electron-vite (React + TypeScript), ESLint, Prettier, Vitest
+[x] Estrutura de pastas (main, preload, renderer, shared)
+[x] SQLite: conexão, pragmas, função unaccent
+[x] Schema completo + migração 0000_esquema_inicial + backup antes de migrar (DAD-01)
+[x] Utilitário de IPC (Zod + Result) e protocolo mello-arquivo://
+[x] Temas (paletas literais do protótipo) e fonte Inter local
+[x] Casca do app: cabeçalho com logo, menu lateral do Início, barra flutuante de baixo, rotas
+[x] .gitignore, .gitattributes, electron-builder.yml, script de capturas
+[x] LICENSE (MIT) e README.md
+[x] Converter Docs/Arquitetura.md em Docs/Arquitetura.txt
+[x] Criar Modelo-de-Dados.txt, Testes.txt e Changelog.txt; preencher Pipeline.txt
+[x] Instalação do Electron sem o VC++ Redistributable (scripts/instalar-electron.mjs)
+[x] Testes (46), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 2 — QUADROS E LISTAS
 [ ] Início: área Pessoal, grade de quadros, criar, favoritos, quadros fechados, convite da
@@ -119,7 +120,11 @@ ETAPA 12 — POLIMENTO, REVISÃO GERAL E INSTALADOR
 
 PENDÊNCIAS E OBSERVAÇÕES
 
-- As mudanças de pasta (Documentacao → Docs, Criativo → Assets) e os documentos do planejamento
-  ainda não foram commitados (commit e push ficam com o Jackson).
-- As telas de modelos, capa e lembretes não existem no protótipo; seguem o comportamento do Trello
-  no visual do protótipo (propostas P5, P6 e P7).
+- As telas de modelos, capa e lembretes não existem no protótipo; foram desenhadas nas telas novas
+  10 a 16 (aprovadas em 21/10/2026).
+- Etapa 2: o tema claro das telas do quadro usa --btn #e4e6ea (as Configurações usam #e9ebee);
+  sobrescrever --btn localmente no quadro (ver Regras.txt, TEM-02).
+- Etapa 12: no electron-builder.yml, deixar fora do instalador os binários do better-sqlite3 de
+  outras plataformas e o código-fonte do SQLite que vêm no pacote.
+- O post-it azul do calendário no canvas ainda diz "riscado = ✓ ou Concluído/Entregue"; a regra
+  que vale é a FIN-01 (lista de conclusão E ✓), registrada no post-it verde "Telas novas".

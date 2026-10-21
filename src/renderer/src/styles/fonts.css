@@ -1,0 +1,10 @@
+/* Inter em arquivo local (licença OFL), sem depender de internet. Os pesos são os do protótipo;
+   latin cobre o português e latin-ext os demais acentos. */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
+@import '@fontsource/inter/latin-ext-400.css';
+@import '@fontsource/inter/latin-ext-500.css';
+@import '@fontsource/inter/latin-ext-600.css';
+@import '@fontsource/inter/latin-ext-700.css';

@@ -400,6 +400,9 @@ TEM-02  As paletas são as variáveis do protótipo, sem alteração:
           claro:  --bg #f7f8f9, --panel #ffffff, --line #dcdfe4, --txt #44546f,
                   --strong #172b4d, --muted #5b687e, --btn #e9ebee, --accent #0c66e4,
                   --accent-soft #e9f2ff, --card #ffffff, --list #f1f2f4
+        As telas do quadro definem ainda --top, --accent-txt, --a1 a --a5 e --slot, e no tema
+        claro usam --btn #e4e6ea. O app usa a união de todas, sem mudar nenhum valor
+        (src/renderer/src/styles/themes.css, etapa 1).
 TEM-03  "Igual ao sistema" acompanha a troca de tema do Windows sem reiniciar o app.
 TEM-04  O fundo dos quadros não muda com o tema.
 
