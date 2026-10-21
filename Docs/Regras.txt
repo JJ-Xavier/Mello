@@ -1,0 +1,456 @@
+Regras de negócio — Mello
+
+Status: aprovado em 21/10/2026 (inclusive as regras que eram propostas).
+Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
+decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
+(as divergências estão marcadas com "Decisão 21/10").
+
+COMO LER
+- Cada regra tem um código (ex.: ENV-03). Os testes automáticos citam esse código no nome, e o
+  To-do-list.txt usa o mesmo código.
+- Regras marcadas com "(aprovada 21/10)" eram propostas e foram aprovadas junto com o plano.
+- "Agora" é sempre um relógio que os testes conseguem controlar.
+- Datas de entrega são "horário de relógio" local, sem fuso: "2026-10-20" (dia inteiro) ou
+  "2026-10-20T14:30" (com hora). Datas de tarefas do checklist são só o dia.
+
+
+1. QUADROS (QUA)
+
+QUA-01  Quadro tem título obrigatório, de 1 a 80 caracteres (espaços nas pontas são removidos).
+QUA-02  Quadro novo nasce com 4 listas, nesta ordem: A fazer, Em andamento, Concluído, Entregue.
+        Concluído e Entregue nascem com "Lista de conclusão" e "Não envelhece" ligadas.
+QUA-03  Quadro novo nasce com o fundo gradiente "Mello" e com as 6 etiquetas padrão (ETQ-02).
+QUA-04  Fechar um quadro tira ele do Início e de "Mudar de quadros". Ele passa a aparecer em
+        "Ver todos os quadros fechados", de onde pode ser reaberto ou excluído de vez.
+QUA-05  Cards de quadro fechado não aparecem no calendário nem na busca, não disparam lembretes,
+        e as repetições do quadro ficam pausadas (REP-16).
+QUA-06  Quadros favoritos aparecem primeiro no Início e em "Mudar de quadros". Entre si, e entre
+        os não favoritos, vale a ordem manual.
+QUA-07  Excluir um quadro de vez (só a partir dos fechados, com confirmação) apaga as listas,
+        os cards, as etiquetas, os checklists, a atividade, os anexos e as repetições dele.
+QUA-08  Existe uma única área de trabalho, "Pessoal", fixa. Não há membros nem compartilhamento.
+QUA-09  Na primeira abertura (nenhum quadro, nem fechado), o Início mostra só o convite
+        "Criar seu primeiro quadro". Nada é criado sem você pedir.
+
+
+2. LISTAS (LIS)
+
+LIS-01  Lista tem título obrigatório, de 1 a 80 caracteres.
+LIS-02  O menu "…" da lista tem duas opções independentes: "Não envelhece" (ENV-03) e
+        "Lista de conclusão" (FIN-01).
+LIS-03  Arrastar uma lista muda só a posição dela no quadro.
+LIS-04  "Copiar lista" cria uma lista logo à direita, chamada "<nome> (cópia)", com cópias de todos
+        os cards (CAR-07).
+LIS-05  "Mover lista" para outro quadro leva os cards junto. As etiquetas usadas por esses cards
+        são recriadas no quadro de destino (mesma cor e nome) quando ainda não existem lá.
+LIS-06  "Arquivar lista" esconde a lista e os cards dela do quadro, do calendário, da busca e dos
+        lembretes. Ela pode ser restaurada em "Itens arquivados" (menu "…" do quadro).
+LIS-07  "Arquivar todos os cartões" arquiva todos os cards da lista. A lista continua.
+LIS-08  "Ordenar por prioridade" e "Ordenar por data de entrega" reordenam a lista uma única vez
+        (PRI-05, DAT-04). A lista não fica presa a essa ordem.
+LIS-09  O contador no cabeçalho mostra quantos cards a lista tem. Com filtro ativo, mostra
+        "visíveis/total" (FLT-04).
+
+
+3. CARDS (CAR)
+
+CAR-01  Card tem título obrigatório, de 1 a 500 caracteres.
+CAR-02  Card novo entra no fim da lista, com nível de envelhecimento 0.
+CAR-03  Soltar um card no mesmo lugar (mesma lista e mesmos vizinhos) não grava nada.
+CAR-04  A face do card mostra, quando houver: capa; etiquetas (barras coloridas); ✓ verde antes
+        do título; título; data de entrega; ícone de descrição; ícone de nota; ícone de anexo com
+        a quantidade; progresso do checklist (x/y); ↻ com o próximo dia da repetição; selo de
+        prioridade; selo "Modelo".
+CAR-05  Arquivar um card tira ele do quadro, do calendário, da busca e dos lembretes. Ele pode ser
+        restaurado em "Itens arquivados". "Excluir" apaga de vez, com confirmação.
+CAR-06  "Mover" (menu "…" do modal) leva o card para outra lista, inclusive de outro quadro.
+        Etiquetas seguem a regra LIS-05.
+CAR-07  "Copiar" cria uma cópia logo abaixo, ou na lista escolhida, com título, descrição, nota,
+        etiquetas, prioridade, data, lembrete, capa, checklists (com o estado dos itens) e anexos.
+        Não copia a atividade nem a repetição. A cópia nasce com nível 0 e atividade
+        "Copiado de <título>".
+CAR-08  "Acompanhar card" (o ícone de olho do protótipo) não existe no Mello: sem outras pessoas,
+        ele não teria função. (aprovada 21/10)
+
+
+4. FINALIZADO (FIN) — Decisão 21/10
+
+FIN-01  Um card está FINALIZADO quando duas coisas valem ao mesmo tempo:
+        (a) ele está numa lista com "Lista de conclusão" ligada; e
+        (b) o ✓ circular dele está marcado.
+FIN-02  Arrastar ou mover um card PARA uma lista de conclusão marca o ✓ automaticamente.
+FIN-03  Tirar um card de uma lista de conclusão e levá-lo para uma lista comum desmarca o ✓
+        automaticamente. Mover entre duas listas de conclusão mantém o ✓ como está.
+FIN-04  O ✓ pode ser marcado à mão em qualquer lista. Fora de uma lista de conclusão o card fica
+        com ✓, mas NÃO está finalizado: continua envelhecendo, não fica riscado no calendário e não
+        conta como "anterior concluído" na repetição.
+FIN-05  Desmarcar o ✓ à mão dentro de uma lista de conclusão mantém o card na lista, mas ele deixa
+        de estar finalizado.
+FIN-06  Ligar ou desligar "Lista de conclusão" numa lista não muda o ✓ dos cards que já estão
+        nela. (aprovada 21/10)
+FIN-07  Um item de checklist está finalizado quando está marcado.
+
+
+5. ENVELHECIMENTO (ENV)
+
+ENV-01  dias_parado = parte inteira de (agora − última alteração do card) / 24 horas.
+ENV-02  Nível pelo tempo parado:
+          dias_parado  0 a 2   → nível 0 (novo)
+          dias_parado  3 a 5   → nível 1
+          dias_parado  6 a 8   → nível 2
+          dias_parado  9 a 11  → nível 3
+          dias_parado 12 a 13  → nível 4
+          dias_parado 14 ou +  → nível 5
+ENV-03  O nível é sempre 0 (card congelado) quando vale qualquer uma destas condições:
+          - o envelhecimento está desligado nas Configurações;
+          - a lista do card tem "Não envelhece" ligado;
+          - o card está finalizado (FIN-01);
+          - o card é um modelo (MOD-02).
+        Card com ✓ fora de lista de conclusão envelhece normalmente (FIN-04).
+ENV-04  Congelar não zera o tempo. Quando a condição deixa de valer, o nível volta a ser
+        calculado pela última alteração. Sair de uma lista congelada arrastando o card já conta
+        como alteração (ENV-05).
+ENV-05  Zeram o envelhecimento (última alteração = agora):
+          - mover para outra lista ou para outra posição (inclusive para outro quadro);
+          - editar o título ou a descrição;
+          - adicionar ou remover etiqueta;
+          - mudar a prioridade, a data de entrega ou o lembrete;
+          - marcar ou desmarcar o ✓ (inclusive o automático de FIN-02 e FIN-03);
+          - criar, renomear ou excluir checklist;
+          - adicionar, editar, marcar, desmarcar, datar, reordenar ou excluir item do checklist
+            (também quando a tarefa é marcada pelo calendário);
+          - editar a nota (cada salvamento automático conta);
+          - anexar ou remover arquivo;
+          - mudar ou remover a capa;
+          - configurar ou remover a repetição;
+          - restaurar o card do arquivo.
+ENV-06  NÃO zeram o envelhecimento:
+          - abrir ou fechar o modal;
+          - pegar e soltar no mesmo lugar (CAR-03);
+          - "Ocultar itens marcados";
+          - mudanças em outras coisas: renomear a lista, trocar o fundo, editar o nome ou a cor de
+            uma etiqueta;
+          - "Ordenar por prioridade" e "Ordenar por data" (reordenam a lista inteira e não são
+            alteração do card). (aprovada 21/10)
+ENV-07  Card criado por repetição, cópia ou modelo nasce com nível 0.
+ENV-08  O modal mostra "Última movimentação: <data e hora>" e, ao lado, 5 barrinhas (as N
+        primeiras acesas) com "Parado há X dias · nível N de 5". Card congelado mostra
+        "Não envelhece" e o motivo (lista congelada, finalizado, modelo ou desligado).
+ENV-09  Visual: a função fog(level, seed, claro) do protótipo, com o algoritmo e as constantes
+        dela, recebe o tamanho real do card (o protótipo fixava 252 × 100 px). A semente é o id do
+        card, então o desenho de um card não muda a cada abertura. O tom que aparece por baixo
+        (bege #d8bd9b no protótipo) vem do fundo do quadro (FUN-09).
+ENV-10  O nível é recalculado sem precisar de alteração: ao abrir o quadro e a cada hora com o
+        app aberto.
+
+
+6. PRIORIDADE (PRI)
+
+PRI-01  Cinco níveis, mais "sem prioridade" (o padrão):
+
+          valor  nome         ícone (path SVG do protótipo)            cor escuro / claro
+          1      Muito alta   M6 13l6-6 6 6M6 19l6-6 6 6  (⏶⏶)        #f87168 / #c9372c
+          2      Alta         M6 15l6-6 6 6               (⏶)         #fea362 / #c25100
+          3      Média        M5 9h14M5 15h14             (=)         #f5cd47 / #946f00
+          4      Baixa        M6 9l6 6 6-6                (⏷)         #85b8ff / #0c66e4
+          5      Muito baixa  M6 5l6 6 6-6M6 11l6 6 6-6   (⏷⏷)        #9fadbc / #626f86
+
+PRI-02  Na face do card aparece só o ícone. O nome aparece ao passar o mouse e é lido pelo
+        leitor de tela ("Prioridade alta").
+PRI-03  No modal aparecem ícone e nome. O seletor tem os 5 níveis e "Sem prioridade".
+PRI-04  A prioridade é separada das etiquetas, que ficam livres para categorias.
+PRI-05  "Ordenar por prioridade": do valor 1 ao 5, com os cards sem prioridade no fim. Empates
+        mantêm a ordem em que já estavam (ordenação estável).
+
+
+7. ETIQUETAS (ETQ)
+
+ETQ-01  Etiquetas são do quadro. Têm cor obrigatória e nome opcional.
+ETQ-02  Quadro novo nasce com 6 etiquetas sem nome, nas cores do protótipo: roxo #6e5dc6,
+        vermelho #c9372c, laranja #b65c02, amarelo #e2b203, cinza #8c9bab e verde #216e4e.
+ETQ-03  Na face do card a etiqueta é uma barra colorida de 40 × 8 px. No modal ela aparece com o
+        nome, quando tem nome.
+ETQ-04  O editor de etiquetas (tela Estados) permite buscar, marcar/desmarcar no card, editar
+        nome e cor e criar etiqueta nova. Excluir uma etiqueta tira ela de todos os cards.
+
+
+8. FILTRO DO QUADRO (FLT)
+
+FLT-01  Palavra-chave: procura no título, na descrição, na nota e no nome das etiquetas, sem
+        diferenciar maiúsculas de minúsculas nem letras com e sem acento.
+FLT-02  Prioridade: com uma ou mais prioridades marcadas, aparecem só os cards dessas prioridades.
+FLT-03  "Só cards recorrentes": aparecem só os cards que fazem parte de uma repetição ativa.
+FLT-04  Os critérios se combinam (todos precisam valer). Com filtro ativo, o contador da lista
+        mostra "visíveis/total" e o botão de filtro fica destacado.
+FLT-05  O filtro não fica salvo: sair do quadro limpa o filtro.
+
+
+9. CHECKLIST (CHK)
+
+CHK-01  Um card pode ter vários checklists, cada um com título e ordem manual.
+CHK-02  Progresso do checklist = itens marcados / total, em porcentagem arredondada. A barra é
+        azul e fica verde em 100%. Checklist vazio mostra 0%.
+CHK-03  Na face do card aparece x/y somando todos os checklists. Some quando não há itens.
+CHK-04  "Ocultar itens marcados" vale por checklist e fica salvo.
+CHK-05  Cada item pode ter uma data (só o dia) e a opção "Mostrar no calendário", ligada por
+        padrão.
+CHK-06  O selo de data do item é cinza; vermelho quando a data já passou e o item não está
+        marcado; verde quando está marcado.
+
+
+10. DATAS E ATRASO (DAT)
+
+DAT-01  A data de entrega do card tem dia e, opcionalmente, hora.
+DAT-02  Um card está atrasado quando não está finalizado e o prazo passou: com hora, quando o
+        instante passou; sem hora, quando o dia acabou.
+DAT-03  Card atrasado: selo "Em atraso" no modal e data em vermelho na face. Card finalizado com
+        data: data em verde na face.
+DAT-04  "Ordenar por data de entrega": do prazo mais cedo para o mais tarde, com os cards sem data
+        no fim. Ordenação estável.
+
+
+11. LEMBRETES (LEM)
+
+LEM-01  Opções do seletor de data: Nenhum, No horário e 1 dia antes (as do protótipo). Só existe
+        lembrete quando há data de entrega.
+LEM-02  Data sem hora: o lembrete considera 09:00 daquele dia. (aprovada 21/10)
+LEM-03  O lembrete dispara uma vez, como notificação do Windows: título "Mello · <título do card>",
+        texto "Entrega <data e hora> · <quadro>". Clicar na notificação abre o app no card.
+LEM-04  Mudar a data ou a opção de lembrete rearma o lembrete.
+LEM-05  Não dispara para card finalizado, arquivado, modelo, de lista arquivada ou de quadro
+        fechado.
+LEM-06  Lembretes que venceram com o app fechado: ao abrir, os dos últimos 7 dias viram um único
+        aviso agrupado ("Você perdeu 2 lembretes"), com a lista. Os mais antigos são descartados.
+LEM-07  Com "Manter o Mello na bandeja" ligado (o padrão), fechar a janela esconde o app na
+        bandeja do Windows, e ele continua disparando lembretes e repetições. "Sair", no menu da
+        bandeja, encerra o app. Com a opção desligada, fechar a janela encerra o app. (aprovada 21/10)
+
+
+12. NOTA E DESCRIÇÃO (NOT)
+
+NOT-01  Cada card tem uma nota, sempre aberta na coluna da direita do modal. Não há comentários.
+NOT-02  Ferramentas do editor: Título, Negrito, Itálico, Lista, Caixa de marcar e Link.
+NOT-03  A nota salva sozinha 800 ms depois que você para de digitar, e também ao fechar o modal.
+        Depois de salvar, mostra "Salvo automaticamente".
+NOT-04  A nota é guardada como HTML que só aceita estas marcas: título (h3), parágrafo, negrito,
+        itálico, lista, lista de tarefas com caixa de marcar e link (http, https ou mailto). Tudo o
+        que não está nessa lista é descartado ao salvar e ao abrir.
+NOT-05  Links da nota e da descrição abrem no navegador padrão, nunca dentro do app.
+NOT-06  A face do card mostra o ícone de nota quando a nota tem algum texto.
+NOT-07  A descrição usa o mesmo editor e as mesmas regras, em modo leitura, com o botão "Editar".
+        (aprovada 21/10)
+
+
+13. ATIVIDADE (ATV)
+
+ATV-01  "Atividade" fica recolhida embaixo da nota e mostra a quantidade ("2 registros").
+        Aberta, lista os registros do mais recente para o mais antigo, com data e hora.
+ATV-02  São registrados: criado em <lista>; movido de <lista> para <lista> (inclusive entre
+        quadros); ✓ marcado ou desmarcado; arquivado e restaurado; copiado de <card>; criado a
+        partir do modelo <card>; criado pela repetição de <data>; repetição de <data> pulada;
+        repetição de <data> não criada porque o app estava fechado.
+ATV-03  Edições de texto, etiquetas, checklist e nota não são registradas, para a atividade não
+        virar ruído.
+
+
+14. ANEXOS E CAPA (ANX / CAP)
+
+ANX-01  Aceita qualquer tipo de arquivo. Ele é copiado para a pasta de arquivos do app
+        (%APPDATA%\Mello\arquivos) e o nome original é guardado.
+ANX-02  O mesmo arquivo anexado mais de uma vez é guardado uma vez só (identificado pelo hash do
+        conteúdo).
+ANX-03  Imagens mostram miniatura. "Abrir" usa o programa padrão do Windows.
+ANX-04  Remover um anexo apaga a referência. O arquivo só é apagado do disco quando nada mais o
+        usa (DAD-08).
+ANX-05  Arquivos acima de 200 MB pedem confirmação antes de copiar.
+CAP-01  Capa pode ser: nenhuma, uma cor (paleta das etiquetas) ou uma imagem (enviada na hora ou
+        escolhida entre os anexos de imagem do card).
+CAP-02  Na face do card: faixa de cor de 32 px ou imagem de até 160 px de altura (recortada para
+        cobrir), acima das etiquetas. No modal: faixa no topo.
+CAP-03  Remover o anexo usado como capa remove a capa.
+
+
+15. REPETIÇÃO (REP)
+
+REP-01  Frequências:
+          - Diária;
+          - Semanal: um ou mais dias da semana (pelo menos um é obrigatório);
+          - Mensal: dia X, de 1 a 31. Se o mês não tem o dia X, usa o último dia do mês;
+          - A cada N dias: N de 1 a 365, contando a partir do dia em que a repetição foi salva.
+REP-02  O horário (HH:mm) é o momento em que o card novo é criado.
+REP-03  "Criar na lista": uma lista do mesmo quadro (padrão: a lista atual do card). O card novo
+        nasce no topo dessa lista.
+REP-04  O que é copiado para o card novo:
+          - sempre o título;
+          - se marcado: etiquetas e prioridade;
+          - se marcado: descrição;
+          - se marcado: checklists, com todos os itens desmarcados e sem data;
+          - se marcado: data de entrega = dia da repetição + horário da regra, com o mesmo
+            lembrete do card de origem.
+        Nunca são copiados: nota, anexos, capa e atividade.
+REP-05  O card de origem da cópia é o card mais recente da série.
+REP-06  Quando termina:
+          - Nunca;
+          - Em <data>: valem as ocorrências até essa data, inclusive;
+          - Depois de N vezes: contam as ocorrências que venceram, criadas ou puladas.
+REP-07  O "anterior" é o card mais recente da série que não foi arquivado nem excluído. Se não
+        houver anterior, o card novo é criado.
+REP-08  Se o anterior NÃO está finalizado (FIN-01):
+          - "Pular e avisar no card" (padrão): o card novo não é criado; a ocorrência fica
+            registrada como pulada; o anterior mostra o aviso "Repetição de <dia> pulada. Este card
+            ainda não foi concluído, então o Mello não criou outro. A próxima será <dia>.", com os
+            botões "Criar agora mesmo assim" e "Dispensar";
+          - "Criar mesmo assim": o card novo é criado normalmente.
+REP-09  "Criar agora mesmo assim" cria na hora o card daquela ocorrência e some com o aviso.
+        "Dispensar" só some com o aviso; a ocorrência continua contando como pulada.
+REP-10  Se o app ficou fechado e várias ocorrências venceram, só a mais recente é processada
+        (REP-08 vale para ela). As anteriores ficam registradas como "não criada: app fechado" e
+        contam para REP-06. Decisão 21/10.
+REP-11  O agendador roda ao abrir o app e a cada minuto enquanto o app estiver aberto ou na
+        bandeja.
+REP-12  O card novo nasce com nível 0, sem ✓, com a atividade "Criado pela repetição de <data>".
+REP-13  Na face do card: ↻ e o próximo dia. Mostra o dia da semana ("seg.") quando a próxima
+        ocorrência é nos próximos 6 dias; senão, a data ("26 out."). Aparece em todos os cards
+        da série enquanto a repetição estiver ativa.
+REP-14  No calendário:
+          - ocorrências futuras do mês aparecem tracejadas, com "Próxima repetição";
+          - ocorrências puladas aparecem tracejadas, com o aviso "Pulada: a anterior está em
+            aberto";
+          - ocorrências perdidas por app fechado aparecem tracejadas, com "Não criada: app
+            fechado".
+REP-15  "Remover repetição": os cards já criados ficam; somem o ↻ e as ocorrências futuras.
+REP-16  Quadro fechado, ou lista de destino arquivada ou excluída: a repetição fica pausada e não
+        processa nada. Ao voltar, vale REP-10 para o período parado.
+REP-17  Resumo da regra: "Todo dia, 08:00", "Toda segunda, 08:00", "Toda segunda, quarta,
+        08:00", "Todo dia 5, 08:00", "A cada 3 dias, 08:00". "Próximas:" mostra as 3 próximas
+        datas.
+
+
+16. CALENDÁRIO (CAL)
+
+CAL-01  Só visão mensal. Abre no mês atual.
+CAL-02  Tem tela própria. Aberto pela barra de baixo de um quadro, mostra aquele quadro. Aberto
+        pelo menu lateral do Início, mostra todos os quadros, com um seletor para escolher um
+        quadro. (aprovada 21/10)
+CAL-03  Grade de 7 colunas, começando no domingo ou na segunda (Configurações), com 5 ou 6
+        semanas, conforme o mês precisar. Dias de fora do mês ficam com fundo mais escuro e sem
+        itens, como no protótipo.
+CAL-04  O dia de hoje tem o número num círculo azul.
+CAL-05  Cards aparecem no dia da data de entrega. Tarefas são os itens de checklist com data e
+        "Mostrar no calendário" ligado.
+CAL-06  Não aparecem: cards arquivados, modelos, cards de lista arquivada e de quadro fechado.
+CAL-07  Riscado (com "Riscar itens finalizados" ligado): card finalizado (FIN-01, com o ✓ verde)
+        ou tarefa marcada. Com a opção desligada, nada fica riscado.
+CAL-08  Card atrasado (DAT-02) mostra o relógio vermelho. Tarefa atrasada tem o texto vermelho.
+CAL-09  Os filtros "Cards" e "Tarefas do checklist" são independentes. O valor inicial de
+        "Tarefas" vem das Configurações.
+CAL-10  Ordem dentro do dia: cards antes das tarefas. Entre cards: sem hora primeiro, depois pela
+        hora; empate por prioridade e depois pelo título.
+CAL-11  Clicar num card abre o modal dele por cima do calendário. Clicar numa tarefa marca ou
+        desmarca o item (ENV-05). (aprovada 21/10: o protótipo também marcava o card ao clicar, mas pela
+        regra FIN-01 marcar o ✓ sozinho não finaliza)
+CAL-12  "Adicionar" aparece ao passar o mouse num dia. Cria um card com data de entrega naquele
+        dia, sem hora, na primeira lista do quadro que não é de conclusão. No modo "todos os
+        quadros", pergunta antes em qual quadro.
+CAL-13  Quando os itens não cabem no dia, aparece "+N mais", que abre a lista completa do dia.
+CAL-14  Tarefas mostram o título do card embaixo. No modo "todos os quadros", os cards mostram
+        também o nome do quadro.
+
+
+17. FUNDO DO QUADRO (FUN)
+
+FUN-01  Cada quadro tem o seu fundo, de um destes tipos: Imagem; Cor (Azul Mello #1f5eff,
+        Grafite #2c333a, Verde #216e4e, Roxo #5e4db2, Laranja #a54800, Vermelho #ae2e24,
+        Azul-petróleo #206a83, Cinza claro #8590a2); Gradiente (Mello, Pôr do sol, Oceano,
+        Floresta, Uva, Noite, com os valores do protótipo).
+FUN-02  Imagem: JPG, PNG ou WEBP, de até 25 MB, enviada por clique ou arrastando. É copiada para
+        a pasta de arquivos do app.
+FUN-03  A imagem cobre a tela toda, centrada no ponto de foco, ampliada pelo zoom, com uma camada
+        preta de opacidade igual a "Escurecer" e o desfoque aplicado.
+FUN-04  Ao enviar a imagem, o ajuste automático calcula os quatro valores a partir de uma cópia
+        reduzida da imagem (64 × 40 px):
+          - foco: a célula da grade 3 × 3 com mais detalhe (energia de bordas). Empate: o centro;
+          - zoom: 100% com o foco no centro; 112% com o foco fora do centro, para o
+            enquadramento ter folga para andar;
+          - escurecer: o menor valor, de 2 em 2%, até 70%, que deixa o contraste entre texto
+            branco e o fundo escurecido em pelo menos 4,5:1;
+          - desfoque: 6 px quando o detalhe médio da imagem passa do limite (imagem "carregada");
+            senão, 0.
+FUN-05  Mexer em qualquer ajuste desliga o modo automático e mostra "Restaurar automático", que
+        recalcula os valores e liga o automático de novo.
+FUN-06  Indicador de legibilidade: "Cards legíveis sobre este fundo" (verde) quando o contraste
+        estimado é de pelo menos 4,5:1; senão, "Pouco contraste: aumente o escurecer ou o
+        desfoque" (amarelo).
+FUN-07  A prévia é ao vivo. Nada é salvo até "Aplicar ao quadro"; "Cancelar" descarta tudo.
+FUN-08  O fundo aparece no quadro, no calendário daquele quadro e na miniatura do Início. O tema
+        do app não muda o fundo.
+FUN-09  Tom do envelhecimento: é a cor média do fundo (cor: a própria; gradiente: média das
+        paradas; imagem: média calculada no envio). Ela é convertida para HSL, a saturação é
+        limitada a 45% e a luminosidade é fixada em 73%. O resultado substitui o bege #d8bd9b do
+        protótipo.
+
+
+18. TEMA (TEM)
+
+TEM-01  Escuro (padrão), Claro e Igual ao sistema.
+TEM-02  As paletas são as variáveis do protótipo, sem alteração:
+          escuro: --bg #1d2125, --panel #22272b, --line #38414a, --txt #b6c2cf,
+                  --strong #dee4ea, --muted #9fadbc, --btn #2c333a, --accent #579dff,
+                  --accent-soft #1c2b41, --card #22272b, --list #101204
+          claro:  --bg #f7f8f9, --panel #ffffff, --line #dcdfe4, --txt #44546f,
+                  --strong #172b4d, --muted #5b687e, --btn #e9ebee, --accent #0c66e4,
+                  --accent-soft #e9f2ff, --card #ffffff, --list #f1f2f4
+TEM-03  "Igual ao sistema" acompanha a troca de tema do Windows sem reiniciar o app.
+TEM-04  O fundo dos quadros não muda com o tema.
+
+
+19. BUSCA (BUS)
+
+BUS-01  O campo do topo busca a partir de 2 caracteres, sem diferenciar maiúsculas e acentos.
+BUS-02  Procura no título, na descrição e na nota dos cards; no texto dos itens de checklist; e
+        no título dos quadros.
+BUS-03  Os resultados vêm em grupos: Cards (título + "Quadro · Lista"), Tarefas (texto +
+        "Card · data") e Quadros, com até 8 resultados por grupo.
+BUS-04  Ficam de fora: arquivados, modelos e quadros fechados.
+BUS-05  Clicar ou dar Enter abre o resultado: card abre o modal no quadro dele, tarefa abre o modal
+        do card e quadro abre o quadro.
+
+
+20. MODELOS (MOD)
+
+MOD-01  Um card vira modelo pelo menu "…" do modal ("Transformar em modelo"), e deixa de ser pelo
+        mesmo menu.
+MOD-02  Card-modelo: mostra o selo "Modelo" na face; não envelhece; não aparece no calendário nem
+        na busca; não dispara lembrete; não pode ter ✓ nem repetição.
+MOD-03  "Criar a partir de modelo" (ícone ao lado de "Adicionar um cartão" e no menu "Criar")
+        lista os cards-modelo do quadro. Escolher um cria uma cópia na lista (como CAR-07, mas sem
+        a marca de modelo), com a atividade "Criado a partir do modelo <título>".
+MOD-04  Um quadro vira modelo pelo menu "…" do quadro. Quadros-modelo aparecem numa seção
+        "Modelos" no Início, separados dos quadros comuns.
+MOD-05  Criar um quadro a partir de modelo copia as listas (com as opções delas), as etiquetas e o
+        fundo. Com "Manter cards" marcado, copia também os cards, com ✓ desmarcado, nível 0 e sem
+        atividade anterior.
+
+
+21. DADOS, BACKUP E EXPORTAÇÃO (DAD)
+
+DAD-01  Backup automático: ao abrir o app (se o último tiver mais de 1 hora), a cada 1 hora em
+        que houve alteração, antes de cada migração do banco e antes de cada restauração.
+DAD-02  O backup é um arquivo consistente gerado pela API de backup do SQLite, nunca uma cópia do
+        banco aberto. Nome: mello-AAAA-MM-DD_HHmm.db.
+DAD-03  Ficam guardados os 10 backups mais recentes.
+DAD-04  A pasta padrão é %APPDATA%\Mello\backups. Ela pode ser trocada nas Configurações, por
+        exemplo para um HD externo ou uma pasta do OneDrive/Google Drive. Se a pasta escolhida
+        estiver indisponível, o backup vai para a pasta padrão e o app avisa.
+DAD-05  Os arquivos (anexos, fundos e capas) são espelhados em <pasta de backup>\arquivos. Só os
+        que ainda não estão lá são copiados (o nome é o hash, então não mudam).
+DAD-06  Restaurar: você escolhe um backup; o estado atual vira um backup antes; o banco é trocado,
+        os arquivos que faltam vêm do espelho e o app reinicia.
+DAD-07  Exportar: cria a pasta Mello-exportacao-AAAA-MM-DD com dados.json (todas as tabelas, em
+        formato legível) e a subpasta arquivos.
+DAD-08  Arquivos sem nenhuma referência no banco são apagados da pasta do app na abertura
+        seguinte. No espelho do backup, só saem quando nenhum dos backups guardados os usa.
+DAD-09  "Apagar tudo" pede para digitar APAGAR. Apaga o banco e os arquivos, com uma opção à parte
+        para apagar também os backups. O app reinicia vazio.
+DAD-10  O app não envia nenhum dado para fora do computador: não usa rede e não tem telemetria.
+        Usar uma pasta de backup sincronizada com a nuvem é uma escolha sua (ver LGPD.txt).

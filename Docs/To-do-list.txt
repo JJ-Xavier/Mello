@@ -1,0 +1,125 @@
+To-do list — Mello
+
+Atualizado em: 21/10/2026
+Situação: planejamento concluído e aprovado em 21/10/2026 (plano e telas novas 10 a 16).
+          Aguardando a ordem do Jackson para começar a etapa 1.
+Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
+Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
+são regras do Regras.txt.
+
+
+PLANEJAMENTO
+
+[x] Ler o protótipo inteiro (canvas.json e as 10 telas) e todos os arquivos de Docs/
+[x] Levantar dúvidas e decidir com o Jackson (nota, arquivos, calendário, finalizado, extras,
+    app fechado)
+[x] Escrever Docs/PLANO.md
+[x] Preencher Apresentacao.txt, Definicao-da-Stack.txt (proposta), Regras.txt, LGPD.txt e este
+    To-do-list.txt
+[x] Definir o fluxo de trabalho e escrever o Pipeline.txt inicial (sem CI: proposta P13)
+[x] Aprovação do plano (21/10/2026): propostas P1 a P17, regras propostas, licença MIT,
+    Início vazio na primeira abertura
+[x] Desenhar no canvas, em área separada ("Telas novas"), as telas sem protótipo: 10 Início
+    vazio, 11 e 12 modelos, 13 calendário de todos os quadros, 14 capa e anexos, 15 Configurações
+    novas, 16 estados e menus novos (versão 1792610028-933e do canvas)
+[x] Aprovação das telas novas (21/10/2026)
+
+
+ETAPA 1 — BASE DO APP E BANCO
+[ ] Projeto electron-vite (React + TypeScript), ESLint, Prettier, Vitest
+[ ] Estrutura de pastas (main, preload, renderer, shared)
+[ ] SQLite: conexão, pragmas, função unaccent
+[ ] Schema completo + migração 0001 + backup antes de migrar
+[ ] Utilitário de IPC (Zod + Result) e protocolo mello-arquivo://
+[ ] Temas (paletas literais do protótipo) e fonte Inter local
+[ ] Casca do app: cabeçalho com logo, barra flutuante de baixo, rotas
+[ ] .gitignore, electron-builder.yml, script de capturas
+[ ] LICENSE (MIT) e README.md
+[ ] Converter Docs/Arquitetura.md em Docs/Arquitetura.txt
+[ ] Criar Modelo-de-Dados.txt, Testes.txt e Changelog.txt; preencher Pipeline.txt
+[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+
+ETAPA 2 — QUADROS E LISTAS
+[ ] Início: área Pessoal, grade de quadros, criar, favoritos, quadros fechados, convite da
+    primeira abertura (QUA)
+[ ] Menu Criar, "Mudar de quadros"
+[ ] Barra do quadro: título, filtro, favoritar, Alterar fundo, menu "…"
+[ ] Listas: criar, renomear, arrastar, copiar, mover, arquivar (LIS)
+[ ] "Não envelhece" e "Lista de conclusão" no menu da lista
+[ ] Quadro novo com 4 listas, 6 etiquetas e fundo Mello
+[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+
+ETAPA 3 — CARDS E ARRASTAR
+[ ] Criar card e face do card (CAR-04)
+[ ] Arrastar cards com o visual do protótipo; teclado
+[ ] ✓ automático ao entrar e sair da área de finalizado (FIN-02, FIN-03)
+[ ] Soltar no mesmo lugar não grava (CAR-03)
+[ ] Tema claro do quadro
+[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+
+ETAPA 4 — MODAL DO CARD: DADOS
+[ ] Modal: seletor de lista, ✓, título, botões
+[ ] Etiquetas (ETQ), prioridade (PRI), data de entrega e atraso (DAT)
+[ ] Descrição com TipTap (NOT-07)
+[ ] Checklists e itens com data (CHK)
+[ ] Menu "…": copiar, mover, arquivar, excluir (CAR-05..07)
+[ ] Ordenar lista por prioridade e por data; filtro do quadro (FLT)
+[ ] Testes (inclui tabela de eventos ENV-05/06), conferência visual, documentos, aviso de pronto para commit
+
+ETAPA 5 — MODAL DO CARD: NOTA, ATIVIDADE, ANEXOS E CAPA
+[ ] Nota com TipTap e salvamento automático (NOT)
+[ ] Atividade recolhida (ATV)
+[ ] Anexos (ANX) e capa (CAP)
+[ ] Testes, conferência visual, documentos (LGPD: anexos), aviso de pronto para commit
+
+ETAPA 6 — ENVELHECIMENTO
+[ ] Cálculo do nível e congelamentos (ENV-01..04)
+[ ] fog() do protótipo no tamanho real do card, com tom do fundo (ENV-09)
+[ ] Indicador no modal (ENV-08); recálculo de hora em hora (ENV-10)
+[ ] Testes (inclui desempenho), conferência visual, documentos, aviso de pronto para commit
+
+ETAPA 7 — CALENDÁRIO
+[ ] Tela mensal com escopo quadro/todos (CAL-01..03)
+[ ] Cards e tarefas, riscado, atraso, hoje, filtros (CAL-04..10)
+[ ] Abrir modal, marcar tarefa, Adicionar, "+N mais" (CAL-11..14)
+[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+
+ETAPA 8 — AGENDADOR: REPETIÇÃO E LEMBRETES
+[ ] Diálogo Repetir (REP-01..06, REP-17)
+[ ] Agendador: criar, pular e avisar, app fechado (REP-07..12, REP-16)
+[ ] ↻ na face, fantasmas no calendário (REP-13..15)
+[ ] Lembretes e bandeja (LEM)
+[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+
+ETAPA 9 — FUNDO DO QUADRO
+[ ] Editor: imagem, cor, gradiente, prévia ao vivo (FUN-01..03, FUN-07)
+[ ] Ajuste automático, legibilidade, restaurar (FUN-04..06)
+[ ] Fundo no quadro, calendário e miniatura; tom do envelhecimento (FUN-08, FUN-09)
+[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+
+ETAPA 10 — CONFIGURAÇÕES, TEMA, BACKUP E DADOS
+[ ] Aparência, Envelhecimento, Calendário (tela 7)
+[ ] Lembretes e bandeja; Dados e backup (seções novas)
+[ ] Tema claro/sistema em todas as telas (TEM)
+[ ] Backup automático, restaurar, exportar, apagar tudo (DAD)
+[ ] Testes, conferência visual, documentos (LGPD), aviso de pronto para commit
+
+ETAPA 11 — BUSCA E MODELOS
+[ ] Busca do topo (BUS)
+[ ] Cards-modelo e quadros-modelo (MOD)
+[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+
+ETAPA 12 — POLIMENTO, REVISÃO GERAL E INSTALADOR
+[ ] Conferência de todas as telas nos dois temas; estados vazios; acessibilidade
+[ ] Desempenho com 500 cards
+[ ] Ícone do instalador; npm run build:win; instalar e atualizar sem perder dados
+[ ] Revisão geral do código; suíte completa de novo
+[ ] Todos os documentos conferidos contra o estado final; resumo da entrega
+
+
+PENDÊNCIAS E OBSERVAÇÕES
+
+- As mudanças de pasta (Documentacao → Docs, Criativo → Assets) e os documentos do planejamento
+  ainda não foram commitados (commit e push ficam com o Jackson).
+- As telas de modelos, capa e lembretes não existem no protótipo; seguem o comportamento do Trello
+  no visual do protótipo (propostas P5, P6 e P7).

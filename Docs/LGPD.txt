@@ -1,1 +1,104 @@
 Referente as boas praticas da LGPD e aplicacões em desenvolvimentos de softwere
+
+Status: aprovado em 21/10/2026. Este documento é revisado nas etapas 5 (anexos),
+10 (backup, exportação e apagar tudo) e 12 (versão final).
+
+
+1. RESUMO
+
+O Mello é um app local, de um único usuário, que não envia nenhum dado para fora do computador.
+Não há servidor, conta, login, telemetria, relatório de erros automático nem anúncios. A pessoa
+que usa o app é, ao mesmo tempo, quem controla os dados e a titular deles. Mesmo assim, o projeto
+segue os princípios da LGPD (Lei 13.709/2018) como boa prática: guardar só o necessário, deixar
+claro onde está cada coisa e permitir exportar e apagar tudo.
+
+
+2. QUE DADOS O MELLO GUARDA
+
+- Conteúdo que você digita: títulos e descrições de quadros, listas e cards; notas; itens de
+  checklist; nomes de etiquetas.
+- Datas: entregas, lembretes, datas das tarefas, quando cada card foi criado e alterado pela
+  última vez, e o histórico de atividade (movido de uma lista para outra, concluído…).
+- Arquivos que você adiciona: anexos (qualquer tipo de arquivo), imagens de fundo e de capa.
+- Preferências: tema, configurações do calendário e do envelhecimento, pasta de backup.
+
+O Mello NÃO coleta: nome, e-mail, localização, dados do computador, uso do app nem nenhum
+identificador. Também não sabe quem está usando: não existe cadastro.
+
+Atenção: anexos e notas podem conter dados pessoais seus ou de outras pessoas (documentos, fotos,
+contatos). Eles ficam guardados como você os colocou, sem criptografia própria do app.
+
+
+3. ONDE OS DADOS FICAM
+
+Tudo fica na pasta de dados do usuário do Windows:
+
+- %APPDATA%\Mello\mello.db ........ banco de dados (com os arquivos mello.db-wal e mello.db-shm,
+                                    que o SQLite usa enquanto o app está aberto)
+- %APPDATA%\Mello\arquivos\ ....... anexos, imagens de fundo e capas, com nomes trocados pelo
+                                    hash do conteúdo
+- %APPDATA%\Mello\backups\ ........ backups automáticos (pasta padrão; pode ser trocada)
+- %APPDATA%\Mello\logs\ ........... registros técnicos (erros e eventos do app, nunca o conteúdo
+                                    dos cards)
+- Outras pastas do Electron em %APPDATA%\Mello (cache do Chromium), sem conteúdo seu.
+
+A pasta do programa instalado não guarda dados. Por isso, desinstalar ou reinstalar não apaga
+nada. Para apagar, use "Apagar tudo" (seção 5).
+
+Proteção recomendada: use uma senha na sua conta do Windows e, se possível, ative a criptografia
+do disco (BitLocker). Quem tem acesso à sua conta do Windows consegue ler esses arquivos.
+
+
+4. BACKUP E EXPORTAÇÃO
+
+- Backup automático: ao abrir o app, a cada hora em que houve alteração, antes de atualizar a
+  estrutura do banco e antes de restaurar. Ficam os 10 mais recentes.
+- Por padrão, os backups ficam no mesmo disco (%APPDATA%\Mello\backups). Isso NÃO protege contra
+  defeito no disco. O recomendado é apontar a pasta de backup, nas Configurações, para um HD
+  externo ou para uma pasta sincronizada.
+- Se você escolher uma pasta sincronizada (OneDrive, Google Drive, Dropbox), os backups passam a
+  ser enviados para esse serviço pelo programa dele, não pelo Mello. A partir daí, valem os termos
+  e a política de privacidade desse serviço. É uma escolha sua, e o app avisa ao configurar.
+- Restaurar: Configurações → Dados e backup → escolha o backup. O estado atual é salvo antes.
+- Exportar: gera uma pasta com dados.json (todas as informações, em texto legível) e uma cópia dos
+  arquivos. Serve para guardar, consultar ou levar os dados para outro programa (portabilidade).
+
+
+5. APAGAR TUDO
+
+Configurações → Dados e backup → "Apagar tudo". É preciso digitar APAGAR para confirmar. Isso
+apaga o banco e a pasta de arquivos. Os backups só são apagados se você marcar a opção separada
+para isso, porque podem estar em outro disco. Depois, o app reinicia vazio.
+
+Para não deixar nada para trás, apague também, à mão, as exportações que você tiver gerado e os
+backups que estiverem em pastas sincronizadas com a nuvem.
+
+
+6. COMO OS PRINCÍPIOS DA LGPD SE APLICAM
+
+- Finalidade e necessidade: o app só guarda o que você digita ou anexa para organizar as suas
+  atividades. Não há coleta escondida nem dado "para depois".
+- Livre acesso e transparência: este documento diz o que é guardado e onde; a exportação mostra
+  tudo em texto legível.
+- Segurança: a interface do app não tem acesso direto ao disco nem ao banco (isolamento do
+  Electron); só a parte principal do app lê e grava os arquivos. Conteúdo digitado é filtrado
+  antes de ser exibido, para que um texto colado não vire código executado.
+- Eliminação: "Apagar tudo" (seção 5).
+- Portabilidade: exportação em JSON (seção 4).
+- Não discriminação e compartilhamento: nenhum dado é compartilhado com ninguém.
+
+
+7. CUIDADOS PORQUE O CÓDIGO É PÚBLICO
+
+O repositório no GitHub é público. Por isso:
+
+- Nada de dados reais no repositório: o .gitignore bloqueia *.db, *.db-wal, *.db-shm, a pasta de
+  arquivos, backups e exportações.
+- Os dados de exemplo usados em testes, capturas de tela e na documentação são fictícios. Nomes
+  de clientes, projetos ou pessoas reais não entram no código nem nas imagens.
+- O app não usa chaves de API, tokens nem senhas. Se um dia usar, eles ficam fora do repositório
+  (arquivo .env, ignorado pelo Git), nunca no código.
+- Capturas de tela da documentação são geradas com os dados fictícios, nunca com o seu banco.
+- Logs não guardam o conteúdo dos cards, para que um log enviado ao reportar um erro não exponha
+  nada.
+- Antes de cada commit, a revisão do diff confere se não entrou nenhum arquivo de dados.

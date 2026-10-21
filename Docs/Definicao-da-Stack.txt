@@ -1,0 +1,126 @@
+Definição da Stack — Mello
+
+Status: aprovada em 21/10/2026, junto com o Docs/PLANO.md.
+As versões exatas serão fixadas no package.json na etapa 1 e anotadas aqui.
+A primeira versão deste documento (20/10/2026) está resumida no fim, em "Histórico".
+Como essas peças se encaixam: ver Docs/Arquitetura.md (vira Docs/Arquitetura.txt
+na etapa 1).
+
+
+BASE
+- Electron ............... app desktop (Chromium + Node.js), só para Windows
+- TypeScript ............. em todo o projeto (main, preload, renderer e testes)
+- electron-vite .......... build e servidor de desenvolvimento com recarga automática
+- electron-builder ....... instalador NSIS para Windows x64, gerado no próprio computador
+
+DADOS (processo main)
+- SQLite ................. banco local em um único arquivo
+- better-sqlite3 ......... driver do SQLite: síncrono, rápido e com API de backup
+- Drizzle ORM ............ schema tipado em TypeScript + migrações em SQL (drizzle-kit)
+- Zod .................... validação de tudo que chega pelo IPC
+- fractional-indexing .... posição de quadros, listas, cards, checklists e itens no arrastar
+- electron-log ........... logs em arquivo, na pasta de dados do app (sem conteúdo dos cards)
+- Recursos nativos ....... Notification (lembretes), Tray (bandeja), nativeTheme (tema do
+                           sistema), protocol (servir imagens e anexos da pasta do app),
+                           dialog e shell (escolher e abrir arquivos)
+
+INTERFACE (renderer)
+- React .................. interface
+- React Router ........... rotas (HashRouter, porque o app carrega via file://)
+- TanStack Query ......... cache e atualização dos dados vindos do IPC
+- Zustand ................ estado de interface (filtro do quadro, popovers, arraste)
+- dnd-kit ................ arrastar listas e cards, com suporte a teclado
+- TipTap ................. editor da nota e da descrição (StarterKit, TaskList, TaskItem, Link)
+- date-fns ............... datas com locale pt-BR
+- CSS Modules ............ estilos por componente, com as variáveis CSS do protótipo
+- @fontsource/inter ...... fonte Inter em arquivo local (licença OFL), sem depender de internet
+- Ícones ................. SVG copiados do protótipo, sem biblioteca de ícones
+
+QUALIDADE
+- Vitest ................. testes das regras (shared/rules) e dos módulos (SQLite em memória)
+- Testing Library + jsdom  testes de componentes com lógica própria (arraste, editor, calendário)
+- Playwright ............. só ferramenta de desenvolvimento (pacote playwright-core, que usa o
+                           próprio Electron e não baixa navegadores): tira capturas do app para
+                           comparar com o protótipo (npm run capturas). Não vai para o instalador.
+- ESLint + Prettier ...... padrão de código
+
+O app instalado não depende de nenhum serviço externo nem de internet. As ferramentas acima são
+usadas só no desenvolvimento; a internet só é necessária para baixar as dependências uma vez.
+
+
+POR QUE ESSAS ESCOLHAS (E O QUE FICOU DE FORA)
+
+Electron em vez de Tauri
+  O Tauri seria mais leve (instalador e uso de memória menores), mas a parte de sistema
+  seria escrita em Rust. Com o Electron, o projeto inteiro fica em TypeScript, e o peso
+  extra não faz diferença num app que roda em um único computador.
+
+React em vez de Vue ou JavaScript puro
+  O Mello tem muita interface que muda conforme o estado: arrastar, o modal com várias partes,
+  popovers, o calendário e o editor de fundo com prévia ao vivo. O React tem as bibliotecas que
+  esses pedaços precisam (dnd-kit, TipTap, TanStack Query), e o jeito como o protótipo é escrito
+  (estado → renderVals → tela) passa quase direto para componentes React.
+
+Drizzle em vez de Prisma
+  O Prisma depende de um engine binário separado, o que complica o empacotamento no
+  Electron. O Drizzle é só TypeScript sobre o driver e gera migrações em SQL puro.
+
+better-sqlite3 em vez de sqlite3
+  A API síncrona é mais simples e mais rápida. A versão assíncrona (sqlite3) não traz
+  vantagem num app de um usuário só.
+
+node:sqlite (SQLite nativo do Node)
+  Evitaria compilar um módulo nativo, mas ainda é experimental e tem pouco suporte dos
+  ORMs. Vale reavaliar no futuro.
+
+electron-vite + electron-builder em vez de Electron Forge
+  Lidam melhor com módulos nativos (better-sqlite3) junto com o Vite e geram o
+  instalador com o ícone que já temos.
+
+Calendário próprio em vez de FullCalendar (mudou em 21/10)
+  O Mello só tem visão mensal, e o visual do protótipo é específico: tarefas com caixa de marcar,
+  riscado, repetições tracejadas, aviso de repetição pulada e o botão "Adicionar" no dia.
+  Adaptar o FullCalendar a isso daria mais trabalho do que montar a grade, que é uma função pura
+  e fácil de testar.
+
+TipTap em vez de react-markdown (mudou em 21/10)
+  A nota é rich text: você vê o negrito, a lista e a caixa de marcar já formatados, como no
+  protótipo. O TipTap (MIT, sobre o ProseMirror) só aceita as marcas do schema, o que também
+  protege contra HTML malicioso.
+
+CSS Modules em vez de Tailwind (mudou em 21/10)
+  As paletas e os estilos do protótipo são CSS com variáveis. Com CSS Modules eles passam
+  literalmente, sem tradução para classes utilitárias, e o Vite já entende CSS Modules sem
+  instalar nada.
+
+Repetição implementada à mão em vez de uma biblioteca de RRULE
+  As quatro frequências do Mello são simples, e as bibliotecas de RRULE trazem armadilhas de fuso
+  horário. Uma função pura, com testes de virada de mês e de ano bissexto, é mais segura.
+
+Busca com LIKE + função sem acento em vez de FTS5
+  O volume de um uso pessoal é pequeno. Uma função registrada no SQLite remove os acentos e
+  resolve "acao" achar "Ação". FTS5 pode entrar se um dia a busca ficar lenta.
+
+dnd-kit em vez de react-beautiful-dnd
+  O react-beautiful-dnd foi descontinuado pela Atlassian.
+
+TanStack Query + Zustand em vez de Redux
+  Menos código para um app deste tamanho. O TanStack Query já resolve cache,
+  recarregamento e atualização otimista.
+
+Desnecessário para uso pessoal (fora da stack)
+  Assinatura de código, Electron Fuses, instaladores para macOS e Linux, atualização
+  automática e CI no GitHub Actions (os testes rodam no computador antes de cada etapa ser
+  entregue, e o projeto não deve depender de serviços externos — proposta P13). Podem entrar
+  depois se algum dia fizerem falta.
+
+
+HISTÓRICO
+
+20/10/2026 — primeira versão: React (ainda em aberto), FullCalendar, react-markdown, Tailwind CSS;
+             sem Playwright e sem CI.
+21/10/2026 — revisão depois dos protótipos: React confirmado; calendário próprio no lugar do
+             FullCalendar; TipTap no lugar do react-markdown; CSS Modules no lugar do Tailwind;
+             entraram a fonte Inter local, os recursos nativos (bandeja, notificações, protocolo
+             de arquivos) e o Playwright para conferência visual. O CI foi cogitado e ficou de
+             fora (sem serviços externos).

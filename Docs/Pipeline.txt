@@ -1,0 +1,118 @@
+Pipeline — Mello
+
+Status: versão inicial (21/10/2026). Os comandos da seção 4 passam a existir na etapa 1 e serão
+conferidos e completados nela.
+
+
+1. QUEM FAZ O QUÊ
+
+- Jackson: branches, commits e push para o GitHub.
+- Claude: implementa, testa, confere a tela com o protótipo, atualiza a documentação e avisa
+  quando cada etapa está pronta para commit. Não cria branch, não faz commit e não faz push.
+
+
+2. FLUXO DE UMA ETAPA
+
+1. Implementação da etapa (ver Docs/PLANO.md, seção 7).
+2. Verificações locais, todas precisam passar (seção 5).
+3. Conferência visual: capturas do app comparadas com o protótipo, nos temas escuro e claro.
+4. Revisão do próprio diff, procurando erros e arquivos que não deveriam entrar (dados, segredos).
+5. Atualização dos documentos da etapa (Docs/PLANO.md, seção 10) e do To-do-list.txt.
+6. Aviso "Etapa N pronta para commit", com:
+   - a lista dos arquivos criados, alterados e apagados;
+   - o resumo do que foi feito e de como foi testado;
+   - uma sugestão de mensagem de commit (opcional, use se quiser).
+7. Jackson faz commit e push na branch que escolher.
+8. Próxima etapa, só depois que o Jackson liberar. A implementação PARA ao fim de cada etapa
+   (decidido em 21/10/2026), para que cada etapa vire um commit separado.
+
+Se uma funcionalidade não ficar boa, a etapa é revertida por completo (voltando ao commit
+anterior) e refeita, em vez de remendada.
+
+
+3. AMBIENTE DE DESENVOLVIMENTO
+
+Necessário (já instalado na máquina em 21/10/2026):
+- Windows 10 ou 11, 64 bits
+- Node.js 24 (com npm 11)
+- Git
+- VS Code (recomendado)
+
+Internet só é preciso para instalar as dependências (npm install baixa os pacotes e o Electron).
+Depois disso, desenvolver, testar e gerar o instalador funcionam sem internet.
+
+Não deve ser necessário: Python e Visual Studio Build Tools. Eles só seriam exigidos se o
+better-sqlite3 precisasse ser compilado na máquina. A etapa 1 confere se a versão escolhida traz
+o binário pronto para Windows; se não trouxer, esta seção é atualizada.
+
+Não é necessário: GitHub CLI, contas ou tokens de serviço nenhum.
+
+
+4. COMANDOS (previstos; confirmados na etapa 1)
+
+npm install ............ instala as dependências (uma vez, e quando o package.json mudar)
+npm run dev ............ abre o app em modo de desenvolvimento, com recarga automática
+npm test ............... roda todos os testes uma vez
+npm run test:watch ..... roda os testes a cada alteração
+npm run lint ........... confere o padrão de código (ESLint)
+npm run format ......... formata o código (Prettier)
+npm run typecheck ...... confere os tipos do TypeScript
+npm run capturas ....... abre o app com dados fictícios e salva capturas de cada tela em
+                         capturas/ (pasta ignorada pelo Git)
+npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit)
+npm run build:win ...... gera o instalador do Windows em dist/
+
+
+5. VERIFICAÇÕES ANTES DE CADA AVISO DE "PRONTO"
+
+- npm run lint ......... sem erros
+- npm run typecheck .... sem erros
+- npm test ............. todos os testes passando
+- Conferência visual ... telas da etapa iguais ao protótipo (cores, medidas, textos, ícones)
+- git status ........... nenhum arquivo de dados (.db, arquivos, backups, capturas) na lista
+
+
+6. INSTALADOR
+
+- npm run build:win gera dist/Mello-Setup-<versão>.exe (NSIS, Windows x64), com o ícone de build/.
+- Instalar: abrir o .exe. Como o instalador não é assinado, o Windows SmartScreen avisa na
+  primeira vez: "Mais informações" → "Executar assim mesmo".
+- Atualizar: gerar o instalador da versão nova e instalar por cima. Os dados ficam em
+  %APPDATA%\Mello, separados do programa, e são preservados.
+- Desinstalar não apaga os dados. Para apagar, use "Apagar tudo" nas Configurações (LGPD.txt).
+
+
+7. VERSÕES
+
+- Versionamento semântico no package.json: MAIOR.MENOR.CORREÇÃO. A primeira versão completa,
+  ao fim da etapa 12, é a 1.0.0.
+- O que mudou em cada etapa e em cada versão fica no Docs/Changelog.txt (criado na etapa 1).
+
+
+8. CI (INTEGRAÇÃO CONTÍNUA)
+
+Não usado (proposta P13 do PLANO.md, 21/10/2026).
+
+O CI seria o GitHub Actions rodando os testes nos servidores do GitHub a cada push. Ele não tem
+nenhuma relação com o app instalado: só ajudaria durante o desenvolvimento. Ficou de fora porque
+o projeto não deve depender de serviços externos e porque os testes já rodam no computador antes
+de cada aviso de "pronto". Se um dia fizer falta, basta um arquivo .github/workflows/ci.yml.
+
+
+9. O APP INSTALADO É 100% OFFLINE
+
+- Não faz nenhuma conexão de rede: a política de segurança da janela bloqueia endereços externos.
+- Fontes, ícones e imagens padrão vão dentro do instalador.
+- Não tem telemetria, atualização automática nem relatório de erros enviado para fora.
+- A única saída possível de dados é a pasta de backup que você escolher. Se ela for sincronizada
+  com a nuvem, quem envia é o programa da nuvem, não o Mello (LGPD.txt).
+
+
+10. O QUE NUNCA ENTRA NO GIT
+
+O .gitignore (criado na etapa 1) bloqueia:
+- node_modules/, out/, dist/ (dependências e builds);
+- *.db, *.db-wal, *.db-shm (bancos de dados);
+- arquivos/, backups/, exportações e capturas/ (dados e imagens geradas);
+- .env e arquivos de chave, por precaução (o app não usa nenhum segredo);
+- logs.

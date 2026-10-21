@@ -8,3 +8,73 @@ com todos os dados salvos localmente em um banco SQLite — sem depender de serv
 
 O código-fonte é público no GitHub, mas o banco de dados e as informações registradas permanecem apenas
 na máquina de quem usa o app.
+
+
+PARA QUEM É
+
+Para uma pessoa só, organizando a própria rotina num único computador com Windows: tarefas,
+projetos, estudos e compromissos. Não há contas, login, membros nem compartilhamento.
+
+
+O PROBLEMA QUE RESOLVE
+
+Ferramentas como o Trello deixam o essencial atrás de assinatura. A visão de calendário, as datas
+nos itens do checklist, a repetição de cards e o ajuste de fundo, por exemplo, ficam nos planos
+pagos. Além disso, os seus dados ficam no servidor de outra empresa.
+
+O Mello faz isso de graça e offline: tudo fica num arquivo no seu computador, e o app funciona
+sem internet.
+
+
+PRINCIPAIS FUNCIONALIDADES
+
+Quadros e listas
+- Vários quadros, cada um com o próprio fundo (imagem, cor ou gradiente). Ao enviar uma imagem,
+  o Mello enquadra e escurece sozinho para os cards ficarem legíveis.
+- Listas que você cria, renomeia e arrasta. Concluído e Entregue formam a área de finalizado.
+- Favoritos, quadros fechados e itens arquivados que podem ser restaurados.
+
+Cards
+- Arrastar e soltar entre listas. Ao entrar na área de finalizado, o card é marcado como feito
+  automaticamente.
+- Etiquetas, prioridade em 5 níveis (selo próprio, separado das etiquetas), data de entrega com
+  aviso de atraso, descrição, checklists com data em cada item, anexos e capa.
+- Uma nota por card, com editor simples, que salva sozinha, e o histórico de atividade do card.
+
+Envelhecimento
+- Cards parados vão sendo "comidos" pelas bordas em 5 níveis ao longo de 14 dias, até virarem uma
+  nuvem. Qualquer alteração faz o card voltar a ficar novo. Assim, o que está esquecido salta aos
+  olhos.
+
+Calendário
+- Visão mensal, com tela própria, dos cards (pela data de entrega) e das tarefas do checklist que
+  têm data. O que já foi finalizado aparece riscado.
+
+Repetição e lembretes
+- Cards recorrentes (diário, semanal, mensal ou a cada N dias). Se o anterior ainda não foi
+  concluído, o Mello pula a repetição e avisa no card.
+- Lembretes com notificação do Windows.
+
+Outros
+- Busca de cards, tarefas e quadros.
+- Modelos de card e de quadro.
+- Tema escuro (padrão), claro ou igual ao do sistema.
+- Backup automático, exportação dos dados e opção de apagar tudo.
+
+
+FORA DO ESCOPO
+
+- Caixa de entrada, Planejador, Membros, Compartilhar e comentários.
+- Contas, login e sincronização entre computadores ou com a nuvem.
+- Versões para macOS, Linux, celular ou web.
+- Integrações com outros serviços (Power-Ups, sincronização com calendários externos).
+
+
+ONDE ESTÁ CADA COISA
+
+- Telas (protótipo): https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9
+- Regras de negócio: Docs/Regras.txt
+- Stack: Docs/Definicao-da-Stack.txt
+- Plano de implementação: Docs/PLANO.md
+- Dados pessoais e privacidade: Docs/LGPD.txt
+- Licença do código: MIT (arquivo LICENSE na raiz, criado na etapa 1)
