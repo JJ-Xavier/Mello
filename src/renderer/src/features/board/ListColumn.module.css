@@ -12,6 +12,11 @@
   gap: 8px;
 }
 
+/* Lista onde o card arrastado vai cair (Arrasto.dc.html). */
+.target {
+  border-color: var(--accent);
+}
+
 /* Vaga reservada enquanto a lista está sendo arrastada. */
 .placeholder {
   background: var(--slot);
@@ -28,6 +33,7 @@
 }
 
 .header {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -103,7 +109,23 @@
   background: var(--btn);
 }
 
+/* Cards: rolam dentro da lista quando ela passa da altura do quadro. O respiro de 2 px deixa a
+   sombra e o contorno de foco dos cards à vista. */
+.cards {
+  flex: 0 1 auto;
+  min-height: 0;
+  margin: -2px;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--a5) transparent;
+}
+
 .footer {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -123,6 +145,64 @@
   font:
     500 14px Inter,
     sans-serif;
+}
+
+.addCard:hover {
+  background: var(--btn);
+}
+
+/* "Adicionar um cartão" aberto (Estados.dc.html, "Novo card"). */
+.addCardForm {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Cresce com o texto (field-sizing), a partir da altura do protótipo. */
+.addCardInput {
+  width: 100%;
+  field-sizing: content;
+  min-block-size: 64px;
+  max-block-size: 10lh;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--strong);
+  font:
+    400 14px Inter,
+    sans-serif;
+  line-height: 20px;
+  resize: none;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.addCardInput:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.formRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cancel {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel:hover {
+  background: var(--btn);
 }
 
 .template {

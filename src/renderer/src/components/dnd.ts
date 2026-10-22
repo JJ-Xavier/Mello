@@ -6,16 +6,20 @@ import {
   useSensor,
   useSensors,
   type Announcements,
+  type KeyboardCoordinateGetter,
   type ScreenReaderInstructions,
   type UniqueIdentifier
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 
-export function useDragSensors() {
+// coordinateGetter: as setas do teclado durante o arraste (o padrão anda entre os itens ordenáveis).
+export function useDragSensors(
+  coordinateGetter: KeyboardCoordinateGetter = sortableKeyboardCoordinates
+) {
   return useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter,
       // Enter fica livre para abrir o item (ex.: o quadro no Início).
       keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space', 'Enter'] }
     })

@@ -3,8 +3,12 @@
 // O jsdom não tem o popover nem o <dialog> modal, que no app são nativos (Chromium do Electron).
 // Aqui fica uma imitação mínima, só para os testes: abrir e fechar, o evento "toggle", o clique
 // num botão com popovertarget e o modal fechando os popovers abertos.
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterEach } from 'vitest'
+
+// Os testes montam o app inteiro com o banco de verdade. O limite padrão de 1 s dos findBy… às
+// vezes estoura com o computador ocupado, mesmo sem nada errado na tela.
+configure({ asyncUtilTimeout: 5000 })
 
 const OPEN = 'data-test-popover-open'
 

@@ -7,6 +7,7 @@ import { DEFAULT_BACKGROUND } from '../../shared/rules/background'
 import { toneForBackground } from '../../shared/rules/tone'
 import type { Db, DbOrTx } from '../db/client'
 import { board, card, list } from '../db/schema'
+import { summariesByList } from './cards'
 import { createDefaultLabels } from './labels'
 import { keyAfter, keyAt, keysFor, rebalance, visibleIndex } from './position'
 
@@ -75,8 +76,10 @@ export function activeLists(db: DbOrTx, boardId: string): ListSummary[] {
     .all()
 }
 
+// O quadro aberto: listas ativas com os cards ativos de cada uma, em ordem.
 export function get(db: DbOrTx, boardId: string): BoardDetail {
   const found = requireBoard(db, boardId)
+  const cards = summariesByList(db, boardId)
   return {
     id: found.id,
     title: found.title,
@@ -86,7 +89,7 @@ export function get(db: DbOrTx, boardId: string): BoardDetail {
     bgKind: found.bgKind,
     bgValue: found.bgValue,
     bgTone: found.bgTone,
-    lists: activeLists(db, boardId)
+    lists: activeLists(db, boardId).map((l) => ({ ...l, cards: cards.get(l.id) ?? [] }))
   }
 }
 

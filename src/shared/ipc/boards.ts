@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { BOARD_TITLE_MAX, LIST_TITLE_MAX } from '../limits'
 import type { BackgroundKind } from '../rules/background'
+import type { CardSummary } from './cards'
 
 const id = z.uuid()
 const boardTitle = z.string().trim().min(1).max(BOARD_TITLE_MAX)
@@ -29,8 +30,6 @@ export const updateListInput = z.object({
 export const moveListInput = z.object({ listId: id, index })
 export const moveListToBoardInput = z.object({ listId: id, boardId: id, index })
 
-export const cardIdInput = z.object({ cardId: id })
-
 export type BoardIdInput = z.infer<typeof boardIdInput>
 export type CreateBoardInput = z.infer<typeof createBoardInput>
 export type UpdateBoardInput = z.infer<typeof updateBoardInput>
@@ -40,7 +39,6 @@ export type CreateListInput = z.infer<typeof createListInput>
 export type UpdateListInput = z.infer<typeof updateListInput>
 export type MoveListInput = z.infer<typeof moveListInput>
 export type MoveListToBoardInput = z.infer<typeof moveListToBoardInput>
-export type CardIdInput = z.infer<typeof cardIdInput>
 
 export interface BoardSummary {
   id: string
@@ -62,9 +60,14 @@ export interface ListSummary {
   cardCount: number
 }
 
+// Lista na tela do quadro, com os cards ativos em ordem.
+export interface ListDetail extends ListSummary {
+  cards: CardSummary[]
+}
+
 export interface BoardDetail extends BoardSummary {
   bgTone: string
-  lists: ListSummary[]
+  lists: ListDetail[]
 }
 
 export interface ArchivedCard {

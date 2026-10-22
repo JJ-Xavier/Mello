@@ -1,7 +1,7 @@
-// Menu "…" da lista (NovosEstados.dc.html, "atualizado"): copiar, mover, as duas opções
-// independentes (LIS-02) e arquivar. "Adicionar cartão" e os "Ordenar" entram nas etapas 3 e 4.
+// Menu "…" da lista (NovosEstados.dc.html, "atualizado"): adicionar cartão, copiar, mover, as duas
+// opções independentes (LIS-02) e arquivar. Os "Ordenar" entram na etapa 4.
 import { useState } from 'react'
-import type { BoardDetail, ListSummary } from '../../../../shared/ipc/boards'
+import type { BoardDetail, ListDetail } from '../../../../shared/ipc/boards'
 import { PopoverHeader } from '../../components/Popover'
 import ui from '../../components/ui.module.css'
 import { api, unwrap } from '../../lib/api'
@@ -9,7 +9,7 @@ import { useAction, useBoard, useBoards } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
 
 interface ListMenuProps {
-  list: ListSummary
+  list: ListDetail
   board: BoardDetail
   close: () => void
 }
@@ -91,7 +91,12 @@ function MoveList({ list, board, close, onBack }: ListMenuProps & { onBack: () =
   )
 }
 
-export function ListMenu({ list, board, close }: ListMenuProps) {
+export function ListMenu({
+  list,
+  board,
+  close,
+  onAddCard
+}: ListMenuProps & { onAddCard: () => void }) {
   const [view, setView] = useState<'menu' | 'move'>('menu')
   const run = useAction()
   const keys = [queryKeys.board(board.id)]
@@ -111,7 +116,14 @@ export function ListMenu({ list, board, close }: ListMenuProps) {
   return (
     <>
       <PopoverHeader title="Ações da lista" onClose={close} />
-      <button type="button" className={ui.mi} disabled title="Chega na etapa 3">
+      <button
+        type="button"
+        className={ui.mi}
+        onClick={() => {
+          close()
+          onAddCard()
+        }}
+      >
         Adicionar cartão
       </button>
       <button

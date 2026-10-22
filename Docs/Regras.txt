@@ -1,7 +1,8 @@
 Regras de negócio — Mello
 
 Status: aprovado em 21/10/2026 (inclusive as regras que eram propostas). Atualizado na etapa 2
-(QUA-10 e esclarecimentos em LIS-05, LIS-06 e ENV-06).
+(QUA-10 e esclarecimentos em LIS-05, LIS-06 e ENV-06) e na etapa 3 (FIN-02: card criado numa
+lista de conclusão).
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -64,6 +65,9 @@ LIS-09  O contador no cabeçalho mostra quantos cards a lista tem. Com filtro at
 
 
 3. CARDS (CAR)
+Testes (etapa 3): src/main/modules/cards.test.ts, src/renderer/src/features/board/cardDrag.test.ts
+e src/renderer/src/features/board/BoardCards.test.tsx. CAR-05 a CAR-07 pelo modal entram na
+etapa 4.
 
 CAR-01  Card tem título obrigatório, de 1 a 500 caracteres.
 CAR-02  Card novo entra no fim da lista, com nível de envelhecimento 0.
@@ -85,11 +89,16 @@ CAR-08  "Acompanhar card" (o ícone de olho do protótipo) não existe no Mello:
 
 
 4. FINALIZADO (FIN) — Decisão 21/10
+Testes (etapa 3): src/shared/rules/finished.test.ts, src/main/modules/cards.test.ts e
+src/renderer/src/features/board/BoardCards.test.tsx. FIN-04 e FIN-05 pelo ✓ do modal entram na
+etapa 4.
 
 FIN-01  Um card está FINALIZADO quando duas coisas valem ao mesmo tempo:
         (a) ele está numa lista com "Lista de conclusão" ligada; e
         (b) o ✓ circular dele está marcado.
 FIN-02  Arrastar ou mover um card PARA uma lista de conclusão marca o ✓ automaticamente.
+        Um card criado direto numa lista de conclusão nasce SEM o ✓: o automático vale só para
+        quem chega arrastado ou movido. (decidido em 22/10, etapa 3)
 FIN-03  Tirar um card de uma lista de conclusão e levá-lo para uma lista comum desmarca o ✓
         automaticamente. Mover entre duas listas de conclusão mantém o ✓ como está.
 FIN-04  O ✓ pode ser marcado à mão em qualquer lista. Fora de uma lista de conclusão o card fica
@@ -213,6 +222,9 @@ CHK-06  O selo de data do item é cinza; vermelho quando a data já passou e o i
 
 
 10. DATAS E ATRASO (DAT)
+Testes (etapa 3, a regra e a cor na face): src/shared/rules/dates.test.ts e
+src/renderer/src/features/board/BoardCards.test.tsx. O seletor de data e o selo "Em atraso" no
+modal entram na etapa 4.
 
 DAT-01  A data de entrega do card tem dia e, opcionalmente, hora.
 DAT-02  Um card está atrasado quando não está finalizado e o prazo passou: com hora, quando o

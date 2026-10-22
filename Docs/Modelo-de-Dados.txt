@@ -1,6 +1,7 @@
 Modelo de dados — Mello
 
-Status: criado na etapa 1 (21/10/2026). Fonte no código: src/main/db/schema.ts.
+Status: criado na etapa 1 (21/10/2026); a etapa 3 (22/10/2026) registrou o conteúdo de
+activity.data, sem migração nova. Fonte no código: src/main/db/schema.ts.
 Qualquer migração nova atualiza este documento (seções 3 e 4).
 
 
@@ -72,6 +73,13 @@ activity — histórico do card
   kind TEXT NOT NULL (created, moved, done, undone, archived, restored, copied, from_template,
                       from_recurrence, recurrence_skipped, recurrence_missed)
   data TEXT NOT NULL (JSON: nomes das listas, datas…) | created_at
+  O que vai em data, por tipo (os nomes são guardados, para o histórico não mudar se a lista ou
+  o quadro forem renomeados):
+    created ........ { list }                       (etapa 3)
+    moved .......... { from, to } e, entre quadros, também { fromBoard, toBoard } (etapa 3)
+    done, undone ... {}                             (etapa 3: ✓ automático ao mover)
+    archived, restored {}                           (etapa 2)
+    copied ......... { from: título do card de origem } (etapa 2)
 
 file — arquivos guardados em <pasta de dados>\arquivos\<id>.<ext>
   id TEXT PK (SHA-256) | ext TEXT NOT NULL | mime TEXT NOT NULL | size INTEGER NOT NULL

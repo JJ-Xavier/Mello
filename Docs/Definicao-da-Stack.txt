@@ -1,7 +1,7 @@
 Definição da Stack — Mello
 
 Status: aprovada em 21/10/2026, junto com o Docs/PLANO.md. Versões fixadas na etapa 1 e
-completadas na etapa 2 (seção "Versões fixadas", no fim).
+completadas na etapa 2 (seção "Versões fixadas", no fim). A etapa 3 não trouxe dependência nova.
 A primeira versão deste documento (20/10/2026) está resumida no fim, em "Histórico".
 Como essas peças se encaixam: ver Docs/Arquitetura.txt.
 
@@ -168,3 +168,6 @@ HISTÓRICO
              Visual C++ Redistributable (ver Pipeline.txt, seção 3).
 21/10/2026 — etapa 2: entraram fractional-indexing e o dnd-kit clássico; datas curtas pelo Intl;
              recursos nativos de popover e diálogo, sem polyfill.
+22/10/2026 — etapa 3: nenhuma dependência nova. O arrastar de cards usa o mesmo dnd-kit, com o
+             destino calculado pelo próprio app (Arquitetura.txt, seção 7); o campo do card novo
+             cresce com o texto pelo CSS (field-sizing), sem biblioteca.

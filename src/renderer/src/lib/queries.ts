@@ -17,10 +17,19 @@ export function useClosedBoards() {
   })
 }
 
+// Sem quadro escolhido (boardId vazio), não consulta.
 export function useBoard(boardId: string) {
   return useQuery({
     queryKey: queryKeys.board(boardId),
-    queryFn: () => unwrap(api().boards.get({ boardId }))
+    queryFn: () => unwrap(api().boards.get({ boardId })),
+    enabled: boardId !== ''
+  })
+}
+
+export function useCard(cardId: string) {
+  return useQuery({
+    queryKey: queryKeys.card(cardId),
+    queryFn: () => unwrap(api().cards.get({ cardId }))
   })
 }
 

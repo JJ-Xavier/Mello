@@ -4,6 +4,43 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.3.0 — Etapa 3: cards e arrastar (22/10/2026)
+
+Adicionado
+- Cards: "Adicionar um cartão" no pé da lista e no menu "…" da lista (o card entra no fim, e o
+  campo continua aberto para o próximo; Enter adiciona, Esc fecha). "Criar card" no menu "Criar",
+  escolhendo o quadro e a lista (CAR-01, CAR-02).
+- Face do card (CAR-04): etiquetas, ✓ verde, título, data de entrega (vermelha em atraso, verde
+  no card finalizado), ícones de descrição e nota, checklist x/y e anexos. Prioridade, capa,
+  repetição e "Modelo" entram nas etapas 4, 5, 8 e 11.
+- Arrastar cards na mesma lista e entre listas, com o mouse ou o teclado, no visual do protótipo:
+  o card fica translúcido no lugar de origem, a vaga aparece no destino, a lista de destino ganha
+  a borda azul e o card vai inclinado. Arrastar para uma lista de conclusão marca o ✓ (o card
+  inclinado já mostra o ✓ antes de soltar); tirar de lá desmarca (FIN-02, FIN-03). Soltar no
+  mesmo lugar não grava nada (CAR-03).
+- Modal do card: clicar no card (ou Enter) abre a casca do modal, com a lista, o ✓ e o título;
+  Esc, o X ou o clique fora fecham. O card aberto fica no endereço (?card=), para o calendário
+  usar o mesmo modal na etapa 7.
+- Atividade do card: criado, movido (inclusive entre quadros) e ✓ marcado ou desmarcado.
+- Quadro no tema claro conferido com a tela 8.
+
+Mudou
+- boards:get devolve os cards de cada lista, já com o que a face mostra.
+- Canais novos: cards:get, cards:create e cards:move.
+- Testes da tela com mais tempo de espera (5 s nos findBy e no expect.poll, 20 s por teste): os
+  limites padrão estouravam às vezes com o computador ocupado.
+- Versão 0.3.0.
+
+Decisões tomadas na etapa (22/10/2026)
+- Card criado direto numa lista de conclusão nasce sem o ✓; o automático é só para quem chega
+  arrastado ou movido (FIN-02).
+
+Documentação
+- Atualizados: Regras.txt (FIN-02; testes ligados às regras CAR, FIN e DAT), Arquitetura.txt
+  (arrastar cards, modal pelo endereço), Modelo-de-Dados.txt (conteúdo de activity.data),
+  Testes.txt, Definicao-da-Stack.txt, PLANO.md, To-do-list.txt, README.md.
+
+
 0.2.0 — Etapa 2: quadros e listas (21/10/2026)
 
 Adicionado

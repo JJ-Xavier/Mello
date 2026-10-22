@@ -77,6 +77,30 @@ const paths = {
       <rect x="4" y="6" width="16" height="12" rx="2" />
       <path d="M8 10h8" />
     </>
+  ),
+  chevronDown: <path d="m6 9 6 6 6-6" />,
+  // Face do card (Quadro.dc.html e NovosEstados.dc.html)
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
+  description: <path d="M4 6h16M4 12h16M4 18h10" />,
+  checklist: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <path d="m8 12 3 3 5-6" />
+    </>
+  ),
+  note: (
+    <>
+      <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+      <path d="M14 3v6h6M8 13h8M8 17h5" />
+    </>
+  ),
+  attachment: (
+    <path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.3 3.3 0 0 1 4.7 4.7L10.2 17a1.7 1.7 0 0 1-2.4-2.4L15.5 7" />
   )
 } satisfies Record<string, ReactNode>
 

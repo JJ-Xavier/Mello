@@ -5,7 +5,6 @@ import { z } from 'zod'
 import { CHANNELS, type AppInfo } from '../../shared/ipc/api'
 import {
   boardIdInput,
-  cardIdInput,
   createBoardInput,
   createListInput,
   listIdInput,
@@ -15,6 +14,7 @@ import {
   updateBoardInput,
   updateListInput
 } from '../../shared/ipc/boards'
+import { cardIdInput, createCardInput, moveCardInput } from '../../shared/ipc/cards'
 import type { Db } from '../db/client'
 import * as boards from '../modules/boards'
 import * as cards from '../modules/cards'
@@ -93,6 +93,13 @@ export function createRoutes({ db, app, now, onUnexpectedError }: RouteContext):
     done(() => lists.restore(db, listId, now()))
   )
 
+  route(CHANNELS.cardsGet, cardIdInput, ({ cardId }) => cards.get(db, cardId))
+  route(CHANNELS.cardsCreate, createCardInput, ({ listId, title }) =>
+    cards.create(db, listId, title, now())
+  )
+  route(CHANNELS.cardsMove, moveCardInput, ({ cardId, listId, index }) =>
+    done(() => cards.move(db, cardId, listId, index, now()))
+  )
   route(CHANNELS.cardsRestore, cardIdInput, ({ cardId }) =>
     done(() => cards.restore(db, cardId, now()))
   )

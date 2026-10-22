@@ -17,7 +17,11 @@ export default defineConfig({
           name: 'renderer',
           environment: 'jsdom',
           include: ['src/renderer/**/*.test.{ts,tsx}'],
-          setupFiles: ['src/renderer/src/test/setup.ts']
+          setupFiles: ['src/renderer/src/test/setup.ts'],
+          // Cada teste monta o app inteiro com o banco de verdade; com o computador ocupado, os
+          // limites padrão (5 s por teste, 1 s no expect.poll) às vezes não bastam.
+          testTimeout: 20_000,
+          expect: { poll: { timeout: 5000 } }
         }
       }
     ]

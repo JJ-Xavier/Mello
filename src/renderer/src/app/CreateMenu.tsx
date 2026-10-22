@@ -1,9 +1,10 @@
-// Menu "Criar" do cabeçalho (Estados.dc.html). "Criar quadro" troca o menu pelo formulário; os
-// outros itens ganham função nas etapas 3 (card) e 11 (modelo).
+// Menu "Criar" do cabeçalho (Estados.dc.html). "Criar quadro" e "Criar card" trocam o menu pelo
+// formulário; "Criar a partir de modelo" ganha função na etapa 11.
 import { useState } from 'react'
 import { Icon, type IconName } from '../components/Icon'
 import { Popover, PopoverHeader } from '../components/Popover'
 import ui from '../components/ui.module.css'
+import { CreateCardForm } from '../features/card/CreateCardForm'
 import { CreateBoardForm } from '../features/home/CreateBoardForm'
 
 function MenuOption({
@@ -40,7 +41,15 @@ function MenuOption({
 }
 
 function CreateMenuContent({ close }: { close: () => void }) {
-  const [view, setView] = useState<'menu' | 'board'>('menu')
+  const [view, setView] = useState<'menu' | 'board' | 'card'>('menu')
+  if (view === 'card') {
+    return (
+      <>
+        <PopoverHeader title="Criar card" onClose={close} onBack={() => setView('menu')} />
+        <CreateCardForm onDone={close} />
+      </>
+    )
+  }
   if (view === 'board') {
     return (
       <>
@@ -61,7 +70,7 @@ function CreateMenuContent({ close }: { close: () => void }) {
         icon="card"
         title="Criar card"
         hint="Escolha o quadro e a lista"
-        disabledHint="Chega na etapa 3"
+        onClick={() => setView('card')}
       />
       <MenuOption
         icon="template"

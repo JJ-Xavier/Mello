@@ -1,7 +1,7 @@
 To-do list — Mello
 
-Atualizado em: 21/10/2026
-Situação: etapa 2 concluída em 21/10/2026, aguardando o commit do Jackson. A etapa 3 começa
+Atualizado em: 22/10/2026
+Situação: etapa 3 concluída em 22/10/2026, aguardando o commit do Jackson. A etapa 4 começa
           quando for liberada.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
@@ -52,13 +52,15 @@ ETAPA 2 — QUADROS E LISTAS (concluída em 21/10/2026)
 [x] Quadro novo com 4 listas, 6 etiquetas e fundo Mello
 [x] Testes (112 no total), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 3 — CARDS E ARRASTAR
-[ ] Criar card e face do card (CAR-04)
-[ ] Arrastar cards com o visual do protótipo; teclado
-[ ] ✓ automático ao entrar e sair da área de finalizado (FIN-02, FIN-03)
-[ ] Soltar no mesmo lugar não grava (CAR-03)
-[ ] Tema claro do quadro
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 3 — CARDS E ARRASTAR (concluída em 22/10/2026)
+[x] Criar card (pé da lista, menu da lista e menu "Criar") e face do card (CAR-02, CAR-04)
+[x] Arrastar cards com o visual do protótipo; teclado
+[x] ✓ automático ao entrar e sair da área de finalizado (FIN-02, FIN-03)
+[x] Soltar no mesmo lugar não grava (CAR-03)
+[x] Casca do modal do card (abre pelo clique ou Enter, endereço ?card=)
+[x] Tema claro do quadro
+[x] Card criado numa lista de conclusão nasce sem ✓ (FIN-02, decidido em 22/10/2026)
+[x] Testes (161 no total), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 4 — MODAL DO CARD: DADOS
 [ ] Modal: seletor de lista, ✓, título, botões

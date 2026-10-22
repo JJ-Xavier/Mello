@@ -6,5 +6,6 @@ export const queryKeys = {
   boards: ['boards'] as const,
   closedBoards: ['boards', 'closed'] as const,
   board: (boardId: string) => ['board', boardId] as const,
-  archived: (boardId: string) => ['board', boardId, 'archived'] as const
+  archived: (boardId: string) => ['board', boardId, 'archived'] as const,
+  card: (cardId: string) => ['card', cardId] as const
 }

@@ -1,0 +1,109 @@
+/* Card no quadro (Quadro.dc.html, NovosEstados.dc.html e Arrasto.dc.html). */
+.card {
+  position: relative;
+  display: block;
+  flex: none;
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--strong);
+  box-shadow: 0 1px 1px rgba(9, 30, 66, 0.25);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.card:hover {
+  box-shadow:
+    0 1px 1px rgba(9, 30, 66, 0.25),
+    0 0 0 1px var(--line);
+}
+
+/* Lugar de onde o card saiu, enquanto ele é arrastado. */
+.ghost {
+  opacity: 0.35;
+}
+
+/* O card que segue o mouse: inclinado e com sombra. */
+.overlay {
+  transform: rotate(4deg);
+  box-shadow: 0 12px 24px rgba(9, 30, 66, 0.45);
+  cursor: grabbing;
+}
+
+/* Vaga reservada onde o card vai cair. */
+.slot {
+  flex: none;
+  border-radius: 10px;
+  background: var(--slot);
+}
+
+.in {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px 10px;
+}
+
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.label {
+  width: 40px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.title {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+/* O ✓ alinhado com a primeira linha do título. */
+.title > svg {
+  margin-top: 2px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.late,
+.finished {
+  padding: 0 6px;
+}
+
+.late {
+  background: #ae2e24;
+  color: #ffeceb;
+}
+
+.finished {
+  background: #2f4a1a;
+  color: #b3df72;
+}

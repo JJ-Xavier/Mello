@@ -1,7 +1,7 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 2 (112 testes). Atualizado a cada
-etapa.
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 3 (161 testes, em 22/10/2026).
+Atualizado a cada etapa.
 
 
 1. COMO RODAR
@@ -31,8 +31,15 @@ structuredClone, como no IPC. Assim um teste de tela também confere o contrato 
 
 O jsdom não tem o popover nem o <dialog> modal, que o app usa nativos. src/renderer/src/test/
 setup.ts imita o mínimo, só nos testes: abrir e fechar, o evento "toggle", o botão com
-popovertarget e o modal fechando os popovers. O arrastar também não funciona no jsdom; ele é
-conferido no app real (seção 5) e as posições são testadas nos módulos.
+popovertarget e o modal fechando os popovers. O arrastar com o mouse não funciona no jsdom (lá
+tudo mede 0 px): ele é conferido no app real (seção 5), e as contas de onde o card cai são
+testadas em funções puras (cardDrag.test.ts). O arrastar de cards pelo teclado roda no jsdom e é
+testado na tela (BoardCards.test.tsx).
+
+Limites de tempo dos testes da tela (desde a etapa 3): 5 s para os findBy… e o expect.poll e
+20 s por teste. Cada teste monta o app inteiro com o banco de verdade, e os limites padrão (1 s e
+5 s) estouravam às vezes com o computador ocupado, inclusive na versão da etapa 2. Um teste que
+falha de verdade continua falhando; só demora mais para avisar.
 
 Os testes da tela importam código do main, por isso têm o tsconfig.test.json próprio (com os
 tipos do Node); o código da tela continua no tsconfig.web.json, sem acesso ao Node.
@@ -138,15 +145,65 @@ src/renderer/src/features/board/BoardPage.test.tsx
 - Fechar o quadro volta ao Início; quadro fechado aberto pelo endereço mostra o aviso e reabre.
 - "Mudar de quadros" lista os quadros, marca o atual e abre o escolhido.
 
+Etapa 3 — 49 testes novos
+
+src/shared/rules/finished.test.ts
+- FIN-01 (finalizado = lista de conclusão E ✓; ✓ fora dela não finaliza).
+- FIN-02 (entrar numa lista de conclusão marca), FIN-03 (sair desmarca; entre duas de conclusão
+  fica), FIN-04 (entre listas comuns o ✓ continua).
+
+src/shared/rules/dates.test.ts
+- Lê a data com e sem hora, no horário local.
+- DAT-02: sem hora, atrasa quando o dia acaba; com hora, quando o instante passa; card finalizado
+  não atrasa; virada de mês e de ano.
+
+src/main/modules/cards.test.ts
+- CAR-01 (título de 1 a 500, sem espaços nas pontas).
+- CAR-02 (card novo no fim da lista, nível 0, atividade "criado em <lista>"); criado numa lista
+  de conclusão nasce sem ✓; não cria em lista arquivada nem em quadro fechado.
+- Mover: reordenar na mesma lista zera o envelhecimento (ENV-05) sem registrar atividade; CAR-03
+  (mesmo lugar não grava nada); para outra lista muda lista e posição, zera e registra "movido".
+- FIN-02, FIN-03, FIN-04 e FIN-05 no movimento, com a atividade "✓ marcado/desmarcado".
+- O índice ignora os cards arquivados; posições repetidas são reorganizadas.
+- CAR-06: para outro quadro, com as etiquetas recriadas lá (LIS-05) e a atividade com os quadros.
+- Não move card arquivado, nem para lista arquivada, quadro fechado ou card inexistente.
+- CAR-04: o quadro traz os cards em ordem, sem os arquivados; a face tem as etiquetas na ordem do
+  quadro, o checklist x/y somando todos, anexos, descrição, nota e data.
+- Abrir o card traz o título, a lista e o quadro.
+
+src/renderer/src/features/board/cardDrag.test.ts
+- Mouse: a posição é quantos cards têm o meio acima do ponteiro; o card arrastado não conta;
+  fora das listas vale a mais próxima.
+- Teclado: cima e baixo sem passar das pontas; lados vão para a lista vizinha, na mesma altura ou
+  no fim.
+- Durante o arraste: o card de origem fica translúcido no lugar; a vaga entra antes do card da
+  posição de destino; no mesmo lugar não há vaga; em outra lista, a origem guarda o card e o
+  destino mostra a vaga.
+- Depois de soltar: a ordem, os contadores e o ✓ (FIN-02, FIN-03) mudam na hora.
+
+src/renderer/src/features/board/BoardCards.test.tsx
+- CAR-02: "Adicionar um cartão" põe o card no fim e o campo continua aberto; Esc fecha. O menu
+  da lista também abre o campo. Card criado em Concluído nasce sem ✓.
+- CAR-04: a face mostra etiqueta, ✓, data em atraso e data verde de card finalizado, descrição,
+  checklist e nota.
+- Clicar no card abre o modal com a lista e o título; fechar volta ao quadro; um card que não
+  existe mais fecha o modal sozinho.
+- "Criar card" no menu "Criar" cria na lista escolhida.
+- Teclado: setas escolhem a lista e a posição, espaço solta e grava; FIN-02 e FIN-03 marcam e
+  desmarcam o ✓; CAR-03: pegar e soltar no mesmo lugar não grava nada, e Esc cancela.
+
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
 
 O script scripts/capturar-telas.mts compila o app, abre o Electron com uma pasta de dados
 temporária (MELLO_DATA_DIR) e:
 1. confere que o banco foi criado e que o IPC responde (app:info);
-2. salva uma captura de cada tela da etapa, nos temas escuro e claro, em capturas/etapa-N/
-   (pasta ignorada pelo Git);
-3. apaga a pasta temporária.
+2. cria dados fictícios pelo window.mello; os campos da face do card que ainda não têm tela
+   para editar (etiquetas, datas, checklist, descrição, nota e anexos, etapas 4 e 5) são gravados
+   direto no banco temporário;
+3. salva uma captura de cada tela da etapa, nos temas escuro e claro, em capturas/etapa-N/
+   (pasta ignorada pelo Git), inclusive com um card no meio do arraste;
+4. apaga a pasta temporária.
 
 As capturas são comparadas com o .dc.html correspondente do protótipo (cores, medidas, textos,
 ícones e estados). Numa tela com escala de 125% do Windows, a captura sai 1,25 vez maior
@@ -175,5 +232,17 @@ Etapa 2 (conferido em 21/10/2026, no app real pelo Playwright)
 [x] Os popovers abrem presos ao botão que os abriu (menus da lista e do quadro, "Criar", "Mudar de
     quadros" acima da barra, quadros fechados) e fecham com Esc.
 [x] Capturas da etapa 2 conferidas com as telas 1, 2, 9, 10 e 16, nos dois temas.
+
+Etapa 3 (conferido em 22/10/2026, no app real pelo Playwright)
+[x] Arrastar um card com o mouse na mesma lista e para outra: o card fica translúcido na origem,
+    a vaga aparece no destino, a lista de destino ganha a borda azul e o card vai inclinado.
+[x] Arrastar para Concluído mostra o ✓ antes de soltar e grava o ✓; voltar desmarca.
+[x] Pegar e soltar no mesmo lugar não grava nada e não abre o modal.
+[x] A ordem continua igual depois de recarregar a tela.
+[x] Teclado: espaço, setas (o card acompanha a vaga, inclusive para outra lista), espaço.
+[x] Clique e Enter no card abrem o modal; Esc, o X e o clique fora fecham.
+[x] "Adicionar um cartão": Enter adiciona e o campo continua aberto para o próximo.
+[x] Nenhum erro no console durante a conferência.
+[x] Capturas da etapa 3 conferidas com as telas 2, 3, 8, 9 e 16, nos dois temas.
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026**; a etapa 2 aguarda o commit. A etapa 3 começa quando for liberada.
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026 e etapa 3 em 22/10/2026**; a etapa 3 aguarda o commit. A etapa 4 começa quando for liberada.
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -44,6 +44,7 @@
 | Barra de título | Barra nativa do Windows, no tema escuro, acima do cabeçalho de 56 px | Etapa 1, 21/10 |
 | Instalação do Electron | Script próprio (`scripts/instalar-electron.mjs`), sem exigir o Visual C++ Redistributable (ver `Pipeline.txt`) | Etapa 1, 21/10 |
 | Criar quadro | Popover com a prévia e o título; só cria ao confirmar (`QUA-10`) | Etapa 2, 21/10 |
+| Card novo em lista de conclusão | Nasce sem o ✓; o automático é só para quem chega arrastado ou movido (`FIN-02`) | Etapa 3, 22/10 |
 
 ### 1.2 Propostas (aprovadas em 21/10/2026)
 
@@ -414,8 +415,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** criar, renomear, favoritar, fechar e reabrir quadros; criar, renomear, arrastar, copiar, mover e arquivar listas; tudo persiste depois de reiniciar o app.
 - **Testes:** QUA-01..07, LIS-01..07; a posição fracionária ao arrastar listas; etiquetas recriadas ao mover lista (LIS-05).
 
-### Etapa 3 — Cards e arrastar
+### Etapa 3 — Cards e arrastar ✅ concluída em 22/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 161 testes no total (49 novos), lint e tipos limpos; capturas conferidas com as telas 2, 3, 8, 9 e 16 nos dois temas; arrastar conferido no app real (mouse e teclado, inclusive o ✓ automático e o "mesmo lugar"). Entrou também o "Criar card" do menu "Criar". O modal do card abre pelo endereço (`?card=`), para o calendário reaproveitar na etapa 7. Decisão da etapa: card criado numa lista de conclusão nasce sem ✓ (seção 1.1). Detalhes no `Changelog.txt`.
 - **Entrega:** criar card (formulário da tela 9); face do card com tudo o que já existe nessa etapa (etiquetas, título, ✓, data, contadores); arrastar cards dentro da lista e entre listas com o visual do protótipo (card inclinado e translúcido, lista de destino com borda azul, vaga reservada); arrastar listas e cards com teclado (dnd-kit); FIN-02 e FIN-03 automáticos; soltar no mesmo lugar não grava nada; clicar abre a casca do modal; tema claro do quadro.
 - **Telas:** 2, 3, 8, 9 (novo card); 16 (card concluído, arrastar para a área de finalizado).
 - **Aceite:** arrastar entre todas as listas, inclusive para a área de finalizado (o ✓ é marcado sozinho) e de volta (desmarcado); a ordem persiste.

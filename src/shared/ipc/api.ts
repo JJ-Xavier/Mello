@@ -6,7 +6,6 @@ import type {
   BoardDetail,
   BoardIdInput,
   BoardSummary,
-  CardIdInput,
   CreateBoardInput,
   CreateListInput,
   ListIdInput,
@@ -17,6 +16,7 @@ import type {
   UpdateBoardInput,
   UpdateListInput
 } from './boards'
+import type { CardDetail, CardIdInput, CardSummary, CreateCardInput, MoveCardInput } from './cards'
 
 export const CHANNELS = {
   appInfo: 'app:info',
@@ -38,6 +38,9 @@ export const CHANNELS = {
   listsArchive: 'lists:archive',
   listsArchiveCards: 'lists:archiveCards',
   listsRestore: 'lists:restore',
+  cardsGet: 'cards:get',
+  cardsCreate: 'cards:create',
+  cardsMove: 'cards:move',
   cardsRestore: 'cards:restore',
   cardsDelete: 'cards:delete'
 } as const
@@ -75,6 +78,9 @@ export interface MelloApi {
     restore(input: ListIdInput): Promise<Result<null>>
   }
   cards: {
+    get(input: CardIdInput): Promise<Result<CardDetail>>
+    create(input: CreateCardInput): Promise<Result<CardSummary>>
+    move(input: MoveCardInput): Promise<Result<null>>
     restore(input: CardIdInput): Promise<Result<null>>
     delete(input: CardIdInput): Promise<Result<null>>
   }
@@ -116,6 +122,9 @@ export function createApi(
       restore: call(CHANNELS.listsRestore)
     },
     cards: {
+      get: call(CHANNELS.cardsGet),
+      create: call(CHANNELS.cardsCreate),
+      move: call(CHANNELS.cardsMove),
       restore: call(CHANNELS.cardsRestore),
       delete: call(CHANNELS.cardsDelete)
     }

@@ -1,6 +1,7 @@
 import { Link, Navigate, NavLink, Outlet, useLocation, useParams } from 'react-router'
 import { backgroundCss } from '../../../shared/rules/background'
 import { Icon } from '../components/Icon'
+import { CardModal } from '../features/card/CardModal'
 import { ApiError } from '../lib/api'
 import { cx } from '../lib/cx'
 import { useBoard } from '../lib/queries'
@@ -46,7 +47,8 @@ export function HomeLayout() {
 }
 
 // Quadro e calendário do quadro: cabeçalho + conteúdo sobre o fundo do quadro (FUN-08) + barra
-// flutuante de baixo. Um quadro que não existe mais (excluído) volta para o Início.
+// flutuante de baixo + o modal do card (?card=<id>). Um quadro que não existe mais (excluído)
+// volta para o Início.
 export function BoardLayout() {
   const { boardId = '' } = useParams()
   const board = useBoard(boardId)
@@ -61,6 +63,7 @@ export function BoardLayout() {
         <Outlet />
         <BoardNav boardId={boardId} />
       </div>
+      <CardModal />
     </div>
   )
 }
