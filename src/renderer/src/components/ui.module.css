@@ -1,0 +1,151 @@
+/* Peças dos menus e formulários do protótipo (Estados.dc.html e NovosEstados.dc.html): legenda,
+   campo, botões, item de menu, separador e opção liga/desliga. */
+
+.cap {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.fld {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--field-line);
+  border-radius: 6px;
+  background: var(--field);
+  color: var(--strong);
+  font:
+    400 14px Inter,
+    sans-serif;
+}
+
+.fld:focus {
+  outline: none;
+  border: 2px solid var(--accent);
+  padding: 0 9px;
+}
+
+.pri {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-txt);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.pri:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.sec {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--sec);
+  color: var(--sec-txt);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.lnk {
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--sec);
+  color: var(--sec-txt);
+  font:
+    500 12px Inter,
+    sans-serif;
+}
+
+.mi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  text-align: left;
+  text-decoration: none;
+  font:
+    400 14px Inter,
+    sans-serif;
+}
+
+.mi:hover:not(:disabled) {
+  background: var(--pop-hover);
+}
+
+.sep {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--line);
+}
+
+.tog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tog:hover {
+  background: var(--pop-hover);
+}
+
+.togText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  color: var(--txt);
+}
+
+.togHint {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--muted);
+}
+
+.check {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--muted);
+}
+
+/* Fica no fim do arquivo para valer sobre .mi e .lnk (mesma especificidade). */
+.danger {
+  color: var(--danger-txt);
+}

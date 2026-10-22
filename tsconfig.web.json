@@ -17,5 +17,10 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["src/renderer/src/**/*", "src/shared/**/*"]
+  "include": ["src/renderer/src/**/*", "src/shared/**/*"],
+  "exclude": [
+    "src/renderer/src/**/*.test.ts",
+    "src/renderer/src/**/*.test.tsx",
+    "src/renderer/src/test/**"
+  ]
 }

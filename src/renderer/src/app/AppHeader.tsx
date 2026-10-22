@@ -1,8 +1,10 @@
+import { useId } from 'react'
 import { Link, useLocation } from 'react-router'
 import { Icon } from '../components/Icon'
 import { Logo } from '../components/Logo'
 import { cx } from '../lib/cx'
 import styles from './AppHeader.module.css'
+import { CreateMenu } from './CreateMenu'
 
 // O cabeçalho muda um pouco conforme a tela, como no protótipo:
 // - home: Início e calendário de todos os quadros (busca com o texto completo e engrenagem cheia);
@@ -35,6 +37,7 @@ function BackLink() {
 export function AppHeader({ variant }: { variant: HeaderVariant }) {
   const location = useLocation()
   const home = variant === 'home'
+  const createMenuId = useId()
 
   return (
     <header className={styles.header}>
@@ -57,9 +60,10 @@ export function AppHeader({ variant }: { variant: HeaderVariant }) {
               aria-label="Pesquisar"
             />
           </label>
-          <button type="button" className={styles.create}>
+          <button type="button" className={styles.create} popoverTarget={createMenuId}>
             Criar
           </button>
+          <CreateMenu id={createMenuId} />
           <Link
             to="/settings"
             state={{ from: location.pathname } satisfies SettingsLocationState}

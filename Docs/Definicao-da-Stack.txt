@@ -1,7 +1,7 @@
 Definição da Stack — Mello
 
-Status: aprovada em 21/10/2026, junto com o Docs/PLANO.md. Versões fixadas na etapa 1 (seção
-"Versões fixadas", no fim).
+Status: aprovada em 21/10/2026, junto com o Docs/PLANO.md. Versões fixadas na etapa 1 e
+completadas na etapa 2 (seção "Versões fixadas", no fim).
 A primeira versão deste documento (20/10/2026) está resumida no fim, em "Histórico".
 Como essas peças se encaixam: ver Docs/Arquitetura.txt.
 
@@ -114,14 +114,15 @@ Desnecessário para uso pessoal (fora da stack)
   depois se algum dia fizerem falta.
 
 
-VERSÕES FIXADAS (etapa 1, 21/10/2026)
+VERSÕES FIXADAS (etapas 1 e 2, 21/10/2026)
 
-As versões ficam exatas no package.json (sem ^). Cada biblioteca entra na etapa que a usa: dnd-kit
-e fractional-indexing (etapas 2 e 3), date-fns (etapa 4), TipTap (etapas 4 e 5) e Zustand (quando
+As versões ficam exatas no package.json (sem ^). Cada biblioteca entra na etapa que a usa:
+date-fns (etapa 4, se o Intl do navegador não bastar), TipTap (etapas 4 e 5) e Zustand (quando
 houver estado de interface compartilhado) ainda não estão instalados.
 
 Vão dentro do app (dependencies)
   better-sqlite3 13.0.3 · drizzle-orm 0.45.4 · zod 4.6.7 · electron-log 5.4.4
+  fractional-indexing 4.0.0 (etapa 2)
 
 Só desenvolvimento (devDependencies; a tela é empacotada pelo Vite, então React e companhia não
 precisam ir como dependência do app)
@@ -129,6 +130,7 @@ precisam ir como dependência do app)
   electron-builder 26.15.3 · drizzle-kit 0.31.11 · typescript 6.0.3
   react 19.3.1 · react-dom 19.3.1 · react-router 8.5.0 · @tanstack/react-query 5.104.5
   @fontsource/inter 5.3.0
+  @dnd-kit/core 6.3.1 · @dnd-kit/sortable 10.0.0 · @dnd-kit/utilities 3.2.2 (etapa 2)
   vitest 5.0.5 · jsdom 30.1.3 · @testing-library/react 16.3.3 · @testing-library/dom 10.4.2
   eslint 10.13.0 · @eslint/js 10.0.1 · typescript-eslint 8.72.0 · eslint-plugin-react-hooks 7.1.1
   eslint-plugin-react-refresh 0.5.7 · eslint-config-prettier 10.1.8 · globals 17.13.0
@@ -144,6 +146,13 @@ Por que essas e não as mais novas
   precisa recompilar (npmRebuild: false). Isso resolveu o principal risco técnico do plano.
 - Os modelos do electron-vite trazem pacotes auxiliares (@electron-toolkit/*); o Mello não os usa,
   porque o que eles fazem cabe em poucas linhas do próprio código.
+- dnd-kit clássico (@dnd-kit/core 6 e sortable 10) em vez do @dnd-kit/react: a versão nova
+  ainda é 0.x e muda a cada lançamento; a clássica é estável, tem arrastar pelo teclado e
+  funciona com o React 19.
+- Datas curtas ("3 de set.") com o Intl do próprio navegador, sem biblioteca. O date-fns só entra
+  se o calendário e os seletores de data precisarem.
+- Sem polyfills: o app roda só no Chromium do Electron fixado (Arquitetura.txt, seção 7), então
+  popover, posicionamento por âncora e <dialog closedby> são usados direto.
 
 
 HISTÓRICO
@@ -157,3 +166,5 @@ HISTÓRICO
              fora (sem serviços externos).
 21/10/2026 — etapa 1: versões fixadas (seção acima); Electron instalado por script próprio, sem o
              Visual C++ Redistributable (ver Pipeline.txt, seção 3).
+21/10/2026 — etapa 2: entraram fractional-indexing e o dnd-kit clássico; datas curtas pelo Intl;
+             recursos nativos de popover e diálogo, sem polyfill.

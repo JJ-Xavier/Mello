@@ -1,0 +1,212 @@
+/* Tela do quadro (Quadro.dc.html, Estados.dc.html e NovosEstados.dc.html). */
+.page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Barra do quadro: translúcida sobre o fundo, igual nos dois temas. */
+.bar {
+  position: relative;
+  height: 64px;
+  flex: none;
+  padding: 0 16px 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(6px);
+  color: #172b4d;
+}
+
+.boardTitle {
+  margin: 0;
+  min-width: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Limite fixo (e não em %): o Chromium encolhe um <button> com max-width em % dentro de um título
+   que mede o próprio conteúdo, e o nome do quadro virava "C…". */
+.boardTitleButton {
+  display: block;
+  max-width: min(60vw, 900px);
+  padding: 4px 8px;
+  margin-left: -8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boardTitleButton:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.boardTitleInput {
+  width: 420px;
+  height: 36px;
+  padding: 0 8px;
+  margin-left: -8px;
+  border: 2px solid #0c66e4;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172b4d;
+  font:
+    700 20px Inter,
+    sans-serif;
+  outline: none;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.barIcon {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #172b4d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.barIcon:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.favorite svg {
+  fill: #e2b203;
+  stroke: #e2b203;
+}
+
+.background {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #172b4d;
+  color: #fff;
+  font:
+    600 14px Inter,
+    sans-serif;
+}
+
+/* Listas: rolam na horizontal; o espaço de baixo fica livre para a barra flutuante. */
+.lists {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 16px 96px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.55) rgba(9, 30, 66, 0.15);
+}
+
+.addListButton {
+  width: 272px;
+  flex: none;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(6px);
+  color: #172b4d;
+  font:
+    600 14px Inter,
+    sans-serif;
+}
+
+.addListButton:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.addListForm {
+  width: 272px;
+  flex: none;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--list);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.addListInput {
+  height: 36px;
+  padding: 0 10px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--strong);
+  font:
+    500 14px Inter,
+    sans-serif;
+  outline: none;
+}
+
+.formRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cancel {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel:hover {
+  background: var(--btn);
+}
+
+/* Quadro fechado aberto pelo endereço */
+.closedNotice {
+  margin: 48px auto;
+  width: 360px;
+  padding: 20px;
+  border-radius: 10px;
+  background: var(--pop);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.closedNotice h2 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--strong);
+}
+
+.closedNotice p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+}

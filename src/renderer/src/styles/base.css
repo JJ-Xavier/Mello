@@ -48,3 +48,10 @@ button {
   stroke-linejoin: round;
   flex: none;
 }
+
+/* Botões que só ganham função numa etapa futura (ou que não se aplicam agora) ficam apagados. */
+button:disabled,
+input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

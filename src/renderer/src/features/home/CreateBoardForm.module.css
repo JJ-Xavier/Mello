@@ -1,0 +1,45 @@
+/* Formulário "Criar quadro" (aprovado em 21/10/2026): prévia do quadro novo, título e Criar. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Prévia: fundo Mello com as 4 listas em miniatura, como no convite do Início vazio. */
+.preview {
+  height: 112px;
+  padding: 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1f5eff, #4d8dff 60%, #eef1f6);
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.mini {
+  width: 52px;
+  padding: 6px;
+  border-radius: 6px;
+  background: #101204;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini b {
+  display: block;
+  height: 5px;
+  border-radius: 3px;
+  background: #454f59;
+}
+
+.mini i {
+  display: block;
+  height: 14px;
+  border-radius: 3px;
+  background: #2c333a;
+}
+
+.submit {
+  align-self: flex-start;
+}

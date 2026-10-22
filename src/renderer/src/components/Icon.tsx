@@ -41,7 +41,43 @@ const paths = {
       <path d="M7 6V4h14v14h-4" />
     </>
   ),
-  chevronLeft: <path d="m15 18-6-6 6-6" />
+  chevronLeft: <path d="m15 18-6-6 6-6" />,
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  dots: (
+    <>
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+    </>
+  ),
+  filter: <path d="M3 6h18M6 12h12M10 18h4" />,
+  star: <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z" />,
+  image: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="2" />
+      <path d="m21 16-5-5-9 9" />
+    </>
+  ),
+  archive: (
+    <>
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4" />
+    </>
+  ),
+  template: (
+    <>
+      <path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9" />
+      <path d="M18 2v6M15 5h6" />
+    </>
+  ),
+  card: (
+    <>
+      <rect x="4" y="6" width="16" height="12" rx="2" />
+      <path d="M8 10h8" />
+    </>
+  )
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof paths

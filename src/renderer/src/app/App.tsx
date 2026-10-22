@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { HashRouter, Navigate, Route, Routes } from 'react-router'
+import { ConfirmProvider } from '../components/Confirm'
+import { NotifyProvider } from '../components/Notify'
 import { BoardPage } from '../features/board/BoardPage'
 import { CalendarPage } from '../features/calendar/CalendarPage'
 import { HomePage } from '../features/home/HomePage'
@@ -23,22 +25,26 @@ export function App() {
   const [queryClient] = useState(createQueryClient)
   return (
     <QueryClientProvider client={queryClient}>
-      <HashRouter>
-        <Routes>
-          <Route element={<HomeLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="calendar" element={<CalendarPage scope="all" />} />
-          </Route>
-          <Route path="boards/:boardId" element={<BoardLayout />}>
-            <Route index element={<BoardPage />} />
-            <Route path="calendar" element={<CalendarPage scope="board" />} />
-          </Route>
-          <Route element={<SettingsLayout />}>
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </HashRouter>
+      <NotifyProvider>
+        <ConfirmProvider>
+          <HashRouter>
+            <Routes>
+              <Route element={<HomeLayout />}>
+                <Route index element={<HomePage />} />
+                <Route path="calendar" element={<CalendarPage scope="all" />} />
+              </Route>
+              <Route path="boards/:boardId" element={<BoardLayout />}>
+                <Route index element={<BoardPage />} />
+                <Route path="calendar" element={<CalendarPage scope="board" />} />
+              </Route>
+              <Route element={<SettingsLayout />}>
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </HashRouter>
+        </ConfirmProvider>
+      </NotifyProvider>
     </QueryClientProvider>
   )
 }

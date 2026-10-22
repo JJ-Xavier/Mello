@@ -1,6 +1,6 @@
 Pipeline — Mello
 
-Status: atualizado na etapa 1 (21/10/2026). Os comandos da seção 4 existem e foram conferidos.
+Status: atualizado na etapa 2 (21/10/2026). Os comandos da seção 4 existem e foram conferidos.
 
 
 1. QUEM FAZ O QUÊ
@@ -24,6 +24,13 @@ Status: atualizado na etapa 1 (21/10/2026). Os comandos da seção 4 existem e f
 7. Jackson faz commit e push na branch que escolher.
 8. Próxima etapa, só depois que o Jackson liberar. A implementação PARA ao fim de cada etapa
    (decidido em 21/10/2026), para que cada etapa vire um commit separado.
+
+Trocar de branch durante uma etapa: antes de instalar pacotes ou gravar arquivos, o Claude
+confere em que branch o repositório está. Uma branch sem o código da etapa anterior (por
+exemplo, a Developer ainda no commit inicial) não tem package.json, e um "npm install" nela cria
+arquivos soltos que impedem voltar para a branch da feature (aconteceu em 21/10/2026). Se isso
+acontecer, os arquivos soltos são apagados e a volta é feita com "git checkout <branch>"; depois,
+"npm ci" refaz a pasta node_modules.
 
 Se uma funcionalidade não ficar boa, a etapa é revertida por completo (voltando ao commit
 anterior) e refeita, em vez de remendada.
@@ -51,6 +58,15 @@ Não são necessários (conferido na etapa 1):
   de ajuste.
 - GitHub CLI, contas ou tokens de serviço nenhum.
 
+Scripts de instalação das dependências (npm 11.19): o npm só roda o script de instalação de um
+pacote com aprovação no campo "allowScripts" do package.json. Os 5 pacotes que têm script estão
+recusados de propósito (false), porque nenhum é necessário: o better-sqlite3 tentaria compilar
+do zero com node-gyp, o que exige Python e Visual Studio, e o binário pronto já vem no pacote; os
+esbuild usados pelo drizzle-kit só conferem o binário; o electron-winstaller é de outro tipo de
+instalador, que o Mello não usa. Sem a recusa explícita, o "npm ci" rodava a compilação e falhava
+(descoberto na etapa 2). O script do próprio projeto (postinstall do Electron) não é afetado.
+Para reinstalar tudo do zero, exatamente como está no package-lock.json: npm ci.
+
 Cuidado com ELECTRON_RUN_AS_NODE: alguns terminais de dentro do VS Code (como o do Claude Code)
 herdam essa variável, que faz o Electron rodar como se fosse o Node e o app não abre. Num
 terminal normal ela não existe. Se "npm run dev" não abrir a janela, confira com
@@ -65,6 +81,7 @@ Assim, o desenvolvimento nunca mexe nos dados reais.
 
 npm install ............ instala as dependências e baixa o Electron (uma vez, e quando o
                          package.json mudar)
+npm ci ................. reinstala tudo do zero, exatamente como no package-lock.json
 npm run dev ............ abre o app em modo de desenvolvimento, com recarga automática; F12 abre
                          as ferramentas de desenvolvedor
 npm start .............. abre o app já compilado (electron-vite preview)
@@ -73,7 +90,7 @@ npm test ............... roda todos os testes uma vez (Vitest)
 npm run test:watch ..... roda os testes a cada alteração
 npm run lint ........... confere o padrão de código (ESLint)
 npm run format ......... formata o código (Prettier)
-npm run typecheck ...... confere os tipos do TypeScript (main/preload e tela)
+npm run typecheck ...... confere os tipos do TypeScript (main/preload, tela e testes da tela)
 npm run capturas ....... compila, abre o app com uma pasta de dados temporária, confere banco e
                          IPC e salva capturas de cada tela em capturas/etapa-N/ (pasta ignorada
                          pelo Git)

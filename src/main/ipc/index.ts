@@ -1,28 +1,22 @@
-// Liga cada canal de IPC a um módulo (valida → chama → Result). Os canais estão listados em
-// src/shared/ipc/api.ts e no Docs/PLANO.md, seção 4.
+// Registra no ipcMain as rotas de routes.ts. Erros inesperados vão para o log.
 import { app, ipcMain } from 'electron'
 import log from 'electron-log/main'
-import { z } from 'zod'
-import { CHANNELS, type AppInfo } from '../../shared/ipc/api'
-import { createHandler } from './handler'
-
-function handle<S extends z.ZodType, T>(
-  channel: string,
-  schema: S,
-  fn: (input: z.output<S>) => T | Promise<T>
-): void {
-  const handler = createHandler(schema, fn, (error) => log.error(`[ipc] ${channel}`, error))
-  ipcMain.handle(channel, (_event, raw: unknown) => handler(raw))
-}
+import type { Db } from '../db/client'
+import { createRoutes } from './routes'
 
 export interface IpcContext {
   dataDir: string
+  db: Db
 }
 
-export function registerIpc(context: IpcContext): void {
-  handle(CHANNELS.appInfo, z.undefined(), (): AppInfo => ({
-    version: app.getVersion(),
-    dataDir: context.dataDir,
-    dev: !app.isPackaged
-  }))
+export function registerIpc({ dataDir, db }: IpcContext): void {
+  const routes = createRoutes({
+    db,
+    app: { version: app.getVersion(), dataDir, dev: !app.isPackaged },
+    now: Date.now,
+    onUnexpectedError: (channel, error) => log.error(`[ipc] ${channel}`, error)
+  })
+  for (const [channel, handler] of routes) {
+    ipcMain.handle(channel, (_event, raw: unknown) => handler(raw))
+  }
 }

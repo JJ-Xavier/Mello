@@ -23,3 +23,8 @@ export function createDb(sqlite: Sqlite) {
 }
 
 export type Db = ReturnType<typeof createDb>
+
+// Os módulos recebem o banco ou uma transação já aberta, para poderem ser combinados numa
+// transação só.
+export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
+export type DbOrTx = Db | Tx

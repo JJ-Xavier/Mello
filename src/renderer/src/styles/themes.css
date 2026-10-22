@@ -33,6 +33,18 @@
   /* só no escuro: borda do campo de busca e divisória do menu lateral do Início */
   --field-line: #738496;
   --divider: #2c333a;
+  /* só no escuro: popovers, campos e botões dos menus (Estados.dc.html e NovosEstados.dc.html) */
+  --pop: #282e33;
+  --pop-hover: #38414a;
+  --field: #22272b;
+  --sec: #38414a;
+  --sec-txt: #dee4ea;
+  --item: #22272b;
+  --danger-txt: #fd9891;
+  --danger: #ae2e24;
+  --danger-on: #ffeceb;
+  --dashed: #454f59;
+  --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.45);
 }
 
 .tema-claro {
@@ -59,4 +71,20 @@
   --nav-active: rgba(87, 157, 255, 0.16);
   --field-line: var(--line);
   --divider: var(--line);
+  --pop: #ffffff;
+  --pop-hover: var(--btn);
+  --field: #ffffff;
+  --sec: var(--btn);
+  --sec-txt: var(--strong);
+  --item: var(--list);
+  --danger-txt: #ae2e24;
+  --danger: #c9372c;
+  --danger-on: #ffffff;
+  --dashed: var(--line);
+  --shadow-pop: 0 10px 28px rgba(9, 30, 66, 0.25);
+}
+
+/* As telas do quadro usam --btn #e4e6ea no tema claro (Quadro.dc.html e QuadroClaro.dc.html). */
+.tema-claro .board-screen {
+  --btn: #e4e6ea;
 }

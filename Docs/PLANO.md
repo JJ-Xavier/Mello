@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapa 1 concluída em 21/10/2026**, aguardando o commit. A etapa 2 começa quando for liberada.
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026**; a etapa 2 aguarda o commit. A etapa 3 começa quando for liberada.
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -43,6 +43,7 @@
 | Dados no desenvolvimento | `npm run dev` usa `%APPDATA%\Mello-dev`; o app instalado usa `%APPDATA%\Mello` | Etapa 1, 21/10 |
 | Barra de título | Barra nativa do Windows, no tema escuro, acima do cabeçalho de 56 px | Etapa 1, 21/10 |
 | Instalação do Electron | Script próprio (`scripts/instalar-electron.mjs`), sem exigir o Visual C++ Redistributable (ver `Pipeline.txt`) | Etapa 1, 21/10 |
+| Criar quadro | Popover com a prévia e o título; só cria ao confirmar (`QUA-10`) | Etapa 2, 21/10 |
 
 ### 1.2 Propostas (aprovadas em 21/10/2026)
 
@@ -120,11 +121,11 @@ Mello/
 │   │   │   ├── open.ts        # abre o banco: backup se preciso, depois migra
 │   │   │   └── migrations/    # SQL gerado pelo drizzle-kit
 │   │   ├── modules/           # regras + consultas, um arquivo por assunto
-│   │   │   ├── boards.ts  lists.ts  cards.ts  labels.ts  checklists.ts
+│   │   │   ├── boards.ts  lists.ts  cards.ts  labels.ts  checklists.ts  position.ts
 │   │   │   ├── activity.ts  files.ts  attachments.ts  covers.ts
 │   │   │   ├── recurrence.ts  reminders.ts  calendar.ts  search.ts
 │   │   │   ├── templates.ts  settings.ts  backup.ts  export.ts
-│   │   └── ipc/               # handler.ts (Zod + Result) e index.ts (liga cada canal a um módulo)
+│   │   └── ipc/               # handler.ts (Zod + Result), routes.ts (canais, sem Electron), index.ts
 │   ├── preload/
 │   │   └── index.ts           # expõe window.mello
 │   ├── shared/                # código puro, usado pelo main, pela tela e pelos testes
@@ -147,7 +148,8 @@ Mello/
 │           │   └── search/    # busca do topo
 │           ├── components/    # Popover, Modal, Button, PriorityIcon, Logo, DatePicker…
 │           ├── lib/           # fog.ts (do protótipo), api.ts, queryKeys.ts, format.ts
-│           └── styles/        # themes.css (paletas literais), base.css, fonts.css
+│           ├── styles/        # themes.css (paletas literais), base.css, fonts.css
+│           └── test/          # preparação dos testes da tela (API real, imitação do popover)
 ├── electron.vite.config.ts  vitest.config.mts  electron-builder.yml  drizzle.config.ts
 ├── eslint.config.mjs  tsconfig*.json  package.json  LICENSE  README.md
 ```
@@ -404,8 +406,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** `npm run dev` abre a janela com o cabeçalho igual ao protótipo (56 px, cores, logo); o banco é criado em `%APPDATA%\Mello\mello.db` com todas as tabelas; reabrir não recria nada; `npm test`, `npm run lint` e `npm run typecheck` passam limpos; o better-sqlite3 abre dentro do Vitest.
 - **Testes:** a migração roda do zero e é idempotente; chaves estrangeiras ligadas; `Result` de sucesso e de erro; Zod recusa entrada inválida; o protocolo recusa caminhos fora da pasta de arquivos (`..`, caminho absoluto, hash inválido).
 
-### Etapa 2 — Quadros e listas
+### Etapa 2 — Quadros e listas ✅ concluída em 21/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 112 testes no total (66 novos), lint e tipos limpos; capturas conferidas com as telas 1, 2, 9, 10 e 16 nos dois temas; arrastar conferido no app real (mouse e teclado). "Criar quadro" ganhou um popover com o título (`QUA-10`, aprovado). Filtro, "Alterar fundo", "Adicionar cartão", "Ordenar" e modelos aparecem apagados até a etapa deles. Os testes da tela passaram a usar o main de verdade (rotas + SQLite em memória). Detalhes no `Changelog.txt`.
 - **Entrega:** Início (área "Pessoal", grade de quadros com a miniatura do fundo, "Criar novo quadro", favoritos primeiro, "Ver todos os quadros fechados" e o convite "Criar seu primeiro quadro" quando não há nenhum, QUA-09); menu "Criar" → "Criar quadro"; popover "Mudar de quadros"; tela do quadro com a barra superior (título editável, filtro, favoritar, "Alterar fundo" e menu "…" com fechar quadro e itens arquivados); listas: criar, renomear, arrastar, contador e o menu "…" (copiar, mover para outro quadro, "Não envelhece", "Lista de conclusão", arquivar lista, arquivar todos os cards); quadro novo com 4 listas, 6 etiquetas e o fundo "Mello".
 - **Telas:** 1, 2 (estrutura), 9 (nova lista, menu da lista, "Mudar de quadros", menu "Criar"); 10 (Início vazio); 16 (menu da lista atualizado, menu do quadro, itens arquivados, quadros fechados).
 - **Aceite:** criar, renomear, favoritar, fechar e reabrir quadros; criar, renomear, arrastar, copiar, mover e arquivar listas; tudo persiste depois de reiniciar o app.

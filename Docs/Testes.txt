@@ -1,6 +1,7 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026). Atualizado a cada etapa.
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 2 (112 testes). Atualizado a cada
+etapa.
 
 
 1. COMO RODAR
@@ -21,8 +22,20 @@ Ao lado do código testado (backup.test.ts junto de backup.ts). Dois projetos no
 vitest.config.mts:
 - main: src/main/**/*.test.ts e src/shared/**/*.test.ts, ambiente Node, banco SQLite real (em
   memória ou numa pasta temporária apagada no fim);
-- renderer: src/renderer/**/*.test.{ts,tsx}, ambiente jsdom com Testing Library; o window.mello é
-  substituído por uma versão falsa.
+- renderer: src/renderer/**/*.test.{ts,tsx}, ambiente jsdom com Testing Library.
+
+Testes da tela com o main de verdade (desde a etapa 2): src/renderer/src/test/realApi.ts monta
+o window.mello com as mesmas rotas do main (routes.ts: Zod + módulos) sobre um SQLite em
+memória. Só o transporte do Electron fica de fora; entradas e respostas passam por
+structuredClone, como no IPC. Assim um teste de tela também confere o contrato com o banco.
+
+O jsdom não tem o popover nem o <dialog> modal, que o app usa nativos. src/renderer/src/test/
+setup.ts imita o mínimo, só nos testes: abrir e fechar, o evento "toggle", o botão com
+popovertarget e o modal fechando os popovers. O arrastar também não funciona no jsdom; ele é
+conferido no app real (seção 5) e as posições são testadas nos módulos.
+
+Os testes da tela importam código do main, por isso têm o tsconfig.test.json próprio (com os
+tipos do Node); o código da tela continua no tsconfig.web.json, sem acesso ao Node.
 
 Os nomes dos testes citam o código da regra do Regras.txt quando existe (ex.: "DAD-01: …").
 
@@ -72,7 +85,58 @@ src/renderer/src/app/App.test.tsx
 - O calendário do quadro marca "Calendário" na barra.
 - As Configurações mostram a versão vinda do main pelo IPC.
 - O "Voltar" das Configurações leva para a tela de onde elas foram abertas.
-- Um endereço desconhecido volta ao Início.
+- Um endereço desconhecido volta ao Início; um quadro que não existe também (etapa 2).
+
+Etapa 2 — 66 testes novos
+
+src/shared/rules/tone.test.ts (FUN-09)
+- A média de um gradiente é a média simples das paradas.
+- O tom tem luminosidade 73% e saturação de no máximo 45%, para todas as cores do protótipo.
+- O bege do protótipo quase não muda; cinza continua cinza; o fundo Mello gera um tom azulado.
+- Fundos viram o CSS do protótipo; um gradiente desconhecido cai no "Mello".
+
+src/main/modules/position.test.ts
+- As chaves ficam em ordem; mover para o início, o meio e o fim; índice além do fim vai para o fim.
+- Mover 50 vezes para o mesmo lugar continua funcionando.
+- Itens ocultos (listas arquivadas) não contam no índice.
+- Posições repetidas pedem reorganização, que restaura a ordem.
+
+src/main/modules/boards.test.ts
+- QUA-01 (título de 1 a 80, sem espaços nas pontas), QUA-02 (4 listas, Concluído e Entregue de
+  conclusão e sem envelhecer), QUA-03 (fundo Mello, tom e as 6 etiquetas padrão sem nome).
+- Quadros novos vão para o fim; renomear e favoritar.
+- QUA-04 (fechar e reabrir), QUA-06 (favoritos primeiro; ordem manual dentro de cada grupo; mover
+  para o mesmo lugar não grava nada).
+- QUA-07 (só exclui quadro fechado; a exclusão apaga listas, cards, etiquetas, checklists,
+  atividade, anexos e repetições, e o arquivo físico espera a limpeza de órfãos).
+- Itens arquivados em ordem; quadro inexistente dá NOT_FOUND.
+
+src/main/modules/lists.test.ts
+- LIS-01 (título); lista nova vai para o fim; não cria lista em quadro fechado.
+- Renomear não mexe nos cards (ENV-06); LIS-02 e FIN-06 (opções independentes, sem mudar o ✓).
+- LIS-03 (arrastar muda só a posição); soltar no mesmo lugar não grava; arquivadas não contam.
+- LIS-04 (cópia à direita, com os cards ativos, etiquetas, checklist com o estado dos itens, nível
+  0 e atividade "copiado"; título de 80 caracteres; opções da lista copiadas).
+- LIS-05 (mover para outro quadro recria as etiquetas que faltam, leva as repetições e não zera o
+  envelhecimento; mesmo quadro = mudar a posição; não move para quadro fechado).
+- LIS-06 (arquivar e restaurar na mesma posição) e LIS-07 (arquivar todos os cards registra
+  "arquivado" e não zera o envelhecimento); o contador conta só os ativos.
+- Cards arquivados: restaurar zera o envelhecimento e registra "restaurado"; excluir apaga tudo
+  do card.
+
+src/renderer/src/features/home/HomePage.test.tsx
+- QUA-09: na primeira abertura só aparece o convite, e nada é criado.
+- Criar o primeiro quadro pelo convite (QUA-10) abre o quadro com as 4 listas.
+- Favoritos primeiro no Início; o menu "Criar" cria um quadro.
+- Quadros fechados: reabrir e excluir com confirmação; cancelar a exclusão não apaga nada.
+
+src/renderer/src/features/board/BoardPage.test.tsx
+- Título, listas, contadores e barra do quadro; renomear o quadro (Enter salva, Esc cancela).
+- Favoritar; adicionar lista (vai para o fim e o campo continua aberto); renomear lista.
+- Copiar lista; as opções do menu mostram e mudam o estado; arquivar e restaurar lista pelos
+  "Itens arquivados"; mover lista para outro quadro e dentro do mesmo quadro.
+- Fechar o quadro volta ao Início; quadro fechado aberto pelo endereço mostra o aviso e reabre.
+- "Mudar de quadros" lista os quadros, marca o atual e abre o escolhido.
 
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
@@ -101,5 +165,15 @@ Etapa 1 (conferido em 21/10/2026)
     erro no log e não é alterado.
 [x] Todas as rotas abrem no app real (capturas). Os cliques no menu lateral, na barra flutuante e
     no "Voltar" das Configurações são conferidos pelos testes de tela (App.test.tsx).
+
+Etapa 2 (conferido em 21/10/2026, no app real pelo Playwright)
+[x] Arrastar uma lista com o mouse: a lista vai inclinada, a vaga fica reservada e a nova ordem
+    fica igual na tela e no banco.
+[x] Clicar no título da lista abre a edição do nome, sem arrastar.
+[x] Arrastar pelo teclado: foco no cabeçalho da lista, espaço, seta para a direita, espaço.
+[x] Arrastar um quadro no Início muda a ordem e não abre o quadro; um clique simples abre.
+[x] Os popovers abrem presos ao botão que os abriu (menus da lista e do quadro, "Criar", "Mudar de
+    quadros" acima da barra, quadros fechados) e fecham com Esc.
+[x] Capturas da etapa 2 conferidas com as telas 1, 2, 9, 10 e 16, nos dois temas.
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

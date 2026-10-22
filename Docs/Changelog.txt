@@ -4,6 +4,44 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.2.0 — Etapa 2: quadros e listas (21/10/2026)
+
+Adicionado
+- Início: área "Pessoal", grade de quadros com a miniatura do fundo, favoritos primeiro, arrastar
+  para mudar a ordem, "Criar novo quadro" e "Ver todos os quadros fechados" (reabrir e excluir
+  com confirmação). Na primeira abertura, só o convite "Criar seu primeiro quadro" (QUA-09).
+- "Criar quadro" num popover com a prévia e o título (QUA-10), no Início, no menu "Criar" do
+  cabeçalho e em "Mudar de quadros". O quadro novo vem com as 4 listas, as 6 etiquetas e o fundo
+  Mello, e o tom do envelhecimento já calculado a partir do fundo (FUN-09).
+- Tela do quadro: fundo do quadro, barra com título editável, favoritar e menu "…" (itens
+  arquivados e fechar quadro). Quadro fechado aberto pelo endereço mostra o aviso para reabrir.
+- Listas: criar, renomear, arrastar (mouse e teclado), contador, menu "…" com copiar, mover (para
+  outra posição ou outro quadro), "Lista de conclusão", "Cards desta lista não envelhecem",
+  arquivar todos os cartões e arquivar lista.
+- "Itens arquivados": cards e listas, com busca, restaurar e excluir card com confirmação.
+- "Mudar de quadros" na barra flutuante.
+- Popovers nativos presos ao botão, confirmação em <dialog> modal e aviso de erro no canto.
+- Testes da tela usando o main de verdade (rotas + SQLite em memória).
+
+Ainda apagados, com a etapa em que entram: filtro e "Ordenar" (4), "Adicionar cartão" e
+"Criar card" (3), "Alterar fundo" (9), modelos (11).
+
+Mudou
+- IPC: a tabela de canais virou src/main/ipc/routes.ts (sem Electron) e window.mello é montado por
+  createApi, em src/shared/ipc/api.ts, compartilhado pelo preload e pelos testes.
+- package.json: recusa explícita dos scripts de instalação desnecessários (allowScripts), para o
+  "npm ci" não tentar compilar o better-sqlite3.
+- Versão 0.2.0.
+
+Decisões tomadas na etapa (21/10/2026)
+- "Criar quadro" abre um popover com o título; nada é criado antes de confirmar (QUA-10).
+
+Documentação
+- Atualizados: Regras.txt (QUA-10; LIS-05, LIS-06 e ENV-06 esclarecidos; testes ligados às regras
+  QUA e LIS), Arquitetura.txt, Testes.txt, Pipeline.txt, Definicao-da-Stack.txt, PLANO.md,
+  To-do-list.txt.
+
+
 0.1.0 — Etapa 1: base do app e banco (21/10/2026)
 
 Adicionado

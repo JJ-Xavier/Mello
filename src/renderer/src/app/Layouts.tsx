@@ -1,6 +1,9 @@
-import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router'
+import { Link, Navigate, NavLink, Outlet, useLocation, useParams } from 'react-router'
+import { backgroundCss } from '../../../shared/rules/background'
 import { Icon } from '../components/Icon'
+import { ApiError } from '../lib/api'
 import { cx } from '../lib/cx'
+import { useBoard } from '../lib/queries'
 import { AppHeader, type SettingsLocationState } from './AppHeader'
 import { BoardNav } from './BoardNav'
 import styles from './Layouts.module.css'
@@ -42,13 +45,19 @@ export function HomeLayout() {
   )
 }
 
-// Quadro e calendário do quadro: cabeçalho + conteúdo + barra flutuante de baixo.
+// Quadro e calendário do quadro: cabeçalho + conteúdo sobre o fundo do quadro (FUN-08) + barra
+// flutuante de baixo. Um quadro que não existe mais (excluído) volta para o Início.
 export function BoardLayout() {
   const { boardId = '' } = useParams()
+  const board = useBoard(boardId)
+  if (board.error instanceof ApiError && board.error.code === 'NOT_FOUND') {
+    return <Navigate to="/" replace />
+  }
+  const background = board.data ? backgroundCss(board.data.bgKind, board.data.bgValue) : undefined
   return (
-    <div className={styles.screen}>
+    <div className={cx(styles.screen, 'board-screen')}>
       <AppHeader variant="board" />
-      <div className={styles.boardArea}>
+      <div className={styles.boardArea} style={{ background }}>
         <Outlet />
         <BoardNav boardId={boardId} />
       </div>

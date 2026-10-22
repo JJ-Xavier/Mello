@@ -1,6 +1,6 @@
 Arquitetura — Mello
 
-Status: atualizado na etapa 1 (21/10/2026), com o que já existe no código. As partes que ainda vão
+Status: atualizado na etapa 2 (21/10/2026), com o que já existe no código. As partes que ainda vão
 ser construídas estão marcadas com a etapa em que entram.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
 Ver também: Docs/PLANO.md, Docs/Modelo-de-Dados.txt, Docs/Definicao-da-Stack.txt,
@@ -51,6 +51,8 @@ em sandbox, sem bibliotecas).
 
 Dentro do main, a direção é uma só: ipc/ → modules/ → db/.
 - ipc/: valida a entrada com Zod, chama o módulo e devolve um Result. Sem regra de negócio.
+  routes.ts é a tabela de canais (não importa o Electron); index.ts só registra as rotas no
+  ipcMain.
 - modules/: regras e consultas de um assunto (um arquivo por assunto). Não conhece o Electron, por
   isso é testado com um banco em memória.
 - db/: conexão, pragmas, schema e migrações.
@@ -58,7 +60,7 @@ Dentro do main, a direção é uma só: ipc/ → modules/ → db/.
 
 3. PASTAS DO PROJETO
 
-Estado na etapa 1. A estrutura completa prevista está no PLANO.md, seção 3.
+Estado na etapa 2. A estrutura completa prevista está no PLANO.md, seção 3.
 
 Mello/
 ├── Assets/                  identidade visual e imagens de referência
@@ -76,27 +78,40 @@ Mello/
 │   │   │   ├── schema.ts    as 13 tabelas (Drizzle)
 │   │   │   ├── migrate.ts   aplica as migrações
 │   │   │   ├── open.ts      abre o banco: backup se preciso, depois migra
+│   │   │   ├── test-db.ts   banco em memória para os testes (só os testes importam)
 │   │   │   └── migrations/  SQL gerado pelo drizzle-kit
 │   │   ├── modules/
+│   │   │   ├── boards.ts    quadros (QUA)
+│   │   │   ├── lists.ts     listas (LIS)
+│   │   │   ├── cards.ts     cards: por enquanto copiar, arquivar todos, restaurar, excluir
+│   │   │   ├── labels.ts    etiquetas padrão e recriação no outro quadro (LIS-05)
+│   │   │   ├── position.ts  posições de ordem manual (fractional indexing)
 │   │   │   └── backup.ts    backup pela API do SQLite (etapa 1: antes de migrar)
 │   │   └── ipc/
 │   │       ├── handler.ts   utilitário: Zod + Result (sem Electron, testável)
-│   │       └── index.ts     registra os canais
-│   ├── preload/index.ts     window.mello
+│   │       ├── routes.ts    tabela de canais (sem Electron; os testes da tela a usam)
+│   │       └── index.ts     registra as rotas no ipcMain
+│   ├── preload/index.ts     window.mello = createApi(ipcRenderer.invoke)
 │   ├── shared/
 │   │   ├── result.ts        Result, ok, fail, AppError
 │   │   ├── text.ts          removeAccents
-│   │   └── ipc/api.ts       nomes dos canais e o tipo MelloApi
+│   │   ├── limits.ts        tamanhos máximos dos títulos
+│   │   ├── ipc/api.ts       nomes dos canais, o tipo MelloApi e createApi
+│   │   ├── ipc/boards.ts    schemas Zod e tipos de quadros, listas e arquivados
+│   │   └── rules/           background.ts (fundos do protótipo), tone.ts (tom, FUN-09)
 │   └── renderer/
 │       ├── index.html       com a política de segurança (CSP)
 │       └── src/
-│           ├── app/         rotas, layouts, cabeçalho, barra flutuante
-│           ├── features/    uma pasta por área (home, board, calendar, settings…)
-│           ├── components/  Icon, Logo e outros reaproveitados
-│           ├── lib/         api.ts (unwrap), queryKeys.ts, cx.ts
-│           └── styles/      themes.css (paletas literais), fonts.css, base.css
+│           ├── app/         rotas, layouts, cabeçalho, menu "Criar", barra flutuante
+│           ├── features/    home/ (Início, criar quadro, fechados), board/ (barra, listas,
+│           │                menus, arquivados), calendar/, settings/
+│           ├── components/  Popover, Confirm, Notify, EditableTitle, dnd, Icon, Logo…
+│           ├── lib/         api.ts (unwrap), queries.ts (consultas e ações), queryKeys.ts,
+│           │                format.ts (datas), cx.ts
+│           ├── styles/      themes.css (paletas literais), fonts.css, base.css
+│           └── test/        preparação dos testes da tela (setup.ts, realApi.ts)
 ├── electron.vite.config.ts  vitest.config.mts  drizzle.config.ts  eslint.config.mjs
-├── electron-builder.yml     tsconfig*.json     package.json
+├── electron-builder.yml     tsconfig*.json (node, web, test)    package.json
 └── LICENSE  README.md
 
 Os testes ficam ao lado do código (backup.test.ts junto de backup.ts).
@@ -143,8 +158,12 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
 6. COMUNICAÇÃO ENTRE A TELA E O MAIN (IPC)
 
 - Os canais seguem o padrão entidade:ação (boards:list, cards:move…). Lista completa prevista:
-  PLANO.md, seção 4. Na etapa 1 existe só app:info (versão, pasta de dados, se é desenvolvimento),
-  usado nas Configurações e pelo script de capturas para conferir a ponte de ponta a ponta.
+  PLANO.md, seção 4. Existem hoje: app:info; boards:list, listClosed, get, create, update, move,
+  close, reopen, delete, archived; lists:create, update, move, copy, moveToBoard, archive,
+  archiveCards, restore; cards:restore e cards:delete.
+- Mover (quadro ou lista) recebe o índice final entre os itens visíveis, e o main calcula a
+  posição a partir do banco. Assim a tela nunca manda uma posição velha, e listas arquivadas ou
+  quadros fechados no meio não atrapalham.
 - Todo canal é requisição e resposta (invoke/handle).
 - A resposta é sempre um Result:
       { ok: true, data }  ou  { ok: false, error: { code, message, details? } }
@@ -161,15 +180,17 @@ Exemplo (como os canais das próximas etapas serão escritos):
     export const CHANNELS = { appInfo: 'app:info' } as const
     export interface MelloApi { app: { info(): Promise<Result<AppInfo>> } }
 
-    // src/preload/index.ts — ponte
-    const api: MelloApi = { app: { info: () => ipcRenderer.invoke(CHANNELS.appInfo) } }
-    contextBridge.exposeInMainWorld('mello', api)
+    // src/shared/ipc/api.ts — o mesmo mapeamento serve ao preload e aos testes
+    export function createApi(invoke): MelloApi { ... boards: { list: call(CHANNELS.boardsList) ... } }
 
-    // src/main/ipc/index.ts — valida, chama, embrulha
-    handle(CHANNELS.appInfo, z.undefined(), () => ({ version: app.getVersion(), ... }))
+    // src/preload/index.ts — ponte
+    contextBridge.exposeInMainWorld('mello', createApi((ch, input) => ipcRenderer.invoke(ch, input)))
+
+    // src/main/ipc/routes.ts — valida, chama, embrulha
+    route(CHANNELS.boardsCreate, createBoardInput, ({ title }) => boards.create(db, title, now()))
 
     // na tela
-    useQuery({ queryKey: queryKeys.appInfo, queryFn: () => unwrap(api().app.info()) })
+    useQuery({ queryKey: queryKeys.boards, queryFn: () => unwrap(api().boards.list()) })
 
 
 7. TELA (RENDERER)
@@ -191,13 +212,39 @@ Cabeçalho de 56 px, em três variações, como no protótipo:
   mais clara, e a engrenagem cheia;
 - board (quadro e calendário do quadro): busca "Pesquisar" e a engrenagem de raios;
 - settings: só o logo e o "Voltar".
-A busca e o botão "Criar" ganham função nas etapas 11 e 2.
+O botão "Criar" abre o menu (Criar quadro; card e modelo nas etapas 3 e 11). A busca ganha
+função na etapa 11.
 
 Estado:
 - Dados do banco: TanStack Query, com staleTime infinito e sem recarregar ao focar a janela. Os
   dados só mudam quando o próprio app os altera, e então a chave correspondente é invalidada.
-- Estado de interface: useState ou Zustand (entra quando houver estado compartilhado).
+  Chaves (lib/queryKeys.ts): ['boards'] (abertos), ['boards', 'closed'], ['board', id] (quadro
+  com as listas) e ['board', id, 'archived'].
+- Ações (lib/queries.ts, useAction): chamam o main, invalidam as chaves afetadas (mesmo se
+  falharem, para a tela voltar ao estado real) e, em caso de erro, mostram o aviso no canto da
+  tela (components/Notify.tsx).
+- Arrastar listas e quadros atualiza o cache na hora (otimista) e depois confirma no main.
+- Estado de interface: useState (Zustand entra quando houver estado compartilhado).
 - Estado na URL: o quadro e a tela abertos.
+
+Menus, confirmações e arrastar:
+- Popovers (components/Popover.tsx): atributo popover nativo do navegador, aberto pelo botão com
+  popoverTarget. O navegador cuida da camada de cima, do Esc e do clique fora; o posicionamento
+  por âncora (position-area, com troca de lado quando falta espaço) prende o popover ao botão.
+  O conteúdo só existe enquanto o popover está aberto, então submenus ("Mover lista", "Itens
+  arquivados", "Criar quadro") recomeçam do zero a cada abertura.
+- Confirmação (components/Confirm.tsx): um <dialog> modal único, no topo do app, com
+  closedby="any" (Esc ou clique fora cancelam). Abrir o modal fecha os popovers, por isso ele não
+  mora dentro deles; os componentes pedem a confirmação por useConfirm().
+- Arrastar (dnd-kit, components/dnd.ts): mouse com 5 px de distância antes de começar (o clique
+  continua funcionando) e teclado (espaço pega e solta, setas movem, Esc cancela; o Enter fica
+  livre para abrir o quadro). Avisos para leitor de tela em português. A lista se arrasta pelo
+  cabeçalho; o título e o botão "…" dentro dele não iniciam o arraste.
+
+Navegador único: o app só roda no Chromium do Electron fixado no package.json (hoje o 152). Por
+isso recursos novos da plataforma (popover, posicionamento por âncora, <dialog closedby>) são
+usados direto, sem polyfill, depois de conferidos nessa versão. Ao atualizar o Electron, o
+script de capturas mostra se algo mudou.
 
 Estilo:
 - CSS Modules por componente, usando as variáveis das paletas do protótipo
@@ -284,3 +331,7 @@ HISTÓRICO
              aplicadas pelo app, protocolo de arquivos, rotas, layouts, pastas de dados de
              desenvolvimento, barra de título nativa escura). O modelo de dados saiu daqui e foi
              para Modelo-de-Dados.txt; o calendário passou a ser próprio e só mensal (P11).
+21/10/2026 — etapa 2: tabela de rotas do IPC separada do Electron (routes.ts) e createApi
+             compartilhado entre o preload e os testes; módulos de quadros, listas, posições e
+             etiquetas; popovers e confirmação nativos; arrastar com dnd-kit; navegador único,
+             sem polyfills.

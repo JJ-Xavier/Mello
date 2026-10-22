@@ -1,7 +1,7 @@
 To-do list — Mello
 
 Atualizado em: 21/10/2026
-Situação: etapa 1 concluída em 21/10/2026, aguardando o commit do Jackson. A etapa 2 começa
+Situação: etapa 2 concluída em 21/10/2026, aguardando o commit do Jackson. A etapa 3 começa
           quando for liberada.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
@@ -40,15 +40,17 @@ ETAPA 1 — BASE DO APP E BANCO (concluída em 21/10/2026)
 [x] Instalação do Electron sem o VC++ Redistributable (scripts/instalar-electron.mjs)
 [x] Testes (46), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 2 — QUADROS E LISTAS
-[ ] Início: área Pessoal, grade de quadros, criar, favoritos, quadros fechados, convite da
+ETAPA 2 — QUADROS E LISTAS (concluída em 21/10/2026)
+[x] Início: área Pessoal, grade de quadros, criar, favoritos, quadros fechados, convite da
     primeira abertura (QUA)
-[ ] Menu Criar, "Mudar de quadros"
-[ ] Barra do quadro: título, filtro, favoritar, Alterar fundo, menu "…"
-[ ] Listas: criar, renomear, arrastar, copiar, mover, arquivar (LIS)
-[ ] "Não envelhece" e "Lista de conclusão" no menu da lista
-[ ] Quadro novo com 4 listas, 6 etiquetas e fundo Mello
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+[x] "Criar quadro" em popover com o título (QUA-10, aprovado em 21/10/2026)
+[x] Menu Criar, "Mudar de quadros"
+[x] Barra do quadro: título, favoritar, menu "…" (filtro na etapa 4, "Alterar fundo" na 9)
+[x] Listas: criar, renomear, arrastar (mouse e teclado), copiar, mover, arquivar (LIS)
+[x] "Não envelhece" e "Lista de conclusão" no menu da lista
+[x] Itens arquivados (cards e listas) e quadros fechados
+[x] Quadro novo com 4 listas, 6 etiquetas e fundo Mello
+[x] Testes (112 no total), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 3 — CARDS E ARRASTAR
 [ ] Criar card e face do card (CAR-04)
@@ -122,8 +124,6 @@ PENDÊNCIAS E OBSERVAÇÕES
 
 - As telas de modelos, capa e lembretes não existem no protótipo; foram desenhadas nas telas novas
   10 a 16 (aprovadas em 21/10/2026).
-- Etapa 2: o tema claro das telas do quadro usa --btn #e4e6ea (as Configurações usam #e9ebee);
-  sobrescrever --btn localmente no quadro (ver Regras.txt, TEM-02).
 - Etapa 12: no electron-builder.yml, deixar fora do instalador os binários do better-sqlite3 de
   outras plataformas e o código-fonte do SQLite que vêm no pacote.
 - O post-it azul do calendário no canvas ainda diz "riscado = ✓ ou Concluído/Entregue"; a regra

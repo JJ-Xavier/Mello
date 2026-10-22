@@ -1,6 +1,7 @@
 Regras de negócio — Mello
 
-Status: aprovado em 21/10/2026 (inclusive as regras que eram propostas).
+Status: aprovado em 21/10/2026 (inclusive as regras que eram propostas). Atualizado na etapa 2
+(QUA-10 e esclarecimentos em LIS-05, LIS-06 e ENV-06).
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -15,6 +16,7 @@ COMO LER
 
 
 1. QUADROS (QUA)
+Testes (etapa 2): src/main/modules/boards.test.ts e src/renderer/src/features/home/HomePage.test.tsx.
 
 QUA-01  Quadro tem título obrigatório, de 1 a 80 caracteres (espaços nas pontas são removidos).
 QUA-02  Quadro novo nasce com 4 listas, nesta ordem: A fazer, Em andamento, Concluído, Entregue.
@@ -31,9 +33,14 @@ QUA-07  Excluir um quadro de vez (só a partir dos fechados, com confirmação) 
 QUA-08  Existe uma única área de trabalho, "Pessoal", fixa. Não há membros nem compartilhamento.
 QUA-09  Na primeira abertura (nenhum quadro, nem fechado), o Início mostra só o convite
         "Criar seu primeiro quadro". Nada é criado sem você pedir.
+QUA-10  "Criar quadro" (no Início, no menu "Criar" e em "Mudar de quadros") abre um popover com a
+        prévia do quadro novo e o campo do título. O quadro só é criado ao confirmar e abre em
+        seguida; cancelar não deixa nada para trás. (aprovada 21/10, etapa 2)
 
 
 2. LISTAS (LIS)
+Testes (etapa 2): src/main/modules/lists.test.ts e src/renderer/src/features/board/BoardPage.test.tsx.
+LIS-08 e LIS-09 com filtro entram na etapa 4.
 
 LIS-01  Lista tem título obrigatório, de 1 a 80 caracteres.
 LIS-02  O menu "…" da lista tem duas opções independentes: "Não envelhece" (ENV-03) e
@@ -42,9 +49,13 @@ LIS-03  Arrastar uma lista muda só a posição dela no quadro.
 LIS-04  "Copiar lista" cria uma lista logo à direita, chamada "<nome> (cópia)", com cópias de todos
         os cards (CAR-07).
 LIS-05  "Mover lista" para outro quadro leva os cards junto. As etiquetas usadas por esses cards
-        são recriadas no quadro de destino (mesma cor e nome) quando ainda não existem lá.
+        são recriadas no quadro de destino (mesma cor e nome) quando ainda não existem lá. As
+        repetições que criam cards nessa lista passam a pertencer ao quadro de destino. No menu,
+        escolhe-se o quadro e a posição.
 LIS-06  "Arquivar lista" esconde a lista e os cards dela do quadro, do calendário, da busca e dos
-        lembretes. Ela pode ser restaurada em "Itens arquivados" (menu "…" do quadro).
+        lembretes. Ela pode ser restaurada em "Itens arquivados" (menu "…" do quadro), e volta na
+        mesma posição. Um card arquivado sozinho que pertence a uma lista arquivada volta para
+        essa lista ao ser restaurado e só aparece quando a lista também for restaurada.
 LIS-07  "Arquivar todos os cartões" arquiva todos os cards da lista. A lista continua.
 LIS-08  "Ordenar por prioridade" e "Ordenar por data de entrega" reordenam a lista uma única vez
         (PRI-05, DAT-04). A lista não fica presa a essa ordem.
@@ -130,6 +141,9 @@ ENV-06  NÃO zeram o envelhecimento:
           - "Ocultar itens marcados";
           - mudanças em outras coisas: renomear a lista, trocar o fundo, editar o nome ou a cor de
             uma etiqueta;
+          - mover, copiar ou arquivar a lista inteira (de posição ou de quadro), arquivar os
+            cards dela ("Arquivar todos os cartões") e ligar ou desligar as opções da lista. As
+            cópias dos cards nascem novas (ENV-07). (etapa 2)
           - "Ordenar por prioridade" e "Ordenar por data" (reordenam a lista inteira e não são
             alteração do card). (aprovada 21/10)
 ENV-07  Card criado por repetição, cópia ou modelo nasce com nível 0.

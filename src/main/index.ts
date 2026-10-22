@@ -88,7 +88,7 @@ async function start(): Promise<void> {
     callback(false)
   })
   registerFileProtocol(paths.files)
-  registerIpc({ dataDir: paths.root })
+  registerIpc({ dataDir: paths.root, db: database.db })
 
   mainWindow = createWindow()
   mainWindow.on('closed', () => {

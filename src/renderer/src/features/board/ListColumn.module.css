@@ -1,0 +1,138 @@
+/* Lista (Quadro.dc.html): 272 px, fundo --list, borda azul quando é o destino do arraste. */
+.list {
+  width: 272px;
+  flex: none;
+  max-height: 100%;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--list);
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Vaga reservada enquanto a lista está sendo arrastada. */
+.placeholder {
+  background: var(--slot);
+}
+
+.placeholder > * {
+  visibility: hidden;
+}
+
+.overlay {
+  transform: rotate(3deg);
+  box-shadow: 0 12px 24px rgba(9, 30, 66, 0.45);
+  cursor: grabbing;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 10px;
+  cursor: grab;
+  border-radius: 8px;
+}
+
+.header:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.titleButton {
+  max-width: 100%;
+  padding: 2px 4px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.titleButton:hover {
+  background: var(--btn);
+}
+
+.titleInput {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--strong);
+  font:
+    600 14px Inter,
+    sans-serif;
+  outline: none;
+}
+
+.count {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.menuButton {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menuButton:hover {
+  background: var(--btn);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.addCard {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--txt);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.template {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
