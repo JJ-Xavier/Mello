@@ -1,8 +1,9 @@
 Regras de negócio — Mello
 
 Status: aprovado em 21/10/2026 (inclusive as regras que eram propostas). Atualizado na etapa 2
-(QUA-10 e esclarecimentos em LIS-05, LIS-06 e ENV-06) e na etapa 3 (FIN-02: card criado numa
-lista de conclusão).
+(QUA-10 e esclarecimentos em LIS-05, LIS-06 e ENV-06), na etapa 3 (FIN-02: card criado numa
+lista de conclusão) e na etapa 4 (CAR-09 e CAR-10, limites de tamanho e esclarecimentos em CAR-07,
+ENV-05, ENV-06, ETQ-04, FLT-03 e NOT-05).
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -41,7 +42,7 @@ QUA-10  "Criar quadro" (no Início, no menu "Criar" e em "Mudar de quadros") abr
 
 2. LISTAS (LIS)
 Testes (etapa 2): src/main/modules/lists.test.ts e src/renderer/src/features/board/BoardPage.test.tsx.
-LIS-08 e LIS-09 com filtro entram na etapa 4.
+LIS-08 e LIS-09 com filtro (etapa 4): lists.test.ts e BoardCards.test.tsx.
 
 LIS-01  Lista tem título obrigatório, de 1 a 80 caracteres.
 LIS-02  O menu "…" da lista tem duas opções independentes: "Não envelhece" (ENV-03) e
@@ -66,8 +67,8 @@ LIS-09  O contador no cabeçalho mostra quantos cards a lista tem. Com filtro at
 
 3. CARDS (CAR)
 Testes (etapa 3): src/main/modules/cards.test.ts, src/renderer/src/features/board/cardDrag.test.ts
-e src/renderer/src/features/board/BoardCards.test.tsx. CAR-05 a CAR-07 pelo modal entram na
-etapa 4.
+e src/renderer/src/features/board/BoardCards.test.tsx. Etapa 4 (modal, CAR-05 a CAR-07, CAR-09 e
+CAR-10): cards.test.ts e src/renderer/src/features/card/CardModal.test.tsx.
 
 CAR-01  Card tem título obrigatório, de 1 a 500 caracteres.
 CAR-02  Card novo entra no fim da lista, com nível de envelhecimento 0.
@@ -83,15 +84,21 @@ CAR-06  "Mover" (menu "…" do modal) leva o card para outra lista, inclusive de
 CAR-07  "Copiar" cria uma cópia logo abaixo, ou na lista escolhida, com título, descrição, nota,
         etiquetas, prioridade, data, lembrete, capa, checklists (com o estado dos itens) e anexos.
         Não copia a atividade nem a repetição. A cópia nasce com nível 0 e atividade
-        "Copiado de <título>".
+        "Copiado de <título>". O título da cópia pode ser mudado no menu (começa com
+        "<título> (cópia)"); o ✓ vem como está no original, também em outra lista. (etapa 4)
 CAR-08  "Acompanhar card" (o ícone de olho do protótipo) não existe no Mello: sem outras pessoas,
         ele não teria função. (aprovada 21/10)
+CAR-09  No modal, Etiquetas, Prioridade e Data de entrega só aparecem quando preenchidas; o botão
+        "Adicionar" abre um menu para incluir cada uma. "Última movimentação" aparece sempre.
+        (decidido em 23/10, etapa 4)
+CAR-10  "Arquivar" pelo menu do card mantém o modal aberto, com o aviso "Este card está
+        arquivado" e os botões Restaurar e Excluir. (decidido em 23/10, etapa 4)
 
 
 4. FINALIZADO (FIN) — Decisão 21/10
 Testes (etapa 3): src/shared/rules/finished.test.ts, src/main/modules/cards.test.ts e
-src/renderer/src/features/board/BoardCards.test.tsx. FIN-04 e FIN-05 pelo ✓ do modal entram na
-etapa 4.
+src/renderer/src/features/board/BoardCards.test.tsx. FIN-04 e FIN-05 pelo ✓ do modal (etapa 4):
+cards.test.ts e CardModal.test.tsx.
 
 FIN-01  Um card está FINALIZADO quando duas coisas valem ao mesmo tempo:
         (a) ele está numa lista com "Lista de conclusão" ligada; e
@@ -112,6 +119,8 @@ FIN-07  Um item de checklist está finalizado quando está marcado.
 
 
 5. ENVELHECIMENTO (ENV)
+Testes da tabela de eventos (ENV-05 e ENV-06, etapa 4): src/main/ipc/events.test.ts. Ele passa
+por todos os canais do IPC; um canal novo sem classificação faz o teste falhar.
 
 ENV-01  dias_parado = parte inteira de (agora − última alteração do card) / 24 horas.
 ENV-02  Nível pelo tempo parado:
@@ -136,7 +145,7 @@ ENV-05  Zeram o envelhecimento (última alteração = agora):
           - adicionar ou remover etiqueta;
           - mudar a prioridade, a data de entrega ou o lembrete;
           - marcar ou desmarcar o ✓ (inclusive o automático de FIN-02 e FIN-03);
-          - criar, renomear ou excluir checklist;
+          - criar, renomear, reordenar ou excluir checklist (reordenar: etapa 4);
           - adicionar, editar, marcar, desmarcar, datar, reordenar ou excluir item do checklist
             (também quando a tarefa é marcada pelo calendário);
           - editar a nota (cada salvamento automático conta);
@@ -149,7 +158,10 @@ ENV-06  NÃO zeram o envelhecimento:
           - pegar e soltar no mesmo lugar (CAR-03);
           - "Ocultar itens marcados";
           - mudanças em outras coisas: renomear a lista, trocar o fundo, editar o nome ou a cor de
-            uma etiqueta;
+            uma etiqueta, criar etiqueta e excluir etiqueta (ela some de todos os cards de uma
+            vez; é uma mudança do quadro, não do card) (excluir: etapa 4);
+          - arquivar o card (restaurar zera) (etapa 4);
+          - copiar o card: o original não muda, a cópia nasce nova (ENV-07) (etapa 4);
           - mover, copiar ou arquivar a lista inteira (de posição ou de quadro), arquivar os
             cards dela ("Arquivar todos os cartões") e ligar ou desligar as opções da lista. As
             cópias dos cards nascem novas (ENV-07). (etapa 2)
@@ -168,6 +180,8 @@ ENV-10  O nível é recalculado sem precisar de alteração: ao abrir o quadro e
 
 
 6. PRIORIDADE (PRI)
+Testes (etapa 4): src/shared/rules/cardRules.test.ts, src/main/modules/lists.test.ts,
+src/renderer/src/features/card/CardModal.test.tsx e src/renderer/src/features/board/BoardCards.test.tsx.
 
 PRI-01  Cinco níveis, mais "sem prioridade" (o padrão):
 
@@ -187,8 +201,13 @@ PRI-05  "Ordenar por prioridade": do valor 1 ao 5, com os cards sem prioridade n
 
 
 7. ETIQUETAS (ETQ)
+Testes (etapa 4): src/main/modules/labels.test.ts, src/main/modules/cards.test.ts,
+src/shared/rules/cardRules.test.ts e src/renderer/src/features/card/CardModal.test.tsx.
 
-ETQ-01  Etiquetas são do quadro. Têm cor obrigatória e nome opcional.
+ETQ-01  Etiquetas são do quadro. Têm cor obrigatória e nome opcional (até 40 caracteres; vazio =
+        sem nome). A cor vem da paleta do protótipo: as 6 do quadro novo mais azul-petróleo
+        #206a83 e azul #1f5eff (a mesma paleta da capa, CAP-01). No modal, o texto é escuro no
+        amarelo e no cinza e branco nas outras cores, como no protótipo. (etapa 4)
 ETQ-02  Quadro novo nasce com 6 etiquetas sem nome, nas cores do protótipo: roxo #6e5dc6,
         vermelho #c9372c, laranja #b65c02, amarelo #e2b203, cinza #8c9bab e verde #216e4e.
 ETQ-03  Na face do card a etiqueta é uma barra colorida de 40 × 8 px. No modal ela aparece com o
@@ -198,19 +217,28 @@ ETQ-04  O editor de etiquetas (tela Estados) permite buscar, marcar/desmarcar no
 
 
 8. FILTRO DO QUADRO (FLT)
+Testes (etapa 4): src/main/modules/cards.test.ts, src/shared/rules/cardRules.test.ts,
+src/renderer/src/features/board/cardDrag.test.ts e src/renderer/src/features/board/BoardCards.test.tsx.
+Arrastar com o filtro ativo continua valendo: a posição escolhida entre os cards visíveis é
+gravada na lista inteira, logo antes do card visível que estava ali. (etapa 4)
 
 FLT-01  Palavra-chave: procura no título, na descrição, na nota e no nome das etiquetas, sem
         diferenciar maiúsculas de minúsculas nem letras com e sem acento.
 FLT-02  Prioridade: com uma ou mais prioridades marcadas, aparecem só os cards dessas prioridades.
 FLT-03  "Só cards recorrentes": aparecem só os cards que fazem parte de uma repetição ativa.
+        Até a etapa 8 (repetição), nenhum card é recorrente.
 FLT-04  Os critérios se combinam (todos precisam valer). Com filtro ativo, o contador da lista
         mostra "visíveis/total" e o botão de filtro fica destacado.
 FLT-05  O filtro não fica salvo: sair do quadro limpa o filtro.
 
 
 9. CHECKLIST (CHK)
+Testes (etapa 4): src/main/modules/checklists.test.ts, src/shared/rules/cardRules.test.ts e
+src/renderer/src/features/card/CardModal.test.tsx.
 
-CHK-01  Um card pode ter vários checklists, cada um com título e ordem manual.
+CHK-01  Um card pode ter vários checklists, cada um com título (1 a 100 caracteres) e ordem
+        manual; itens com texto de 1 a 500 caracteres. Checklists e itens se reordenam
+        arrastando pelo título, com o mouse ou com o espaço do teclado. (etapa 4)
 CHK-02  Progresso do checklist = itens marcados / total, em porcentagem arredondada. A barra é
         azul e fica verde em 100%. Checklist vazio mostra 0%.
 CHK-03  Na face do card aparece x/y somando todos os checklists. Some quando não há itens.
@@ -223,16 +251,20 @@ CHK-06  O selo de data do item é cinza; vermelho quando a data já passou e o i
 
 10. DATAS E ATRASO (DAT)
 Testes (etapa 3, a regra e a cor na face): src/shared/rules/dates.test.ts e
-src/renderer/src/features/board/BoardCards.test.tsx. O seletor de data e o selo "Em atraso" no
-modal entram na etapa 4.
+src/renderer/src/features/board/BoardCards.test.tsx. Etapa 4 (seletor de data, "Em atraso" no
+modal, DAT-04): src/shared/rules/cardRules.test.ts, src/main/modules/lists.test.ts e
+src/renderer/src/features/card/CardModal.test.tsx.
 
-DAT-01  A data de entrega do card tem dia e, opcionalmente, hora.
+DAT-01  A data de entrega do card tem dia e, opcionalmente, hora. No seletor, a data é digitada
+        como dd/mm/aaaa (ou escolhida na grade do mês) e a hora como hh:mm; uma data que não
+        existe (31/02) não é salva. (etapa 4)
 DAT-02  Um card está atrasado quando não está finalizado e o prazo passou: com hora, quando o
         instante passou; sem hora, quando o dia acabou.
 DAT-03  Card atrasado: selo "Em atraso" no modal e data em vermelho na face. Card finalizado com
         data: data em verde na face.
 DAT-04  "Ordenar por data de entrega": do prazo mais cedo para o mais tarde, com os cards sem data
-        no fim. Ordenação estável.
+        no fim. Ordenação estável. Uma data sem hora vale até o fim do dia, então vem depois de um
+        horário no mesmo dia. (etapa 4)
 
 
 11. LEMBRETES (LEM)
@@ -253,6 +285,8 @@ LEM-07  Com "Manter o Mello na bandeja" ligado (o padrão), fechar a janela esco
 
 
 12. NOTA E DESCRIÇÃO (NOT)
+Testes (descrição, etapa 4): src/shared/rules/richText.test.ts, src/main/modules/cards.test.ts e
+src/renderer/src/features/card/CardModal.test.tsx. A nota entra na etapa 5.
 
 NOT-01  Cada card tem uma nota, sempre aberta na coluna da direita do modal. Não há comentários.
 NOT-02  Ferramentas do editor: Título, Negrito, Itálico, Lista, Caixa de marcar e Link.
@@ -261,10 +295,12 @@ NOT-03  A nota salva sozinha 800 ms depois que você para de digitar, e também 
 NOT-04  A nota é guardada como HTML que só aceita estas marcas: título (h3), parágrafo, negrito,
         itálico, lista, lista de tarefas com caixa de marcar e link (http, https ou mailto). Tudo o
         que não está nessa lista é descartado ao salvar e ao abrir.
-NOT-05  Links da nota e da descrição abrem no navegador padrão, nunca dentro do app.
+NOT-05  Links da nota e da descrição abrem no navegador padrão, nunca dentro do app (http,
+        https e mailto; o mailto abre o programa de e-mail padrão). (etapa 4)
 NOT-06  A face do card mostra o ícone de nota quando a nota tem algum texto.
 NOT-07  A descrição usa o mesmo editor e as mesmas regras, em modo leitura, com o botão "Editar".
-        (aprovada 21/10)
+        (aprovada 21/10) Texto de até 20 000 caracteres. A tela manda o documento do editor e o
+        main gera o HTML guardado, só com as marcas da NOT-04. (etapa 4)
 
 
 13. ATIVIDADE (ATV)

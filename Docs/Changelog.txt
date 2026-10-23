@@ -4,6 +4,60 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.4.0 — Etapa 4: modal do card (dados), filtro e ordenar (23/10/2026)
+
+Adicionado
+- Modal do card completo na coluna da esquerda (tela 4): seletor de lista, ✓ (FIN-04, FIN-05),
+  título editável, Adicionar, Checklist, etiquetas, prioridade, data de entrega com "Em atraso",
+  última movimentação, descrição e checklists. A coluna da nota e da atividade entra na etapa 5.
+- Campos vazios não aparecem: o "Adicionar" inclui etiquetas, prioridade e data (CAR-09).
+- Editor de etiquetas (tela 9): buscar, marcar no card, criar, editar nome e cor e excluir
+  (ETQ-04), com as 8 cores da paleta do protótipo.
+- Seletor de prioridade (PRI-03) e o ícone na face do card (PRI-02).
+- Seletor de data (tela 9): grade do mês, data dd/mm/aaaa, hora opcional e lembrete (guardado
+  agora; dispara na etapa 8).
+- Descrição com o TipTap (NOT-07): modo leitura com "Editar", barra com Título, Negrito,
+  Itálico, Lista, Caixa de marcar e Link.
+- Checklists (CHK): vários por card, renomear, excluir, barra de progresso (verde em 100%),
+  "Ocultar itens marcados", itens com marcar, editar, data da tarefa com "Mostrar no calendário",
+  excluir e "Adicionar um item"; checklists e itens se reordenam pelo título (mouse e teclado).
+- Menu "…" do card: Mover e Copiar (tela 16, com quadro, lista e posição), Arquivar (o modal
+  continua aberto, com o aviso e Restaurar, CAR-10) e Excluir com confirmação.
+- Lista: "Ordenar por prioridade" e "Ordenar por data de entrega" (LIS-08).
+- Filtro do quadro (FLT): palavra-chave sem acento, prioridades e "só recorrentes"; contador
+  "visíveis/total" e botão destacado; arrastar continua funcionando com o filtro.
+- Tabela de eventos do envelhecimento (ENV-05, ENV-06) passando por todos os canais do IPC.
+
+Mudou
+- Canais novos: cards:update, copy, setLabels, archive, matching; labels:list, create, update,
+  delete; checklists:create, update, move, delete; items:create, update, toggle, move, delete;
+  lists:sort.
+- Texto rico: a tela manda o documento do editor e o main escreve o HTML só com as marcas da
+  NOT-04 (shared/rules/richText.ts).
+- Links da descrição abrem no programa padrão também com http e mailto (NOT-05).
+- Arrastar: rolagem automática própria nas bordas do quadro e da lista; a do dnd-kit rolava o
+  quadro sozinha depois de um arraste cancelado.
+- Módulos novos no main: activity.ts (atividade e "zerar o envelhecimento") e checklists.ts.
+- Dependências novas (só na tela): TipTap 3.31.4 (@tiptap/react, pm, starter-kit,
+  extension-list).
+- Versão 0.4.0.
+
+Corrigido
+- No modal, Esc num campo em edição fechava o modal inteiro; agora cancela só a edição.
+- Com um popover aberto no modal, um clique fora fechava também o modal.
+
+Decisões tomadas na etapa (23/10/2026)
+- Etiquetas, prioridade e data aparecem no modal só quando preenchidas; "Adicionar" inclui
+  (CAR-09).
+- "Arquivar" mantém o modal aberto, com o aviso e Restaurar (CAR-10).
+
+Documentação
+- Atualizados: Regras.txt (CAR-09, CAR-10; testes ligados a PRI, ETQ, FLT, CHK, DAT, NOT;
+  esclarecimentos em CAR-07, DAT-01, DAT-04, ENV-05, ENV-06, ETQ-01, FLT-03, NOT-05, NOT-07),
+  Arquitetura.txt, Testes.txt, Definicao-da-Stack.txt (TipTap), Modelo-de-Dados.txt, PLANO.md,
+  To-do-list.txt, README.md.
+
+
 0.3.0 — Etapa 3: cards e arrastar (22/10/2026)
 
 Adicionado

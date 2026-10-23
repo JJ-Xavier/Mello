@@ -96,6 +96,23 @@ export function listItems(cards: CardSummary[], listId: string, drag: CardDrag |
   return items
 }
 
+// Com o filtro do quadro ativo, a posição escolhida conta só os cards visíveis. Para gravar, ela
+// vira a posição na lista inteira: logo antes do card visível que estava ali, ou logo depois do
+// último visível (no fim, se nenhum estiver visível).
+export function fullIndex(
+  all: CardSummary[],
+  shown: CardSummary[],
+  draggedId: string,
+  index: number
+): number {
+  const allOthers = all.filter((c) => c.id !== draggedId)
+  const shownOthers = shown.filter((c) => c.id !== draggedId)
+  const before = shownOthers[index]
+  if (before) return allOthers.findIndex((c) => c.id === before.id)
+  const last = shownOthers.at(-1)
+  return last ? allOthers.findIndex((c) => c.id === last.id) + 1 : allOthers.length
+}
+
 // O quadro como fica depois de soltar, para a tela mudar na hora (o main confirma em seguida). O ✓
 // segue FIN-02 e FIN-03, como no main.
 export function applyMove(board: BoardDetail, cardId: string, target: DropTarget): BoardDetail {
@@ -113,4 +130,20 @@ export function applyMove(board: BoardDetail, cardId: string, target: DropTarget
       return { ...list, cards, cardCount: cards.length }
     })
   }
+}
+
+// Rolagem automática durante o arraste: a menos de EDGE px de uma borda, rola até MAX_STEP px por
+// quadro, mais rápido quanto mais perto da borda. Fora das bordas, 0.
+export const EDGE = 64
+export const MAX_STEP = 16
+
+export function edgeStep(position: number, start: number, end: number): number {
+  if (end - start < EDGE * 2) return 0
+  if (position < start + EDGE) {
+    return -Math.ceil((Math.min(start + EDGE - position, EDGE) / EDGE) * MAX_STEP)
+  }
+  if (position > end - EDGE) {
+    return Math.ceil((Math.min(position - (end - EDGE), EDGE) / EDGE) * MAX_STEP)
+  }
+  return 0
 }

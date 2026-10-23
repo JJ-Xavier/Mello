@@ -3,6 +3,8 @@ import type { BoardDetail, ListDetail } from '../../../../shared/ipc/boards'
 import type { CardSummary } from '../../../../shared/ipc/cards'
 import {
   applyMove,
+  edgeStep,
+  fullIndex,
   keyboardTarget,
   listItems,
   targetFromPoint,
@@ -17,7 +19,9 @@ function card(id: string, listId = 'a', isDone = false): CardSummary {
     title: id,
     position: id,
     isDone,
+    priority: null,
     dueAt: null,
+    recurring: false,
     labels: [],
     hasDescription: false,
     hasNote: false,
@@ -185,5 +189,42 @@ describe('o quadro depois de soltar', () => {
     expect(moved.lists[2]!.cards[1]).toMatchObject({ listId: 'ok', isDone: true })
     const back = applyMove(moved, 'c1', { listId: 'b', index: 0 })
     expect(back.lists[1]!.cards[0]).toMatchObject({ id: 'c1', isDone: false })
+  })
+})
+
+describe('arrastar com o filtro ativo', () => {
+  // Lista inteira: a, b, c, d, e; o filtro mostra só b e d.
+  const all = ['a', 'b', 'c', 'd', 'e'].map((id) => card(id))
+  const shown = [all[1]!, all[3]!]
+
+  it('antes de um card visível: a posição dele na lista inteira', () => {
+    expect(fullIndex(all, shown, 'x', 0)).toBe(1)
+    expect(fullIndex(all, shown, 'x', 1)).toBe(3)
+  })
+
+  it('depois do último visível; sem visíveis, no fim', () => {
+    expect(fullIndex(all, shown, 'x', 2)).toBe(4)
+    expect(fullIndex(all, [], 'x', 0)).toBe(5)
+  })
+
+  it('o card arrastado não conta', () => {
+    expect(fullIndex(all, shown, 'b', 0)).toBe(2)
+    expect(fullIndex(all, shown, 'b', 1)).toBe(3)
+  })
+})
+
+describe('rolagem automática durante o arraste', () => {
+  it('perto das bordas rola, mais rápido quanto mais perto; no meio, não', () => {
+    expect(edgeStep(700, 0, 1440)).toBe(0)
+    expect(edgeStep(64, 0, 1440)).toBe(0)
+    expect(edgeStep(32, 0, 1440)).toBe(-8)
+    expect(edgeStep(0, 0, 1440)).toBe(-16)
+    expect(edgeStep(-50, 0, 1440)).toBe(-16)
+    expect(edgeStep(1408, 0, 1440)).toBe(8)
+    expect(edgeStep(1500, 0, 1440)).toBe(16)
+  })
+
+  it('área pequena demais não rola', () => {
+    expect(edgeStep(10, 0, 100)).toBe(0)
   })
 })

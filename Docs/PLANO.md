@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026 e etapa 3 em 22/10/2026**; a etapa 3 aguarda o commit. A etapa 4 começa quando for liberada.
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026 e etapa 4 em 23/10/2026**; a etapa 4 aguarda o commit. A etapa 5 começa quando for liberada.
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -45,6 +45,8 @@
 | Instalação do Electron | Script próprio (`scripts/instalar-electron.mjs`), sem exigir o Visual C++ Redistributable (ver `Pipeline.txt`) | Etapa 1, 21/10 |
 | Criar quadro | Popover com a prévia e o título; só cria ao confirmar (`QUA-10`) | Etapa 2, 21/10 |
 | Card novo em lista de conclusão | Nasce sem o ✓; o automático é só para quem chega arrastado ou movido (`FIN-02`) | Etapa 3, 22/10 |
+| Campos do modal | Etiquetas, prioridade e data só aparecem quando preenchidas; o "Adicionar" inclui (`CAR-09`) | Etapa 4, 23/10 |
+| Arquivar pelo modal | O modal continua aberto, com o aviso e Restaurar (`CAR-10`) | Etapa 4, 23/10 |
 
 ### 1.2 Propostas (aprovadas em 21/10/2026)
 
@@ -423,8 +425,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** arrastar entre todas as listas, inclusive para a área de finalizado (o ✓ é marcado sozinho) e de volta (desmarcado); a ordem persiste.
 - **Testes:** CAR-02, CAR-03, FIN-01..05; o movimento atualiza a lista, a posição e o `last_activity_at`; o mesmo lugar não muda nada.
 
-### Etapa 4 — Modal do card: dados
+### Etapa 4 — Modal do card: dados ✅ concluída em 23/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 280 testes no total (119 novos, inclusive a tabela de eventos de ENV-05 e ENV-06 com cobertura de todos os canais), lint e tipos limpos; capturas conferidas com as telas 4, 9, 14 e 16 nos dois temas; conferência no app real (descrição com link, Esc e clique fora no modal, reordenar item, rolagem automática). Decisões da etapa: campos só quando preenchidos (`CAR-09`) e arquivar com aviso no modal (`CAR-10`). O texto rico passou a ser escrito pelo main a partir do documento do editor (sem parser de HTML no main), e a rolagem automática do arraste passou a ser própria. Entrou o TipTap 3.31.4. Detalhes no `Changelog.txt`.
 - **Entrega:** modal de 1160 × 804 px como no protótipo. Ele tem: seletor de lista (move o card); ✓ circular; título editável; botões Adicionar, Checklist, Anexo e Repetir; etiquetas (editor da tela 9); prioridade (seletor com "Sem prioridade") e o selo na face; data de entrega (seletor de data com hora e lembrete, que é salvo aqui e dispara na etapa 8; "Em atraso"); descrição (TipTap, "Editar"); checklists (vários, renomear, excluir, barra de progresso, "Ocultar itens marcados", itens com marcar, editar, data com "Mostrar no calendário", ações e "Adicionar um item"); "Última movimentação"; menu "…" (copiar, mover, arquivar, excluir). Também traz "Ordenar por prioridade" e "por data" na lista e o filtro do quadro (palavra-chave, prioridades, só recorrentes).
 - **Telas:** 4 (coluna da esquerda), 9 (etiquetas, prioridade, seletor de data, data da tarefa, filtro, menu da lista); 14 (menu "…" do card); 16 (mover, copiar e excluir card).
 - **Aceite:** cada campo do modal salva e reflete na face do card; ordenar e filtrar funcionam.

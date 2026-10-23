@@ -1,7 +1,7 @@
 To-do list — Mello
 
-Atualizado em: 22/10/2026
-Situação: etapa 3 concluída em 22/10/2026, aguardando o commit do Jackson. A etapa 4 começa
+Atualizado em: 23/10/2026
+Situação: etapa 4 concluída em 23/10/2026, aguardando o commit do Jackson. A etapa 5 começa
           quando for liberada.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
@@ -62,14 +62,17 @@ ETAPA 3 — CARDS E ARRASTAR (concluída em 22/10/2026)
 [x] Card criado numa lista de conclusão nasce sem ✓ (FIN-02, decidido em 22/10/2026)
 [x] Testes (161 no total), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 4 — MODAL DO CARD: DADOS
-[ ] Modal: seletor de lista, ✓, título, botões
-[ ] Etiquetas (ETQ), prioridade (PRI), data de entrega e atraso (DAT)
-[ ] Descrição com TipTap (NOT-07)
-[ ] Checklists e itens com data (CHK)
-[ ] Menu "…": copiar, mover, arquivar, excluir (CAR-05..07)
-[ ] Ordenar lista por prioridade e por data; filtro do quadro (FLT)
-[ ] Testes (inclui tabela de eventos ENV-05/06), conferência visual, documentos, aviso de pronto para commit
+ETAPA 4 — MODAL DO CARD: DADOS (concluída em 23/10/2026)
+[x] Modal: seletor de lista, ✓, título, botões
+[x] Etiquetas (ETQ), prioridade (PRI), data de entrega e atraso (DAT)
+[x] Descrição com TipTap (NOT-07)
+[x] Checklists e itens com data (CHK)
+[x] Menu "…": copiar, mover, arquivar, excluir (CAR-05..07)
+[x] Ordenar lista por prioridade e por data; filtro do quadro (FLT)
+[x] Campos só quando preenchidos (CAR-09) e arquivar com aviso no modal (CAR-10), decididos em
+    23/10/2026
+[x] Testes (280 no total, inclui a tabela de eventos ENV-05/06), conferência visual, documentos,
+    aviso de pronto para commit
 
 ETAPA 5 — MODAL DO CARD: NOTA, ATIVIDADE, ANEXOS E CAPA
 [ ] Nota com TipTap e salvamento automático (NOT)

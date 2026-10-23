@@ -1,6 +1,6 @@
 Arquitetura — Mello
 
-Status: atualizado na etapa 3 (22/10/2026), com o que já existe no código. As partes que ainda vão
+Status: atualizado na etapa 4 (23/10/2026), com o que já existe no código. As partes que ainda vão
 ser construídas estão marcadas com a etapa em que entram.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
 Ver também: Docs/PLANO.md, Docs/Modelo-de-Dados.txt, Docs/Definicao-da-Stack.txt,
@@ -60,7 +60,7 @@ Dentro do main, a direção é uma só: ipc/ → modules/ → db/.
 
 3. PASTAS DO PROJETO
 
-Estado na etapa 3. A estrutura completa prevista está no PLANO.md, seção 3.
+Estado na etapa 4. A estrutura completa prevista está no PLANO.md, seção 3.
 
 Mello/
 ├── Assets/                  identidade visual e imagens de referência
@@ -83,12 +83,15 @@ Mello/
 │   │   ├── modules/
 │   │   │   ├── boards.ts    quadros (QUA)
 │   │   │   ├── lists.ts     listas (LIS)
-│   │   │   ├── cards.ts     cards: criar, mover, abrir, face no quadro, copiar, arquivar
-│   │   │   │                todos, restaurar, excluir
-│   │   │   ├── labels.ts    etiquetas padrão e recriação no outro quadro (LIS-05)
+│   │   │   ├── cards.ts     cards: criar, editar, mover, copiar, etiquetas, arquivar,
+│   │   │   │                restaurar, excluir, face no quadro e a busca do filtro
+│   │   │   ├── checklists.ts checklists e itens (CHK)
+│   │   │   ├── activity.ts  atividade do card e o "zerar o envelhecimento" (touch)
+│   │   │   ├── labels.ts    etiquetas: padrão, editor e recriação no outro quadro (LIS-05)
 │   │   │   ├── position.ts  posições de ordem manual (fractional indexing)
 │   │   │   └── backup.ts    backup pela API do SQLite (etapa 1: antes de migrar)
 │   │   └── ipc/
+│   │       ├── events.test.ts tabela de eventos do envelhecimento (ENV-05, ENV-06)
 │   │       ├── handler.ts   utilitário: Zod + Result (sem Electron, testável)
 │   │       ├── routes.ts    tabela de canais (sem Electron; os testes da tela a usam)
 │   │       └── index.ts     registra as rotas no ipcMain
@@ -96,22 +99,28 @@ Mello/
 │   ├── shared/
 │   │   ├── result.ts        Result, ok, fail, AppError
 │   │   ├── text.ts          removeAccents
-│   │   ├── limits.ts        tamanhos máximos dos títulos
+│   │   ├── limits.ts        tamanhos máximos dos textos
 │   │   ├── ipc/api.ts       nomes dos canais, o tipo MelloApi e createApi
 │   │   ├── ipc/boards.ts    schemas Zod e tipos de quadros, listas e arquivados
 │   │   ├── ipc/cards.ts     schemas Zod e tipos de cards (face e modal)
+│   │   ├── ipc/labels.ts    etiquetas;  ipc/checklists.ts  checklists e itens
 │   │   └── rules/           background.ts (fundos do protótipo), tone.ts (tom, FUN-09),
-│   │                        finished.ts (FIN), dates.ts (atraso, DAT-02)
+│   │                        finished.ts (FIN), dates.ts (datas, DAT), priority.ts (PRI),
+│   │                        color.ts (paleta e texto legível), checklist.ts (CHK),
+│   │                        filter.ts (FLT), richText.ts (texto rico, NOT-04)
 │   └── renderer/
 │       ├── index.html       com a política de segurança (CSP)
 │       └── src/
 │           ├── app/         rotas, layouts, cabeçalho, menu "Criar", barra flutuante
 │           ├── features/    home/ (Início, criar quadro, fechados), board/ (barra, listas,
-│           │                cards, arrastar, menus, arquivados), card/ (modal, criar card),
+│           │                cards, arrastar, filtro, menus, arquivados), card/ (modal,
+│           │                seletores, checklists, descrição, menu do card, criar card),
 │           │                calendar/, settings/
-│           ├── components/  Popover, Confirm, Notify, EditableTitle, dnd, DoneMark, Icon, Logo…
+│           ├── components/  Popover, Confirm, Notify, EditableTitle, dnd, DoneMark,
+│           │                PriorityIcon, RichEditor (TipTap), Icon, Logo…
 │           ├── lib/         api.ts (unwrap), queries.ts (consultas e ações), queryKeys.ts,
-│           │                format.ts (datas), useNow.ts (relógio da tela), cx.ts
+│           │                format.ts (datas), useNow.ts (relógio da tela), useDebounced.ts,
+│           │                cx.ts
 │           ├── styles/      themes.css (paletas literais), fonts.css, base.css
 │           └── test/        preparação dos testes da tela (setup.ts, realApi.ts)
 ├── electron.vite.config.ts  vitest.config.mts  drizzle.config.ts  eslint.config.mjs
@@ -164,7 +173,19 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
 - Os canais seguem o padrão entidade:ação (boards:list, cards:move…). Lista completa prevista:
   PLANO.md, seção 4. Existem hoje: app:info; boards:list, listClosed, get, create, update, move,
   close, reopen, delete, archived; lists:create, update, move, copy, moveToBoard, archive,
-  archiveCards, restore; cards:get, create, move, restore e delete.
+  sort, archiveCards, restore; cards:get, create, update, move, copy, setLabels, archive,
+  restore, delete, matching; labels:list, create, update, delete; checklists:create, update,
+  move, delete; items:create, update, toggle, move, delete.
+- Editar um card é um canal só (cards:update), com um campo por vez (título, ✓, prioridade, data
+  com lembrete, descrição). Se nada mudou, o main não grava nada e não zera o envelhecimento.
+- Texto rico (descrição; a nota na etapa 5): a tela edita com o TipTap e manda o documento dele
+  (JSON). O main passa o documento por shared/rules/richText.ts, que só deixa o que a NOT-04
+  permite, e escreve ele mesmo o HTML guardado no banco, com o texto escapado; o texto puro vai
+  para o filtro e a busca. Assim o main não precisa de um parser de HTML (nem de um DOM como o
+  happy-dom), e nada fora da lista chega ao banco.
+- Filtro do quadro (FLT-01): a palavra-chave vai ao main (cards:matching), que procura no título,
+  na descrição, na nota e no nome das etiquetas com a função unaccent do SQLite. Prioridades e
+  "só recorrentes" são decididos na tela (shared/rules/filter.ts).
 - boards:get devolve o quadro inteiro da tela: as listas ativas com os cards ativos de cada uma, já
   com o que a face do card mostra (etiquetas, ✓, data, contadores).
 - Mover (quadro, lista ou card) recebe o índice final entre os itens visíveis, e o main calcula a
@@ -229,12 +250,16 @@ Estado:
 - Dados do banco: TanStack Query, com staleTime infinito e sem recarregar ao focar a janela. Os
   dados só mudam quando o próprio app os altera, e então a chave correspondente é invalidada.
   Chaves (lib/queryKeys.ts): ['boards'] (abertos), ['boards', 'closed'], ['board', id] (quadro
-  com as listas e os cards), ['board', id, 'archived'] e ['card', id] (o card aberto no modal).
+  com as listas e os cards), ['board', id, 'archived'], ['board', id, 'labels'], ['board', id,
+  'matching', palavra] (filtro) e ['card', id] (o card aberto no modal). As ações do modal
+  recarregam o card e o quadro (features/card/useCardAction.ts).
 - Ações (lib/queries.ts, useAction): chamam o main, invalidam as chaves afetadas (mesmo se
   falharem, para a tela voltar ao estado real) e, em caso de erro, mostram o aviso no canto da
   tela (components/Notify.tsx).
 - Arrastar listas, cards e quadros atualiza o cache na hora (otimista) e depois confirma no main.
-- Estado de interface: useState (Zustand entra quando houver estado compartilhado).
+- Estado de interface: useState. O filtro do quadro fica na página do quadro e passa por
+  propriedade para a barra e as listas; não fica salvo e some ao trocar de quadro (FLT-05).
+  Zustand continua fora: até aqui nenhum estado precisou ser compartilhado entre telas.
 - Estado na URL: o quadro e a tela abertos, e o card aberto (?card=<id>). Fechar o modal tira o
   parâmetro sem criar um passo a mais no histórico.
 - Relógio da tela (lib/useNow.ts): o "agora" das datas em atraso, atualizado a cada minuto.
@@ -259,8 +284,20 @@ Menus, confirmações e arrastar:
   ponteiro sobre as listas e os cards medidos na tela; com o teclado, as setas andam pelas
   posições (cima e baixo na lista, lados para a lista vizinha). As contas ficam em funções puras
   (cardDrag.ts), testadas sem DOM. O card que segue o mouse já mostra o ✓ como vai ficar ao soltar.
+  Com o filtro ativo, a posição escolhida entre os cards visíveis vira a posição na lista
+  inteira ao soltar (cardDrag.ts, fullIndex).
+- Rolagem automática no arraste (etapa 4): a do dnd-kit está desligada, porque depois de um
+  arraste cancelado ela rolava o quadro sozinha (usava a medida errada na conta). No lugar, a
+  cada quadro, a menos de 64 px da borda o quadro rola para os lados e a lista de destino rola
+  para cima e para baixo (cardDrag.ts, edgeStep).
+- Checklists e itens (features/card/Checklists.tsx) se reordenam pelo título com o dnd-kit
+  ordenável, com mouse e teclado; o título editável repassa as teclas ao arraste quando é a alça.
 - Modal do card (features/card/CardModal.tsx): <dialog> aberto com showModal(), closedby="any"
-  e rolagem contida (overscroll-behavior), para a tela de baixo não rolar junto.
+  e rolagem contida (overscroll-behavior), para a tela de baixo não rolar junto. Os seletores
+  (etiquetas, prioridade, data, lista, menu do card) são popovers dentro do modal. Duas
+  proteções: com um popover aberto, o primeiro clique fora fecha só o popover (o modal cancela
+  o próprio fechamento); e Esc dentro de um campo em edição (título, item, descrição) cancela só
+  a edição.
 
 Navegador único: o app só roda no Chromium do Electron fixado no package.json (hoje o 152). Por
 isso recursos novos da plataforma (popover, posicionamento por âncora, <dialog closedby>,
@@ -315,12 +352,14 @@ O Mello não carrega nada da internet. A segurança é o básico do Electron, li
   style-src 'self' 'unsafe-inline'; img-src 'self' data: mello-arquivo:; font-src 'self' data:;
   connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'.
   O 'unsafe-inline' de estilos é o que o Vite usa em desenvolvimento; scripts de fora não rodam.
-- A janela não navega para fora do app, não abre janelas novas, e links https vão para o navegador
-  padrão.
+- A janela não navega para fora do app, não abre janelas novas, e links http, https e mailto
+  vão para o programa padrão do Windows (NOT-05; a mesma regra safeHref do texto rico).
 - Todas as permissões do navegador (câmera, microfone, notificações web…) são recusadas. Os
   lembretes usam a notificação nativa do main (etapa 8).
 - Sem menu na janela. No desenvolvimento, F12 abre as ferramentas de desenvolvedor.
-- O HTML da nota e da descrição é filtrado no main antes de salvar (NOT-04, etapa 4 e 5).
+- O HTML da descrição (e da nota, na etapa 5) é escrito pelo main a partir do documento do
+  editor, só com as marcas da NOT-04 (seção 6). O modo leitura mostra o HTML pelo TipTap, nunca
+  por innerHTML.
 
 Ficam de fora, por não haver ameaça correspondente num app pessoal e offline: Electron Fuses,
 assinatura de código e verificação do remetente de cada mensagem de IPC.
@@ -357,6 +396,9 @@ HISTÓRICO
              compartilhado entre o preload e os testes; módulos de quadros, listas, posições e
              etiquetas; popovers e confirmação nativos; arrastar com dnd-kit; navegador único,
              sem polyfills.
+23/10/2026 — etapa 4: modal do card (campos, descrição com TipTap, checklists, menu), etiquetas,
+             filtro do quadro, ordenar lista; texto rico gerado pelo main; rolagem automática
+             própria no arraste; módulos activity.ts e checklists.ts.
 22/10/2026 — etapa 3: cards (criar, mover, face no quadro), arrastar cards com destino calculado
              pela tela (cardDrag.ts), modal do card pelo endereço (?card=), regras puras de
              finalizado e de atraso.

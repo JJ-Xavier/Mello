@@ -1,12 +1,15 @@
-// Barra do quadro (Quadro.dc.html): título editável, filtro (etapa 4), favoritar, "Alterar fundo"
+// Barra do quadro (Quadro.dc.html): título editável, filtro (FLT), favoritar, "Alterar fundo"
 // (etapa 9) e o menu "…" com itens arquivados e fechar quadro (NovosEstados.dc.html).
 import { useId, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { BoardDetail } from '../../../../shared/ipc/boards'
-import { BOARD_TITLE_MAX } from '../../../../shared/limits'
+import { BOARD_TITLE_MAX, FILTER_KEYWORD_MAX } from '../../../../shared/limits'
+import { isFilterActive, NO_FILTER, type BoardFilter } from '../../../../shared/rules/filter'
+import { PRIORITIES } from '../../../../shared/rules/priority'
 import { EditableTitle } from '../../components/EditableTitle'
 import { Icon } from '../../components/Icon'
 import { Popover, PopoverHeader } from '../../components/Popover'
+import { PriorityIcon } from '../../components/PriorityIcon'
 import ui from '../../components/ui.module.css'
 import { api, unwrap } from '../../lib/api'
 import { cx } from '../../lib/cx'
@@ -54,8 +57,87 @@ function BoardMenu({ board, close }: { board: BoardDetail; close: () => void }) 
   )
 }
 
-export function BoardBar({ board }: { board: BoardDetail }) {
+// Filtro do quadro (Estados.dc.html): palavra-chave (FLT-01), prioridades (FLT-02) e "Só cards
+// recorrentes" (FLT-03).
+function FilterPanel({
+  filter,
+  onFilter,
+  close
+}: {
+  filter: BoardFilter
+  onFilter: (filter: BoardFilter) => void
+  close: () => void
+}) {
+  const togglePriority = (value: number, on: boolean) =>
+    onFilter({
+      ...filter,
+      priorities: on ? [...filter.priorities, value] : filter.priorities.filter((p) => p !== value)
+    })
+  return (
+    <>
+      <PopoverHeader title="Filtrar" onClose={close} />
+      <input
+        className={ui.fld}
+        placeholder="Palavra-chave..."
+        aria-label="Filtrar por palavra-chave"
+        value={filter.keyword}
+        maxLength={FILTER_KEYWORD_MAX}
+        autoFocus
+        onChange={(event) => onFilter({ ...filter, keyword: event.target.value })}
+      />
+      <p className={ui.cap} style={{ margin: '6px 0 2px' }}>
+        PRIORIDADE
+      </p>
+      {PRIORITIES.map((p) => (
+        <label key={p.value} className={styles.filterOption}>
+          <input
+            type="checkbox"
+            className={ui.check}
+            checked={filter.priorities.includes(p.value)}
+            onChange={(event) => togglePriority(p.value, event.target.checked)}
+          />
+          <PriorityIcon value={p.value} />
+          {p.name}
+        </label>
+      ))}
+      <p className={ui.cap} style={{ margin: '6px 0 2px' }}>
+        OUTROS
+      </p>
+      <label className={styles.filterOption}>
+        <input
+          type="checkbox"
+          className={ui.check}
+          checked={filter.recurringOnly}
+          onChange={(event) => onFilter({ ...filter, recurringOnly: event.target.checked })}
+        />
+        Só cards recorrentes
+      </label>
+      {isFilterActive(filter) && (
+        <button
+          type="button"
+          className={ui.sec}
+          style={{ marginTop: 6 }}
+          onClick={() => onFilter(NO_FILTER)}
+        >
+          Limpar filtro
+        </button>
+      )}
+    </>
+  )
+}
+
+export function BoardBar({
+  board,
+  filter,
+  onFilter
+}: {
+  board: BoardDetail
+  filter: BoardFilter
+  onFilter: (filter: BoardFilter) => void
+}) {
   const menuId = useId()
+  const filterId = useId()
+  const filtering = isFilterActive(filter)
   const run = useAction()
   const keys = [queryKeys.boards, queryKeys.board(board.id)]
 
@@ -83,13 +165,15 @@ export function BoardBar({ board }: { board: BoardDetail }) {
       <div className={styles.spacer} />
       <button
         type="button"
-        className={styles.barIcon}
-        aria-label="Filtrar cards"
-        disabled
-        title="Chega na etapa 4"
+        className={cx(styles.barIcon, filtering && styles.barIconActive)}
+        aria-label={filtering ? 'Filtrar cards (filtro ativo)' : 'Filtrar cards'}
+        popoverTarget={filterId}
       >
         <Icon name="filter" size={20} />
       </button>
+      <Popover id={filterId} label="Filtrar" placement="belowEnd">
+        {(close) => <FilterPanel filter={filter} onFilter={onFilter} close={close} />}
+      </Popover>
       <button
         type="button"
         className={cx(styles.barIcon, board.isFavorite && styles.favorite)}

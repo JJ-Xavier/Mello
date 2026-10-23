@@ -66,11 +66,21 @@ interface ColumnBodyProps {
   board: BoardDetail
   drag: CardDrag | null
   now: number
+  // Filtro do quadro ativo: a lista mostra só os cards visíveis e o contador "visíveis/total".
+  filtering: boolean
   handleProps?: HTMLAttributes<HTMLDivElement>
   interactive: boolean
 }
 
-function ColumnBody({ list, board, drag, now, handleProps, interactive }: ColumnBodyProps) {
+function ColumnBody({
+  list,
+  board,
+  drag,
+  now,
+  filtering,
+  handleProps,
+  interactive
+}: ColumnBodyProps) {
   const menuId = useId()
   const run = useAction()
   const [adding, setAdding] = useState(false)
@@ -78,7 +88,9 @@ function ColumnBody({ list, board, drag, now, handleProps, interactive }: Column
   const items = listItems(list.cards, list.id, drag)
   // Como no protótipo, a lista de destino já conta o card que está chegando.
   const incoming = drag !== null && drag.target.listId === list.id && drag.origin.listId !== list.id
-  const count = list.cardCount + (incoming ? 1 : 0)
+  const total = list.cardCount + (incoming ? 1 : 0)
+  // FLT-04 e LIS-09: com filtro ativo, "visíveis/total".
+  const shown = list.cards.length + (incoming ? 1 : 0)
 
   // Com o formulário aberto, o fim da lista fica à vista (o card novo entra lá).
   useLayoutEffect(() => {
@@ -105,8 +117,11 @@ function ColumnBody({ list, board, drag, now, handleProps, interactive }: Column
         ) : (
           <h2 className={styles.title}>{list.title}</h2>
         )}
-        <span className={styles.count} aria-label={`${count} cards`}>
-          {count}
+        <span
+          className={styles.count}
+          aria-label={filtering ? `${shown} de ${total} cards` : `${total} cards`}
+        >
+          {filtering ? `${shown}/${total}` : total}
         </span>
         <button
           type="button"
@@ -126,7 +141,7 @@ function ColumnBody({ list, board, drag, now, handleProps, interactive }: Column
         )}
       </div>
       {items.length > 0 && (
-        <div ref={cardsRef} className={styles.cards}>
+        <div ref={cardsRef} className={styles.cards} data-cards="">
           {items.map((item) =>
             item.kind === 'slot' ? (
               <div
@@ -184,11 +199,19 @@ interface ListColumnProps {
   board: BoardDetail
   drag: CardDrag | null
   now: number
+  filtering: boolean
   // O ListsArea mede as listas para saber onde o card arrastado vai cair.
   registerSection: (listId: string, element: HTMLElement | null) => void
 }
 
-export function ListColumn({ list, board, drag, now, registerSection }: ListColumnProps) {
+export function ListColumn({
+  list,
+  board,
+  drag,
+  now,
+  filtering,
+  registerSection
+}: ListColumnProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: list.id,
     data: { type: 'list' },
@@ -217,6 +240,7 @@ export function ListColumn({ list, board, drag, now, registerSection }: ListColu
         board={board}
         drag={drag}
         now={now}
+        filtering={filtering}
         interactive
         handleProps={{ ...attributes, ...listeners, 'aria-label': `Lista ${list.title}` }}
       />
@@ -228,15 +252,24 @@ export function ListColumn({ list, board, drag, now, registerSection }: ListColu
 export function ListOverlay({
   list,
   board,
-  now
+  now,
+  filtering
 }: {
   list: ListDetail
   board: BoardDetail
   now: number
+  filtering: boolean
 }) {
   return (
     <section className={cx(styles.list, styles.overlay)}>
-      <ColumnBody list={list} board={board} drag={null} now={now} interactive={false} />
+      <ColumnBody
+        list={list}
+        board={board}
+        drag={null}
+        now={now}
+        filtering={filtering}
+        interactive={false}
+      />
     </section>
   )
 }

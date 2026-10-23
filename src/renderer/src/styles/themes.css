@@ -48,6 +48,8 @@
   /* só no escuro: modal do card (Card.dc.html) */
   --modal: #323940;
   --modal-line: #454f59;
+  --modal-btn: #3b444c;
+  --modal-aside: #1d2125;
 }
 
 .tema-claro {
@@ -87,6 +89,8 @@
   --shadow-pop: 0 10px 28px rgba(9, 30, 66, 0.25);
   --modal: #ffffff;
   --modal-line: var(--btn);
+  --modal-btn: var(--btn);
+  --modal-aside: var(--bg);
 }
 
 /* As telas do quadro usam --btn #e4e6ea no tema claro (Quadro.dc.html e QuadroClaro.dc.html). */

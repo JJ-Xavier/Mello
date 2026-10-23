@@ -301,7 +301,7 @@ describe('face do card (CAR-04)', () => {
     expect(face.labels.map((l) => l.color)).toEqual([labels[0]!.color, labels[3]!.color])
   })
 
-  it('abrir o card traz o título, a lista e o quadro', () => {
+  it('abrir o card traz o título, a lista, o quadro e os campos do modal', () => {
     const { compras } = threeCards()
     expect(cards.get(t.db, compras)).toEqual({
       id: compras,
@@ -310,8 +310,204 @@ describe('face do card (CAR-04)', () => {
       listTitle: 'A fazer',
       isDoneList: false,
       title: 'Compras',
-      isDone: false
+      isDone: false,
+      priority: null,
+      dueAt: null,
+      reminder: 'none',
+      labelIds: [],
+      descriptionHtml: '',
+      lastActivityAt: 1000,
+      archivedAt: null,
+      checklists: []
     })
     expect(() => cards.get(t.db, randomUUID())).toThrow(/não encontrado/)
+  })
+})
+
+describe('editar o card pelo modal', () => {
+  it('título: grava e zera o envelhecimento; o mesmo título não grava nada', () => {
+    const { compras } = threeCards()
+    cards.update(t.db, { cardId: compras, title: 'Compras do mês' }, LATER)
+    expect(row(compras)).toMatchObject({ title: 'Compras do mês', lastActivityAt: LATER })
+    const before = row(compras)
+    cards.update(t.db, { cardId: compras, title: 'Compras do mês' }, LATER + 1)
+    expect(row(compras)).toEqual(before)
+  })
+
+  it('FIN-04: o ✓ marcado à mão fora da lista de conclusão fica, mas não finaliza', () => {
+    const { compras } = threeCards()
+    cards.update(t.db, { cardId: compras, isDone: true }, LATER)
+    expect(row(compras)).toMatchObject({ isDone: true, doneAt: LATER, lastActivityAt: LATER })
+    expect(cards.get(t.db, compras).isDoneList).toBe(false)
+    expect(activities(compras)).toEqual([{ kind: 'done', data: {} }])
+  })
+
+  it('FIN-05: desmarcar o ✓ na lista de conclusão mantém o card lá', () => {
+    const done = insertCard(t.db, listId('Concluído'), { title: 'Faxina', isDone: true })
+    cards.update(t.db, { cardId: done, isDone: false }, LATER)
+    expect(row(done)).toMatchObject({ isDone: false, doneAt: null, listId: listId('Concluído') })
+    expect(activities(done)).toEqual([{ kind: 'undone', data: {} }])
+  })
+
+  it('PRI-01: prioridade de 1 a 5 ou nenhuma', () => {
+    const { compras } = threeCards()
+    cards.update(t.db, { cardId: compras, priority: 2 }, LATER)
+    expect(row(compras)).toMatchObject({ priority: 2, lastActivityAt: LATER })
+    cards.update(t.db, { cardId: compras, priority: null }, LATER)
+    expect(row(compras).priority).toBeNull()
+  })
+
+  it('DAT-01 e LEM-01: data com e sem hora; sem data não há lembrete', () => {
+    const { compras } = threeCards()
+    cards.update(t.db, { cardId: compras, due: { dueAt: '2026-10-20', reminder: 'none' } }, LATER)
+    expect(row(compras)).toMatchObject({ dueAt: '2026-10-20', lastActivityAt: LATER })
+    cards.update(
+      t.db,
+      { cardId: compras, due: { dueAt: '2026-10-20T17:00', reminder: 'day_before' } },
+      LATER
+    )
+    expect(row(compras)).toMatchObject({ dueAt: '2026-10-20T17:00', reminder: 'day_before' })
+    cards.update(t.db, { cardId: compras, due: { dueAt: null, reminder: 'at_time' } }, LATER)
+    expect(row(compras)).toMatchObject({ dueAt: null, reminder: 'none' })
+  })
+
+  it('LEM-04: mudar a data rearma o lembrete', () => {
+    const { compras } = threeCards()
+    t.db
+      .update(card)
+      .set({ dueAt: '2026-10-20', reminder: 'at_time', reminderFiredAt: NOW })
+      .where(eq(card.id, compras))
+      .run()
+    cards.update(
+      t.db,
+      { cardId: compras, due: { dueAt: '2026-10-21', reminder: 'at_time' } },
+      LATER
+    )
+    expect(row(compras).reminderFiredAt).toBeNull()
+  })
+
+  it('NOT-07: a descrição é limpa, vira HTML e texto; HTML proibido é descartado', () => {
+    const { compras } = threeCards()
+    const description = {
+      type: 'doc',
+      content: [
+        { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Mercado' }] },
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: '<script>alert(1)</script>', marks: [{ type: 'bold' }] },
+            {
+              type: 'text',
+              text: 'link',
+              marks: [{ type: 'link', attrs: { href: 'javascript:alert(1)' } }]
+            }
+          ]
+        },
+        { type: 'codeBlock', content: [{ type: 'text', text: 'fora' }] }
+      ]
+    }
+    cards.update(t.db, { cardId: compras, description }, LATER)
+    expect(row(compras)).toMatchObject({
+      descriptionHtml:
+        '<h3>Mercado</h3><p><strong>&lt;script&gt;alert(1)&lt;/script&gt;</strong>link</p>',
+      descriptionText: 'Mercado\n<script>alert(1)</script>link',
+      lastActivityAt: LATER
+    })
+    expect(boards.get(t.db, boardId).lists[0]!.cards[0]!.hasDescription).toBe(true)
+    cards.update(t.db, { cardId: compras, description: { type: 'doc', content: [] } }, LATER)
+    expect(row(compras)).toMatchObject({ descriptionHtml: '', descriptionText: '' })
+  })
+})
+
+describe('etiquetas no card (ETQ-04)', () => {
+  const boardLabelIds = (id = boardId) =>
+    t.db
+      .select()
+      .from(label)
+      .where(eq(label.boardId, id))
+      .orderBy(asc(label.position))
+      .all()
+      .map((l) => l.id)
+
+  it('marcar e desmarcar zera o envelhecimento; o mesmo conjunto não grava', () => {
+    const { compras } = threeCards()
+    const [roxo, vermelho] = boardLabelIds()
+    cards.setLabels(t.db, compras, [vermelho!, roxo!], LATER)
+    expect(cards.get(t.db, compras).labelIds).toEqual([roxo, vermelho])
+    expect(row(compras).lastActivityAt).toBe(LATER)
+    cards.setLabels(t.db, compras, [vermelho!], LATER + 1)
+    expect(cards.get(t.db, compras).labelIds).toEqual([vermelho])
+    const before = row(compras)
+    cards.setLabels(t.db, compras, [vermelho!], LATER + 2)
+    expect(row(compras)).toEqual(before)
+  })
+
+  it('não aceita etiqueta de outro quadro', () => {
+    const { compras } = threeCards()
+    const other = boards.create(t.db, 'Estudos', NOW).id
+    expect(() => cards.setLabels(t.db, compras, [boardLabelIds(other)[0]!], LATER)).toThrow(
+      /outro quadro/
+    )
+  })
+})
+
+describe('copiar, arquivar e filtrar', () => {
+  it('CAR-07: cópia com outro título, na lista e posição escolhidas, com checklist', () => {
+    const todo = listId('A fazer')
+    insertCard(t.db, listId('Em andamento'), { title: 'Mudança', position: 'a0' })
+    const source = insertCard(t.db, todo, {
+      title: 'Compras',
+      checklist: { title: 'Itens', items: [{ text: 'Pão', isDone: true }] }
+    })
+    const copied = cards.copy(
+      t.db,
+      { cardId: source, title: 'Compras (cópia)', listId: listId('Em andamento'), index: 0 },
+      LATER
+    )
+    expect(titlesIn('Em andamento')).toEqual(['Compras (cópia)', 'Mudança'])
+    expect(copied).toMatchObject({ checkDone: 1, checkTotal: 1 })
+    expect(row(copied.id).lastActivityAt).toBe(LATER)
+    expect(activities(copied.id)).toEqual([{ kind: 'copied', data: { from: 'Compras' } }])
+  })
+
+  it('CAR-07: cópia em outro quadro recria as etiquetas lá', () => {
+    const roxo = t.db.select().from(label).where(eq(label.boardId, boardId)).all()[0]!
+    const source = insertCard(t.db, listId('A fazer'), { title: 'Compras', labelIds: [roxo.id] })
+    const other = boards.create(t.db, 'Estudos', NOW).id
+    const copied = cards.copy(
+      t.db,
+      { cardId: source, title: 'Compras', listId: listId('A fazer', other), index: 0 },
+      LATER
+    )
+    expect(copied.labels[0]!.id).not.toBe(roxo.id)
+    expect(copied.labels[0]!.color).toBe(roxo.color)
+  })
+
+  it('CAR-05: arquivar tira do quadro, registra e não zera; restaurar zera', () => {
+    const { compras } = threeCards()
+    cards.archive(t.db, compras, LATER)
+    expect(titlesIn('A fazer')).toEqual(['Faxina', 'Contas'])
+    expect(row(compras)).toMatchObject({ archivedAt: LATER, lastActivityAt: 1000 })
+    expect(cards.get(t.db, compras).archivedAt).toBe(LATER)
+    expect(activities(compras)).toEqual([{ kind: 'archived', data: {} }])
+    cards.restore(t.db, compras, LATER + 1)
+    expect(row(compras)).toMatchObject({ archivedAt: null, lastActivityAt: LATER + 1 })
+  })
+
+  it('FLT-01: palavra-chave no título, na descrição, na nota e na etiqueta, sem acento', () => {
+    const { compras, faxina, contas } = threeCards()
+    const roxo = t.db.select().from(label).where(eq(label.boardId, boardId)).all()[0]!
+    t.db.update(label).set({ name: 'Ação' }).where(eq(label.id, roxo.id)).run()
+    cards.setLabels(t.db, contas, [roxo.id], NOW)
+    t.db.update(card).set({ descriptionText: 'Pão e LEITE' }).where(eq(card.id, compras)).run()
+    t.db.update(card).set({ noteText: 'Usar vinagre' }).where(eq(card.id, faxina)).run()
+    const find = (keyword: string) => cards.matching(t.db, boardId, keyword).sort()
+    expect(find('leite')).toEqual([compras])
+    expect(find('VINAGRE')).toEqual([faxina])
+    expect(find('acao')).toEqual([contas])
+    expect(find('Faxína')).toEqual([faxina])
+    expect(find('%')).toEqual([])
+    cards.archive(t.db, faxina, NOW)
+    expect(find('vinagre')).toEqual([])
   })
 })

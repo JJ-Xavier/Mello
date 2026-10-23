@@ -83,6 +83,23 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
+/* FLT-04: com filtro ativo, o botão fica destacado. */
+.barIconActive,
+.barIconActive:hover:not(:disabled) {
+  background: #172b4d;
+  color: #ffffff;
+}
+
+.filterOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  font-size: 14px;
+  color: var(--strong);
+  cursor: pointer;
+}
+
 .favorite svg {
   fill: #e2b203;
   stroke: #e2b203;

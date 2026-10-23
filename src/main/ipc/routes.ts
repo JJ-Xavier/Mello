@@ -11,13 +11,36 @@ import {
   moveBoardInput,
   moveListInput,
   moveListToBoardInput,
+  sortListInput,
   updateBoardInput,
   updateListInput
 } from '../../shared/ipc/boards'
-import { cardIdInput, createCardInput, moveCardInput } from '../../shared/ipc/cards'
+import {
+  cardIdInput,
+  copyCardInput,
+  createCardInput,
+  matchingInput,
+  moveCardInput,
+  setLabelsInput,
+  updateCardInput
+} from '../../shared/ipc/cards'
+import {
+  checklistIdInput,
+  createChecklistInput,
+  createItemInput,
+  itemIdInput,
+  moveChecklistInput,
+  moveItemInput,
+  toggleItemInput,
+  updateChecklistInput,
+  updateItemInput
+} from '../../shared/ipc/checklists'
+import { createLabelInput, labelIdInput, updateLabelInput } from '../../shared/ipc/labels'
 import type { Db } from '../db/client'
 import * as boards from '../modules/boards'
 import * as cards from '../modules/cards'
+import * as checklists from '../modules/checklists'
+import * as labels from '../modules/labels'
 import * as lists from '../modules/lists'
 import { createHandler, type Handler } from './handler'
 
@@ -83,6 +106,9 @@ export function createRoutes({ db, app, now, onUnexpectedError }: RouteContext):
   route(CHANNELS.listsMoveToBoard, moveListToBoardInput, ({ listId, boardId, index }) =>
     done(() => lists.moveToBoard(db, listId, boardId, index, now()))
   )
+  route(CHANNELS.listsSort, sortListInput, ({ listId, by }) =>
+    done(() => lists.sort(db, listId, by))
+  )
   route(CHANNELS.listsArchive, listIdInput, ({ listId }) =>
     done(() => lists.archive(db, listId, now()))
   )
@@ -97,6 +123,19 @@ export function createRoutes({ db, app, now, onUnexpectedError }: RouteContext):
   route(CHANNELS.cardsCreate, createCardInput, ({ listId, title }) =>
     cards.create(db, listId, title, now())
   )
+  route(CHANNELS.cardsUpdate, updateCardInput, (input) =>
+    done(() => cards.update(db, input, now()))
+  )
+  route(CHANNELS.cardsCopy, copyCardInput, (input) => cards.copy(db, input, now()))
+  route(CHANNELS.cardsSetLabels, setLabelsInput, ({ cardId, labelIds }) =>
+    done(() => cards.setLabels(db, cardId, labelIds, now()))
+  )
+  route(CHANNELS.cardsArchive, cardIdInput, ({ cardId }) =>
+    done(() => cards.archive(db, cardId, now()))
+  )
+  route(CHANNELS.cardsMatching, matchingInput, ({ boardId, keyword }) =>
+    cards.matching(db, boardId, keyword)
+  )
   route(CHANNELS.cardsMove, moveCardInput, ({ cardId, listId, index }) =>
     done(() => cards.move(db, cardId, listId, index, now()))
   )
@@ -104,6 +143,41 @@ export function createRoutes({ db, app, now, onUnexpectedError }: RouteContext):
     done(() => cards.restore(db, cardId, now()))
   )
   route(CHANNELS.cardsDelete, cardIdInput, ({ cardId }) => done(() => cards.remove(db, cardId)))
+
+  route(CHANNELS.labelsList, boardIdInput, ({ boardId }) => labels.list(db, boardId))
+  route(CHANNELS.labelsCreate, createLabelInput, (input) => labels.create(db, input))
+  route(CHANNELS.labelsUpdate, updateLabelInput, (input) => labels.update(db, input))
+  route(CHANNELS.labelsDelete, labelIdInput, ({ labelId }) =>
+    done(() => labels.remove(db, labelId))
+  )
+
+  route(CHANNELS.checklistsCreate, createChecklistInput, ({ cardId, title }) =>
+    checklists.create(db, cardId, title, now())
+  )
+  route(CHANNELS.checklistsUpdate, updateChecklistInput, (input) =>
+    done(() => checklists.update(db, input, now()))
+  )
+  route(CHANNELS.checklistsMove, moveChecklistInput, ({ checklistId, index }) =>
+    done(() => checklists.move(db, checklistId, index, now()))
+  )
+  route(CHANNELS.checklistsDelete, checklistIdInput, ({ checklistId }) =>
+    done(() => checklists.remove(db, checklistId, now()))
+  )
+  route(CHANNELS.itemsCreate, createItemInput, ({ checklistId, text }) =>
+    checklists.createItem(db, checklistId, text, now())
+  )
+  route(CHANNELS.itemsUpdate, updateItemInput, (input) =>
+    done(() => checklists.updateItem(db, input, now()))
+  )
+  route(CHANNELS.itemsToggle, toggleItemInput, ({ itemId, isDone }) =>
+    done(() => checklists.toggleItem(db, itemId, isDone, now()))
+  )
+  route(CHANNELS.itemsMove, moveItemInput, ({ itemId, index }) =>
+    done(() => checklists.moveItem(db, itemId, index, now()))
+  )
+  route(CHANNELS.itemsDelete, itemIdInput, ({ itemId }) =>
+    done(() => checklists.removeItem(db, itemId, now()))
+  )
 
   return routes
 }

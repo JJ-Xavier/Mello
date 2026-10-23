@@ -2,6 +2,7 @@
 import path from 'node:path'
 import { app, BrowserWindow, dialog, Menu, nativeTheme, screen, session, shell } from 'electron'
 import log from 'electron-log/main'
+import { safeHref } from '../shared/rules/richText'
 import { openDatabase, type OpenedDatabase } from './db/open'
 import { registerIpc } from './ipc'
 import { dataPaths, ensureDataFolders } from './paths'
@@ -43,9 +44,10 @@ function createWindow(): BrowserWindow {
 
   window.once('ready-to-show', () => window.show())
 
-  // Nada abre dentro do app: links externos vão para o navegador padrão (só https).
+  // Nada abre dentro do app: links externos vão para o programa padrão do Windows (navegador ou
+  // e-mail), só http, https e mailto, os mesmos que a nota e a descrição aceitam (NOT-05).
   window.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://')) void shell.openExternal(url)
+    if (safeHref(url)) void shell.openExternal(url)
     return { action: 'deny' }
   })
   window.webContents.on('will-navigate', (event, url) => {

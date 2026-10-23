@@ -1,10 +1,12 @@
-// O que o card mostra no quadro (CAR-04): etiquetas, ✓, título, data de entrega e os ícones de
-// descrição, checklist, nota e anexos. Prioridade, capa, repetição e "Modelo" entram nas etapas 4,
+// O que o card mostra no quadro (CAR-04): etiquetas, ✓, título, data de entrega, os ícones de
+// descrição, checklist, nota e anexos e a prioridade. Capa, repetição e "Modelo" entram nas etapas
 // 5, 8 e 11.
 import type { CardSummary } from '../../../../shared/ipc/cards'
 import { dueDate, isOverdue } from '../../../../shared/rules/dates'
+import { priorityLevel } from '../../../../shared/rules/priority'
 import { DoneMark } from '../../components/DoneMark'
 import { Icon } from '../../components/Icon'
+import { PriorityIcon } from '../../components/PriorityIcon'
 import { cx } from '../../lib/cx'
 import { formatShortDate } from '../../lib/format'
 import styles from './CardFace.module.css'
@@ -29,7 +31,9 @@ function DueChip({ dueAt, finished, now }: { dueAt: string; finished: boolean; n
 }
 
 export function CardFace({ card, finished, now }: CardFaceProps) {
+  const priority = priorityLevel(card.priority)
   const hasBadges =
+    priority !== null ||
     card.dueAt !== null ||
     card.hasDescription ||
     card.checkTotal > 0 ||
@@ -92,6 +96,16 @@ export function CardFace({ card, finished, now }: CardFaceProps) {
             >
               <Icon name="attachment" />
               {card.attachmentCount}
+            </span>
+          )}
+          {priority && (
+            <span
+              className={styles.priority}
+              role="img"
+              aria-label={`Prioridade ${priority.name.toLowerCase()}`}
+              title={`Prioridade ${priority.name.toLowerCase()}`}
+            >
+              <PriorityIcon value={priority.value} />
             </span>
           )}
         </div>

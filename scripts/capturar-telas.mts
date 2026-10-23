@@ -1,9 +1,8 @@
 // Abre o app compilado (out/) com uma pasta de dados temporária e salva uma captura de cada tela,
 // nos temas escuro e claro, em capturas/etapa-N/ (pasta ignorada pelo Git). Serve para comparar
 // com o protótipo e também confere a ponta a ponta: banco criado e IPC respondendo.
-// Os dados são fictícios (P16) e criados pelo próprio window.mello. Os campos da face do card que
-// ainda não têm tela para editar (etiquetas, datas, checklist, descrição, nota e anexos chegam nas
-// etapas 4 e 5) são gravados direto no banco temporário.
+// Os dados são fictícios (P16) e criados pelo próprio window.mello. A nota e os anexos (etapa 5)
+// ainda não têm tela para editar e são gravados direto no banco temporário.
 //
 // Uso: npm run capturas   (compila antes; roda com o Node 24, que entende TypeScript)
 import { randomUUID } from 'node:crypto'
@@ -13,7 +12,7 @@ import os from 'node:os'
 import path from 'node:path'
 import playwright, { type Page } from 'playwright-core'
 
-const STAGE = 3
+const STAGE = 4
 const THEMES = ['escuro', 'claro']
 
 const root = path.resolve(import.meta.dirname, '..')
@@ -68,79 +67,73 @@ function day(offset: number): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
-// Etiquetas, data, descrição, nota, checklist e anexos de um card, direto no banco.
-interface Face {
-  labels?: (string | undefined)[]
-  due?: string
-  text?: string
-  note?: string
-  checklist?: [done: number, total: number]
-  attachments?: number
+// Chama window.mello.<caminho>(entrada) e devolve o resultado.
+function mello<T>(page: Page, method: string, input: unknown): Promise<T> {
+  return call<T>(page, `window.mello.${method}(${JSON.stringify(input)})`)
 }
 
-function writeFaces(faces: [cardId: string, face: Face][]) {
+// Documento do editor com um título, um parágrafo e uma lista.
+function doc(title: string, text: string, items: string[] = []) {
+  const paragraph = (value: string) => ({
+    type: 'paragraph',
+    content: [{ type: 'text', text: value }]
+  })
+  return {
+    type: 'doc',
+    content: [
+      { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: title }] },
+      paragraph(text),
+      ...(items.length
+        ? [
+            {
+              type: 'bulletList',
+              content: items.map((i) => ({ type: 'listItem', content: [paragraph(i)] }))
+            }
+          ]
+        : [])
+    ]
+  }
+}
+
+// Nota e anexos (etapa 5), direto no banco.
+function writeNoteAndFiles(cardId: string, note: string, files: number) {
   const sqlite = new Database(path.join(dataDir, 'mello.db'))
-  const run = (sql: string, ...params: unknown[]) => sqlite.prepare(sql).run(...params)
   const fileId = '0'.repeat(64)
-  run(
-    'INSERT INTO file (id, ext, mime, size, created_at) VALUES (?, ?, ?, ?, 0)',
-    fileId,
-    'jpg',
-    'image/jpeg',
-    1
-  )
-  for (const [cardId, face] of faces) {
-    for (const labelId of face.labels ?? []) {
-      run('INSERT INTO card_label (card_id, label_id) VALUES (?, ?)', cardId, labelId)
-    }
-    run(
-      'UPDATE card SET due_at = ?, description_text = ?, note_text = ? WHERE id = ?',
-      face.due ?? null,
-      face.text ?? '',
-      face.note ?? '',
-      cardId
-    )
-    if (face.checklist) {
-      const [done, total] = face.checklist
-      const checklistId = randomUUID()
-      run(
-        'INSERT INTO checklist (id, card_id, title, position) VALUES (?, ?, ?, ?)',
-        checklistId,
-        cardId,
-        'Checklist',
-        'a0'
+  sqlite
+    .prepare('INSERT INTO file (id, ext, mime, size, created_at) VALUES (?, ?, ?, ?, 0)')
+    .run(fileId, 'jpg', 'image/jpeg', 1)
+  sqlite.prepare('UPDATE card SET note_text = ? WHERE id = ?').run(note, cardId)
+  for (let i = 0; i < files; i++) {
+    sqlite
+      .prepare(
+        'INSERT INTO attachment (id, card_id, file_id, name, created_at) VALUES (?, ?, ?, ?, 0)'
       )
-      for (let i = 0; i < total; i++) {
-        run(
-          'INSERT INTO checklist_item (id, checklist_id, text, is_done, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, 0)',
-          randomUUID(),
-          checklistId,
-          `Item ${i + 1}`,
-          i < done ? 1 : 0,
-          `a${i}`
-        )
-      }
-    }
-    for (let i = 0; i < (face.attachments ?? 0); i++) {
-      run(
-        'INSERT INTO attachment (id, card_id, file_id, name, created_at) VALUES (?, ?, ?, ?, 0)',
-        randomUUID(),
-        cardId,
-        fileId,
-        `foto-${i + 1}.jpg`
-      )
-    }
+      .run(randomUUID(), cardId, fileId, `foto-${i + 1}.jpg`)
   }
   sqlite.close()
 }
 
-function boardLabels(boardId: string): string[] {
-  const sqlite = new Database(path.join(dataDir, 'mello.db'), { readonly: true })
-  const rows = sqlite
-    .prepare('SELECT id FROM label WHERE board_id = ? ORDER BY position')
-    .all(boardId) as { id: string }[]
-  sqlite.close()
-  return rows.map((r) => r.id)
+// Um checklist com itens; done marca os primeiros, dates dá a data (dias a partir de hoje).
+async function addChecklist(
+  page: Page,
+  cardId: string,
+  title: string,
+  items: { text: string; done?: boolean; date?: number }[]
+) {
+  const checklist = await mello<{ id: string }>(page, 'checklists.create', { cardId, title })
+  for (const item of items) {
+    const created = await mello<{ id: string }>(page, 'items.create', {
+      checklistId: checklist.id,
+      text: item.text
+    })
+    if (item.done) await mello(page, 'items.toggle', { itemId: created.id, isDone: true })
+    if (item.date !== undefined) {
+      await mello(page, 'items.update', {
+        itemId: created.id,
+        due: { dueDate: day(item.date), showInCalendar: true }
+      })
+    }
+  }
 }
 
 // Arrasta um card com o mouse até `dy` px abaixo do topo da lista `to` e tira a captura com o
@@ -209,17 +202,63 @@ async function seed(page: Page): Promise<{ casa: Board }> {
     `window.mello.cards.move({ cardId: '${lampadas}', listId: '${list('Concluído')}', index: 0 })`
   )
 
-  const [roxo, vermelho, laranja, amarelo, cinza, verde] = boardLabels(casa.id)
-  writeFaces([
-    [tinta, { labels: [roxo, cinza], text: 'Branco gelo', checklist: [2, 5] }],
-    [torneira, { labels: [vermelho, roxo], due: day(-2), text: 'Pinga', checklist: [2, 5] }],
-    [condominio, { labels: [laranja], due: day(5) }],
-    [
-      pintar,
-      { labels: [amarelo], text: 'Duas demãos', note: 'Fita', checklist: [3, 7], attachments: 2 }
-    ],
-    [lampadas, { labels: [verde], due: day(-3) }]
+  const labels = (await mello<{ id: string }[]>(page, 'labels.list', { boardId: casa.id })).map(
+    (l) => l.id
+  )
+  const [roxo, vermelho, laranja, amarelo, cinza, verde] = labels
+  await mello(page, 'labels.update', { labelId: amarelo, name: 'Pintura' })
+  const setLabels = (cardId: string, labelIds: (string | undefined)[]) =>
+    mello(page, 'cards.setLabels', { cardId, labelIds })
+  const update = (cardId: string, changes: Record<string, unknown>) =>
+    mello(page, 'cards.update', { cardId, ...changes })
+
+  await setLabels(tinta, [roxo, cinza])
+  await update(tinta, { priority: 4, description: doc('Tinta', 'Branco gelo, 18 litros') })
+  await addChecklist(page, tinta, 'Materiais', [
+    { text: 'Tinta', done: true },
+    { text: 'Rolo', done: true },
+    { text: 'Fita crepe' },
+    { text: 'Lona' },
+    { text: 'Pincel' }
   ])
+  await setLabels(torneira, [vermelho, roxo])
+  await update(torneira, {
+    priority: 2,
+    due: { dueAt: day(-2), reminder: 'none' },
+    description: doc('Vazamento', 'Pinga embaixo da pia')
+  })
+  await addChecklist(page, torneira, 'Conserto', [
+    { text: 'Fechar o registro', done: true },
+    { text: 'Trocar o vedante', done: true },
+    { text: 'Testar' },
+    { text: 'Limpar' },
+    { text: 'Abrir o registro' }
+  ])
+  await setLabels(condominio, [laranja])
+  await update(condominio, { priority: 3, due: { dueAt: day(5), reminder: 'day_before' } })
+  await setLabels(pintar, [amarelo])
+  await update(pintar, {
+    priority: 1,
+    due: { dueAt: `${day(1)}T17:00`, reminder: 'day_before' },
+    description: doc('Quarto do fundo', 'Duas demãos, cor branco gelo.', [
+      'Afastar os móveis do centro',
+      'Proteger as tomadas'
+    ])
+  })
+  await addChecklist(page, pintar, 'Preparação', [
+    { text: 'Afastar os móveis', done: true, date: -5 },
+    { text: 'Cobrir o chão', done: true },
+    { text: 'Lixar as paredes', date: -1 }
+  ])
+  await addChecklist(page, pintar, 'Pintura', [
+    { text: 'Primeira demão', date: 2 },
+    { text: 'Segunda demão' },
+    { text: 'Retoques' },
+    { text: 'Limpar os pincéis' }
+  ])
+  writeNoteAndFiles(pintar, 'Comprar fita crepe larga', 2)
+  await setLabels(lampadas, [verde])
+  await update(lampadas, { due: { dueAt: day(-3), reminder: 'none' } })
   return { casa }
 }
 
@@ -309,11 +348,80 @@ try {
       theme
     )
 
+    // Tela 4 (coluna da esquerda) e os popovers do modal (telas 9, 14 e 16).
     await page.getByRole('link', { name: /Pintar o quarto/ }).click()
+    const modal = page.getByRole('dialog', { name: 'Pintar o quarto' })
+    await modal.waitFor()
     await page.waitForTimeout(300)
-    await shot(page, '04-modal-casca', theme)
-    await page.keyboard.press('Escape')
+    await shot(page, '04-modal', theme)
+    const popover = async (button: RegExp | string, name: string) => {
+      await modal.getByRole('button', { name: button }).first().click()
+      await page.waitForTimeout(250)
+      await shot(page, name, theme)
+      await closePopovers(page)
+    }
+    await popover('Adicionar', '09-menu-adicionar')
+    await popover('Pintura', '09-etiquetas')
+    await popover(/Muito alta/, '09-prioridade')
+    await popover(/, 17:00/, '09-seletor-de-data')
+    await popover(/Data da tarefa: .* em atraso/, '09-data-da-tarefa')
+    await popover('Mais ações', '14-menu-do-card')
+    await modal.getByRole('button', { name: 'Mais ações' }).click()
+    await page
+      .getByRole('dialog', { name: 'Ações do card' })
+      .getByRole('button', { name: 'Mover', exact: true })
+      .click()
+    await page.waitForTimeout(250)
+    await shot(page, '16-mover-card', theme)
+    await closePopovers(page)
+    await modal.getByRole('button', { name: 'Mais ações' }).click()
+    await page
+      .getByRole('dialog', { name: 'Ações do card' })
+      .getByRole('button', { name: 'Copiar', exact: true })
+      .click()
+    await page.waitForTimeout(250)
+    await shot(page, '16-copiar-card', theme)
+    await closePopovers(page)
+    await modal.getByRole('button', { name: 'Mais ações' }).click()
+    await page
+      .getByRole('dialog', { name: 'Ações do card' })
+      .getByRole('button', { name: 'Excluir', exact: true })
+      .click()
+    await page.waitForTimeout(250)
+    await shot(page, '16-confirmar-exclusao-card', theme)
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Cancelar' }).click()
     await page.waitForTimeout(200)
+    await modal.getByRole('button', { name: 'Editar' }).click()
+    await page.waitForTimeout(250)
+    await shot(page, '04-descricao-editando', theme)
+    await modal.getByRole('button', { name: 'Cancelar' }).click()
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(250)
+
+    // Card arquivado: o modal continua aberto, com o aviso.
+    await page.getByRole('link', { name: /Organizar o armário/ }).click()
+    const archived = page.getByRole('dialog', { name: 'Organizar o armário' })
+    await archived.getByRole('button', { name: 'Mais ações' }).click()
+    await page
+      .getByRole('dialog', { name: 'Ações do card' })
+      .getByRole('button', { name: 'Arquivar', exact: true })
+      .click()
+    await archived.getByText('Este card está arquivado.').waitFor()
+    await page.waitForTimeout(200)
+    await shot(page, '16-card-arquivado', theme)
+    await archived.getByRole('button', { name: 'Restaurar' }).click()
+    await page.waitForTimeout(250)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(250)
+
+    // Filtro do quadro (tela 9) com uma prioridade marcada.
+    await page.getByRole('button', { name: 'Filtrar cards' }).click()
+    await page.getByRole('checkbox', { name: /Muito alta/ }).check()
+    await page.getByRole('checkbox', { name: /Alta$/ }).check()
+    await page.waitForTimeout(300)
+    await shot(page, '09-filtro', theme)
+    await page.getByRole('button', { name: 'Limpar filtro' }).click()
+    await closePopovers(page)
 
     await page.getByRole('button', { name: 'Adicionar outra lista' }).click()
     await page.waitForTimeout(150)

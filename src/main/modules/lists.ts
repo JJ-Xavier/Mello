@@ -5,6 +5,8 @@ import { and, asc, eq, inArray, isNull, max } from 'drizzle-orm'
 import type { ListSummary } from '../../shared/ipc/boards'
 import { LIST_TITLE_MAX } from '../../shared/limits'
 import { AppError } from '../../shared/result'
+import { sortByDue } from '../../shared/rules/dates'
+import { sortByPriority } from '../../shared/rules/priority'
 import type { Db, DbOrTx, Tx } from '../db/client'
 import { board, card, cardLabel, list, recurrence } from '../db/schema'
 import { activeLists } from './boards'
@@ -190,6 +192,35 @@ export function moveToBoard(
       .set({ boardId: targetBoardId, updatedAt: now })
       .where(eq(recurrence.targetListId, listId))
       .run()
+  })
+}
+
+// LIS-08: ordena os cards ativos da lista uma vez, por prioridade (PRI-05) ou por data de entrega
+// (DAT-04). Os arquivados ficam depois deles, na ordem em que estavam. Reordenar a lista inteira não
+// é alteração dos cards: não zera o envelhecimento (ENV-06).
+export function sort(db: Db, listId: string, by: 'priority' | 'due'): void {
+  db.transaction((tx) => {
+    requireList(tx, listId)
+    const all = tx
+      .select({
+        id: card.id,
+        priority: card.priority,
+        dueAt: card.dueAt,
+        archivedAt: card.archivedAt
+      })
+      .from(card)
+      .where(eq(card.listId, listId))
+      .orderBy(asc(card.position))
+      .all()
+    const active = all.filter((c) => c.archivedAt === null)
+    const order = [
+      ...(by === 'priority' ? sortByPriority(active) : sortByDue(active)),
+      ...all.filter((c) => c.archivedAt !== null)
+    ]
+    const keys = keysFor(order.length)
+    order.forEach((c, i) => {
+      tx.update(card).set({ position: keys[i]! }).where(eq(card.id, c.id)).run()
+    })
   })
 }
 

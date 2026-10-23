@@ -1,6 +1,7 @@
 // Título que vira campo ao clicar: Enter ou clicar fora salva, Esc cancela. Um título vazio ou
 // igual ao anterior não é salvo. O campo não deixa o arrastar da lista começar por ele.
-import { useState, type ElementType, type KeyboardEvent } from 'react'
+// buttonProps põe o arrastar no próprio título (checklists e itens): espaço pega, Enter edita.
+import { useState, type ButtonHTMLAttributes, type ElementType, type KeyboardEvent } from 'react'
 
 interface EditableTitleProps {
   value: string
@@ -11,6 +12,7 @@ interface EditableTitleProps {
   className?: string
   buttonClassName?: string
   inputClassName?: string
+  buttonProps?: ButtonHTMLAttributes<HTMLButtonElement>
 }
 
 export function EditableTitle({
@@ -21,7 +23,8 @@ export function EditableTitle({
   as: Tag = 'h2',
   className,
   buttonClassName,
-  inputClassName
+  inputClassName,
+  buttonProps
 }: EditableTitleProps) {
   const [draft, setDraft] = useState<string | null>(null)
 
@@ -34,7 +37,11 @@ export function EditableTitle({
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     event.stopPropagation()
     if (event.key === 'Enter') finish(true)
-    if (event.key === 'Escape') finish(false)
+    if (event.key === 'Escape') {
+      // Dentro do modal do card, Esc cancela só a edição (sem fechar o modal).
+      event.preventDefault()
+      finish(false)
+    }
   }
 
   if (draft !== null) {
@@ -58,10 +65,16 @@ export function EditableTitle({
     <Tag className={className}>
       <button
         type="button"
-        className={buttonClassName}
         title="Clique para renomear"
+        {...buttonProps}
+        className={buttonClassName}
         onClick={() => setDraft(value)}
-        onKeyDown={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          // Dentro de um cabeçalho arrastável (a lista), as teclas do título não chegam a ele. Quando
+          // o próprio título é a alça (buttonProps), elas seguem: o arraste ouve o documento.
+          if (buttonProps) buttonProps.onKeyDown?.(event)
+          else event.stopPropagation()
+        }}
       >
         {value}
       </button>

@@ -29,6 +29,8 @@ export const updateListInput = z.object({
 })
 export const moveListInput = z.object({ listId: id, index })
 export const moveListToBoardInput = z.object({ listId: id, boardId: id, index })
+// LIS-08: ordenar uma vez por prioridade (PRI-05) ou por data de entrega (DAT-04).
+export const sortListInput = z.object({ listId: id, by: z.enum(['priority', 'due']) })
 
 export type BoardIdInput = z.infer<typeof boardIdInput>
 export type CreateBoardInput = z.infer<typeof createBoardInput>
@@ -39,6 +41,7 @@ export type CreateListInput = z.infer<typeof createListInput>
 export type UpdateListInput = z.infer<typeof updateListInput>
 export type MoveListInput = z.infer<typeof moveListInput>
 export type MoveListToBoardInput = z.infer<typeof moveListToBoardInput>
+export type SortListInput = z.infer<typeof sortListInput>
 
 export interface BoardSummary {
   id: string

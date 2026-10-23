@@ -30,6 +30,7 @@
   overscroll-behavior: contain;
 }
 
+/* ---- Topo: lista, capa, "…" e fechar ---- */
 .top {
   height: 64px;
   flex: none;
@@ -40,17 +41,23 @@
   border-bottom: 1px solid var(--modal-line);
 }
 
-/* Nome da lista; vira o seletor de lista na etapa 4. */
 .list {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   height: 32px;
   padding: 0 10px;
+  border: 0;
   border-radius: 6px;
   background: var(--modal-line);
   color: var(--strong);
-  font-size: 14px;
-  font-weight: 600;
+  font:
+    600 14px Inter,
+    sans-serif;
+}
+
+.list:hover {
+  filter: brightness(1.12);
 }
 
 .spacer {
@@ -69,50 +76,714 @@
   justify-content: center;
 }
 
-.iconButton:hover {
+.iconButton:hover:not(:disabled) {
   background: var(--btn);
+}
+
+/* ---- Duas colunas ---- */
+.columns {
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
 
 .body {
   flex: 1;
-  min-height: 0;
+  min-width: 0;
   overflow-y: auto;
   padding: 28px 32px 32px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--a5) transparent;
 }
 
+.aside {
+  width: 460px;
+  flex: none;
+  padding: 20px 24px;
+  background: var(--modal-aside);
+  border-left: 1px solid var(--modal-line);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.asideHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--txt);
+}
+
+.asideTitle {
+  margin: 0;
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.asideNotice {
+  margin: 0;
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--muted);
+}
+
+/* ---- ✓ e título ---- */
 .titleRow {
   display: flex;
   align-items: center;
   gap: 14px;
 }
 
-/* O ✓ ocupa o mesmo espaço do botão de marcar que vem na etapa 4. */
-.titleRow > svg {
-  margin: 3px;
+.doneButton {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .title {
   margin: 0;
+  flex: 1;
   min-width: 0;
   font-size: 32px;
   font-weight: 700;
   color: var(--strong);
+}
+
+.titleButton {
+  max-width: 100%;
+  padding: 0 6px;
+  margin-left: -6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: inherit;
   overflow-wrap: anywhere;
 }
 
-/* Card finalizado: título apagado e riscado. */
+.titleButton:hover {
+  background: var(--btn);
+}
+
+.titleInput {
+  width: 100%;
+  height: 48px;
+  padding: 0 8px;
+  margin-left: -8px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--strong);
+  font:
+    700 28px Inter,
+    sans-serif;
+  outline: none;
+}
+
+/* Card finalizado (FIN-01): título apagado e riscado. */
 .titleFinished {
   color: #8c9bab;
   text-decoration: line-through;
 }
 
-.notice {
-  margin: 0;
+/* ---- Botões e campos ---- */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   padding-left: 46px;
+}
+
+/* .obtn do protótipo */
+.outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--modal-line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.outline:hover:not(:disabled) {
+  background: var(--btn);
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 32px;
+  padding-left: 46px;
+}
+
+.lab {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--muted);
+}
+
+.labelChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chipButton {
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  display: flex;
+}
+
+.chipButton:hover {
+  filter: brightness(1.1);
+}
+
+.labelChip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  min-width: 48px;
+  padding: 0 12px;
+  border-radius: 4px;
   font-size: 14px;
-  line-height: 20px;
+  font-weight: 500;
+}
+
+.modalLabel {
+  height: 36px;
+  padding: 0 14px;
+}
+
+.addLabel {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--modal-line);
+  color: var(--strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dueButton {
+  gap: 10px;
+  color: var(--strong);
+  font-weight: 400;
+}
+
+.lateTag {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #5d1f1a;
+  color: #fd9891;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lastMove {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  font-size: 14px;
+  color: var(--strong);
+}
+
+/* Aviso de card arquivado (cores do aviso do protótipo, Estados.dc.html). */
+.archived {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #533f04;
+  color: #f8e6a0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bannerPrimary,
+.bannerSecondary {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  font:
+    600 13px Inter,
+    sans-serif;
+}
+
+.bannerPrimary {
+  background: #f8e6a0;
+  color: #533f04;
+}
+
+.bannerSecondary {
+  background: transparent;
+  color: #f8e6a0;
+}
+
+/* ---- Seções: descrição e checklists ---- */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sectionIcon {
+  display: flex;
+  margin: 0 4px;
+  color: var(--txt);
+}
+
+.sectionTitle {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.sectionTitleButton {
+  max-width: 100%;
+  padding: 2px 6px;
+  margin-left: -6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.sectionTitleButton:hover {
+  background: var(--btn);
+}
+
+.sectionTitleInput {
+  width: 100%;
+  height: 34px;
+  padding: 0 8px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--strong);
+  font:
+    600 16px Inter,
+    sans-serif;
+  outline: none;
+}
+
+.sectionBody {
+  padding-left: 46px;
+}
+
+/* Botões das seções (.obtn com fundo #3b444c) */
+.soft {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--modal-btn);
+  color: var(--txt);
+  font:
+    500 14px Inter,
+    sans-serif;
+  white-space: nowrap;
+}
+
+.soft:hover {
+  filter: brightness(1.12);
+}
+
+.placeholder {
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--modal-btn);
+  color: var(--muted);
+  text-align: left;
+  font:
+    400 14px Inter,
+    sans-serif;
+}
+
+.placeholder:hover {
+  filter: brightness(1.12);
+}
+
+/* ---- Checklist ---- */
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pct {
+  width: 32px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--modal-line);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+/* CHK-02: verde em 100%. */
+.barComplete {
+  background: #6a9a23;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  padding-left: 38px;
+}
+
+/* .row-item do protótipo */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: 8px;
+}
+
+.item:hover {
+  background: var(--btn);
+}
+
+.dragging {
+  position: relative;
+  z-index: 1;
+  opacity: 0.8;
+}
+
+.itemCheck {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.itemText {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--strong);
+}
+
+.itemDone {
+  color: #8c9bab;
+  text-decoration: line-through;
+}
+
+.itemTextButton {
+  max-width: 100%;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: inherit;
+  overflow-wrap: anywhere;
+}
+
+.itemInput {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--strong);
+  font:
+    400 14px Inter,
+    sans-serif;
+  outline: none;
+}
+
+/* CHK-06: cinza; vermelho atrasado; verde marcado. */
+.itemDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  font:
+    500 12px Inter,
+    sans-serif;
+}
+
+.normal {
+  background: var(--modal-line);
+  color: var(--strong);
+}
+
+.late {
+  background: #5d1f1a;
+  color: #fd9891;
+}
+
+.done {
+  background: #2f4a1a;
+  color: #b3df72;
+}
+
+.roundButton {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 0;
+  border-radius: 14px;
+  background: var(--modal-line);
+  color: var(--txt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addItem {
+  padding: 6px 8px 0;
+}
+
+.addItemForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 8px 0;
+}
+
+/* ---- Popovers do modal (Estados.dc.html) ---- */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.start {
+  align-self: flex-start;
+}
+
+.buttonRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selected {
+  background: var(--accent-soft);
+}
+
+.selectedMark {
+  display: flex;
+  color: var(--accent);
+}
+
+.fieldRow {
+  display: flex;
+  gap: 8px;
+}
+
+.destination {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calendarHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.monthButton {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthButton:hover {
+  background: var(--pop-hover);
+}
+
+.monthName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.weekday {
+  height: 24px;
+  line-height: 24px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.day {
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--strong);
+  font:
+    400 12px Inter,
+    sans-serif;
+}
+
+.day:hover {
+  background: var(--pop-hover);
+}
+
+.dayOut {
+  color: var(--field-line);
+}
+
+.daySelected,
+.daySelected:hover {
+  background: var(--accent);
+  color: var(--accent-txt);
+  font-weight: 700;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.smallIcon {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.smallIcon:hover {
+  background: var(--pop-hover);
+}
+
+.labelPreview {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--list);
+}
+
+.colors {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* A cor escolhida ganha o anel azul (NovoCardCapaAnexos.dc.html). */
+.color {
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+}
+
+.color[aria-pressed='true'] {
+  box-shadow:
+    0 0 0 2px var(--pop),
+    0 0 0 4px var(--accent);
+}
+
+.itemQuote {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--field);
+  font-size: 13px;
+  color: var(--strong);
+  overflow-wrap: anywhere;
+}
+
+.checkLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--txt);
 }

@@ -7,5 +7,7 @@ export const queryKeys = {
   closedBoards: ['boards', 'closed'] as const,
   board: (boardId: string) => ['board', boardId] as const,
   archived: (boardId: string) => ['board', boardId, 'archived'] as const,
+  labels: (boardId: string) => ['board', boardId, 'labels'] as const,
+  matching: (boardId: string, keyword: string) => ['board', boardId, 'matching', keyword] as const,
   card: (cardId: string) => ['card', cardId] as const
 }

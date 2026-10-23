@@ -1,5 +1,5 @@
-// Menu "…" da lista (NovosEstados.dc.html, "atualizado"): adicionar cartão, copiar, mover, as duas
-// opções independentes (LIS-02) e arquivar. Os "Ordenar" entram na etapa 4.
+// Menu "…" da lista (NovosEstados.dc.html, "atualizado"): adicionar cartão, copiar, mover, ordenar
+// (LIS-08), as duas opções independentes (LIS-02) e arquivar.
 import { useState } from 'react'
 import type { BoardDetail, ListDetail } from '../../../../shared/ipc/boards'
 import { PopoverHeader } from '../../components/Popover'
@@ -136,10 +136,18 @@ export function ListMenu({
       <button type="button" className={ui.mi} onClick={() => setView('move')}>
         Mover lista
       </button>
-      <button type="button" className={ui.mi} disabled title="Chega na etapa 4">
+      <button
+        type="button"
+        className={ui.mi}
+        onClick={() => act(() => unwrap(api().lists.sort({ listId: list.id, by: 'priority' })))}
+      >
         Ordenar por prioridade
       </button>
-      <button type="button" className={ui.mi} disabled title="Chega na etapa 4">
+      <button
+        type="button"
+        className={ui.mi}
+        onClick={() => act(() => unwrap(api().lists.sort({ listId: list.id, by: 'due' })))}
+      >
         Ordenar por data de entrega
       </button>
       <div className={ui.sep} />

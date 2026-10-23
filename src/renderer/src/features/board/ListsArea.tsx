@@ -22,8 +22,18 @@ import {
   sortableKeyboardCoordinates
 } from '@dnd-kit/sortable'
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent
+} from 'react'
 import type { BoardDetail } from '../../../../shared/ipc/boards'
+import type { CardSummary } from '../../../../shared/ipc/cards'
+import { isFilterActive, type BoardFilter } from '../../../../shared/rules/filter'
 import { LIST_TITLE_MAX } from '../../../../shared/limits'
 import { doneAfterMove } from '../../../../shared/rules/finished'
 import { announcements, screenReaderInstructions, useDragSensors } from '../../components/dnd'
@@ -36,6 +46,8 @@ import { useNow } from '../../lib/useNow'
 import styles from './BoardPage.module.css'
 import {
   applyMove,
+  edgeStep,
+  fullIndex,
   keyboardTarget,
   sameTarget,
   targetFromPoint,
@@ -103,7 +115,8 @@ function AddList({ boardId }: { boardId: string }) {
   )
 }
 
-type Dragging = { type: 'list'; id: string } | ({ type: 'card'; keyboard: boolean } & CardDrag)
+type Dragging =
+  { type: 'list'; id: string; keyboard: boolean } | ({ type: 'card'; keyboard: boolean } & CardDrag)
 
 const DIRECTIONS: Record<string, Direction> = {
   ArrowUp: 'up',
@@ -119,7 +132,28 @@ const LIST_INSET = 10
 
 const isCard = (active: Active) => active.data.current?.['type'] === 'card'
 
-export function ListsArea({ board }: { board: BoardDetail }) {
+// Com o filtro do quadro ativo (FLT), a tela e o arraste usam só os cards visíveis; ao soltar, a
+// posição é convertida para a lista inteira, com os cards escondidos pelo filtro.
+export function ListsArea({
+  board: fullBoard,
+  filter,
+  visible
+}: {
+  board: BoardDetail
+  filter: BoardFilter
+  visible: (card: CardSummary) => boolean
+}) {
+  const filtering = isFilterActive(filter)
+  const board = useMemo(
+    () =>
+      filtering
+        ? {
+            ...fullBoard,
+            lists: fullBoard.lists.map((l) => ({ ...l, cards: l.cards.filter(visible) }))
+          }
+        : fullBoard,
+    [fullBoard, filtering, visible]
+  )
   const queryClient = useQueryClient()
   const run = useAction()
   const now = useNow()
@@ -131,6 +165,7 @@ export function ListsArea({ board }: { board: BoardDetail }) {
   const draggingRef = useRef<Dragging | null>(null)
   const boardRef = useRef(board)
   const sections = useRef(new Map<string, HTMLElement>())
+  const listsRef = useRef<HTMLDivElement>(null)
   const pointer = useRef({ x: 0, y: 0 })
 
   useLayoutEffect(() => {
@@ -209,49 +244,74 @@ export function ListsArea({ board }: { board: BoardDetail }) {
   )
   const sensors = useDragSensors(coordinateGetter)
 
-  // Mouse: o destino acompanha o ponteiro (e a rolagem automática do quadro e das listas).
-  const pointerDrag = dragging?.type === 'card' && !dragging.keyboard
+  // Mouse: a cada quadro, rola perto das bordas (o quadro para os lados e a lista de destino
+  // para cima e para baixo) e, no arraste de card, o destino acompanha o ponteiro. A rolagem
+  // automática do dnd-kit fica desligada: depois de um arraste cancelado ela rolava o quadro
+  // sozinha.
+  const pointerDrag = dragging !== null && !dragging.keyboard
   useEffect(() => {
     if (!pointerDrag) return
-    let frame = 0
-    const update = () => {
-      frame = 0
+    let dirty = true
+    const tick = () => {
       const current = draggingRef.current
-      if (current?.type !== 'card') return
-      const next = targetFromPoint(measure(), pointer.current, current.card.id)
-      if (next && !sameTarget(next, current.target)) setDragging({ ...current, target: next })
+      const lists = listsRef.current
+      const { x, y } = pointer.current
+      if (current && lists) {
+        const box = lists.getBoundingClientRect()
+        const dx = y >= box.top && y <= box.bottom ? edgeStep(x, box.left, box.right) : 0
+        if (dx) lists.scrollLeft += dx
+        if (current.type === 'card') {
+          const cards = sections.current
+            .get(current.target.listId)
+            ?.querySelector<HTMLElement>('[data-cards]')
+          const area = cards?.getBoundingClientRect()
+          if (cards && area && x >= area.left && x <= area.right) {
+            const dy = edgeStep(y, area.top, area.bottom)
+            if (dy) cards.scrollTop += dy
+          }
+          if (dirty) {
+            dirty = false
+            const next = targetFromPoint(measure(), pointer.current, current.card.id)
+            if (next && !sameTarget(next, current.target)) {
+              setDragging({ ...current, target: next })
+            }
+          }
+        }
+      }
+      frame = requestAnimationFrame(tick)
     }
-    const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(update)
-    }
+    let frame = requestAnimationFrame(tick)
     const onMove = (event: PointerEvent) => {
       pointer.current = { x: event.clientX, y: event.clientY }
-      schedule()
+      dirty = true
+    }
+    const onScroll = () => {
+      dirty = true
     }
     window.addEventListener('pointermove', onMove)
-    window.addEventListener('scroll', schedule, true)
+    window.addEventListener('scroll', onScroll, true)
     return () => {
       cancelAnimationFrame(frame)
       window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('scroll', schedule, true)
+      window.removeEventListener('scroll', onScroll, true)
     }
   }, [pointerDrag, measure, setDragging])
 
   const onDragStart = ({ active, activatorEvent }: DragStartEvent) => {
     setMessage('')
+    const keyboard = activatorEvent instanceof KeyboardEvent
+    if (!keyboard && 'clientX' in activatorEvent) {
+      const { clientX, clientY } = activatorEvent as MouseEvent
+      pointer.current = { x: clientX, y: clientY }
+    }
     if (!isCard(active)) {
-      setDragging({ type: 'list', id: String(active.id) })
+      setDragging({ type: 'list', id: String(active.id), keyboard })
       return
     }
     const list = board.lists.find((l) => l.cards.some((c) => c.id === active.id))
     if (!list) return
     const card = list.cards.find((c) => c.id === active.id)!
     const origin = { listId: list.id, index: list.cards.indexOf(card) }
-    const keyboard = activatorEvent instanceof KeyboardEvent
-    if (!keyboard && 'clientX' in activatorEvent) {
-      const { clientX, clientY } = activatorEvent as MouseEvent
-      pointer.current = { x: clientX, y: clientY }
-    }
     setDragging({
       type: 'card',
       keyboard,
@@ -274,11 +334,14 @@ export function ListsArea({ board }: { board: BoardDetail }) {
       return
     }
     setMessage(`${current.card.title} solto em ${describe(target)}.`)
+    const all = fullBoard.lists.find((l) => l.id === target.listId)?.cards ?? []
+    const shown = board.lists.find((l) => l.id === target.listId)?.cards ?? []
+    const saved = { ...target, index: fullIndex(all, shown, current.card.id, target.index) }
     const key = queryKeys.board(board.id)
-    const latest = queryClient.getQueryData<BoardDetail>(key) ?? board
-    queryClient.setQueryData<BoardDetail>(key, applyMove(latest, current.card.id, target))
+    const latest = queryClient.getQueryData<BoardDetail>(key) ?? fullBoard
+    queryClient.setQueryData<BoardDetail>(key, applyMove(latest, current.card.id, saved))
     void run(
-      () => unwrap(api().cards.move({ cardId: current.card.id, ...target })),
+      () => unwrap(api().cards.move({ cardId: current.card.id, ...saved })),
       [key, queryKeys.card(current.card.id)]
     )
   }
@@ -289,8 +352,8 @@ export function ListsArea({ board }: { board: BoardDetail }) {
     const from = board.lists.findIndex((l) => l.id === dragged.id)
     const to = board.lists.findIndex((l) => l.id === over.id)
     queryClient.setQueryData<BoardDetail>(queryKeys.board(board.id), {
-      ...board,
-      lists: arrayMove(board.lists, from, to)
+      ...fullBoard,
+      lists: arrayMove(fullBoard.lists, from, to)
     })
     void run(
       () => unwrap(api().lists.move({ listId: String(dragged.id), index: to })),
@@ -335,9 +398,10 @@ export function ListsArea({ board }: { board: BoardDetail }) {
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragCancel={() => setDragging(null)}
+      autoScroll={false}
       accessibility={{ screenReaderInstructions, announcements: spoken }}
     >
-      <div className={styles.lists}>
+      <div ref={listsRef} className={styles.lists}>
         <SortableContext
           items={board.lists.map((l) => l.id)}
           strategy={horizontalListSortingStrategy}
@@ -349,6 +413,7 @@ export function ListsArea({ board }: { board: BoardDetail }) {
               board={board}
               drag={cardDrag}
               now={now}
+              filtering={filtering}
               registerSection={registerSection}
             />
           ))}
@@ -359,7 +424,9 @@ export function ListsArea({ board }: { board: BoardDetail }) {
         {message}
       </div>
       <DragOverlay>
-        {activeList && <ListOverlay list={activeList} board={board} now={now} />}
+        {activeList && (
+          <ListOverlay list={activeList} board={board} now={now} filtering={filtering} />
+        )}
         {cardDrag && origin && target && (
           <CardOverlay
             card={{ ...cardDrag.card, isDone: doneAfterMove(cardDrag.card.isDone, origin, target) }}

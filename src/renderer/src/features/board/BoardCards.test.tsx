@@ -218,3 +218,98 @@ describe('arrastar cards pelo teclado', () => {
     expect(db.select().from(cardTable).where(eq(cardTable.id, created.id)).get()).toEqual(before)
   })
 })
+
+describe('filtro do quadro (FLT)', () => {
+  async function setup() {
+    const contas = await addCard('A fazer', 'Pagar a conta de luz')
+    const faxina = await addCard('A fazer', 'Faxina')
+    await addCard('Em andamento', 'Ação de limpeza')
+    await unwrap(api.cards.update({ cardId: contas.id, priority: 1 }))
+    await unwrap(api.cards.update({ cardId: faxina.id, priority: 4 }))
+    renderBoard()
+    await screen.findByRole('link', { name: /Faxina/ })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar cards' }))
+    return screen.findByRole('dialog', { name: 'Filtrar' })
+  }
+
+  it('PRI-02: a face mostra o ícone da prioridade com o nome', async () => {
+    await setup()
+    const contas = screen.getByRole('link', { name: /Pagar a conta/ })
+    expect(within(contas).getByRole('img', { name: 'Prioridade muito alta' })).toBeTruthy()
+  })
+
+  it('FLT-02 e FLT-04: só as prioridades marcadas, contador "visíveis/total"', async () => {
+    const panel = await setup()
+    fireEvent.click(within(panel).getByRole('checkbox', { name: /Muito alta/ }))
+    await expect.poll(() => titlesIn('A fazer')).toEqual(['Pagar a conta de luz'])
+    const todo = screen.getByRole('region', { name: 'A fazer' })
+    expect(within(todo).getByLabelText('1 de 2 cards').textContent).toBe('1/2')
+    expect(screen.getByRole('button', { name: 'Filtrar cards (filtro ativo)' })).toBeTruthy()
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Limpar filtro' }))
+    await expect.poll(() => titlesIn('A fazer')).toEqual(['Pagar a conta de luz', 'Faxina'])
+  })
+
+  it('FLT-01: palavra-chave sem acento e sem maiúscula', async () => {
+    const panel = await setup()
+    fireEvent.change(within(panel).getByLabelText('Filtrar por palavra-chave'), {
+      target: { value: 'ACAO' }
+    })
+    await expect.poll(() => titlesIn('A fazer')).toEqual([])
+    expect(await titlesIn('Em andamento')).toEqual(['Ação de limpeza'])
+  })
+
+  it('FLT-05: trocar de quadro limpa o filtro', async () => {
+    const panel = await setup()
+    fireEvent.click(within(panel).getByRole('checkbox', { name: /Baixa/ }))
+    await expect.poll(() => titlesIn('A fazer')).toEqual(['Faxina'])
+    const other = await unwrap(api.boards.create({ title: 'Estudos' }))
+    window.location.hash = `#/boards/${other.id}`
+    await screen.findByRole('heading', { name: 'Estudos' })
+    window.location.hash = `#/boards/${board.id}`
+    await screen.findByRole('heading', { name: 'Casa' })
+    await expect.poll(() => titlesIn('A fazer')).toEqual(['Pagar a conta de luz', 'Faxina'])
+  })
+})
+
+describe('ordenar a lista (LIS-08)', () => {
+  it('por prioridade e por data de entrega', async () => {
+    await addCard('A fazer', 'Sem nada')
+    const b = await addCard('A fazer', 'Média')
+    const c = await addCard('A fazer', 'Alta')
+    await unwrap(
+      api.cards.update({
+        cardId: b.id,
+        priority: 3,
+        due: { dueAt: '2026-10-18', reminder: 'none' }
+      })
+    )
+    await unwrap(
+      api.cards.update({
+        cardId: c.id,
+        priority: 2,
+        due: { dueAt: '2026-10-25', reminder: 'none' }
+      })
+    )
+    renderBoard()
+    const list = await screen.findByRole('region', { name: 'A fazer' })
+    await within(list).findByRole('link', { name: /Alta/ })
+
+    const openMenu = async () => {
+      fireEvent.click(within(list).getByRole('button', { name: 'Ações da lista' }))
+      return screen.findByRole('dialog', { name: 'Ações da lista A fazer' })
+    }
+    fireEvent.click(
+      within(await openMenu()).getByRole('button', { name: 'Ordenar por prioridade' })
+    )
+    await expect.poll(() => savedTitles('A fazer')).toEqual(['Alta', 'Média', 'Sem nada'])
+    fireEvent.click(
+      within(await openMenu()).getByRole('button', { name: 'Ordenar por data de entrega' })
+    )
+    await expect.poll(() => savedTitles('A fazer')).toEqual(['Média', 'Alta', 'Sem nada'])
+    // Na tela, o texto do card também traz a data ("Média18 de out.").
+    await expect
+      .poll(async () => (await titlesIn('A fazer')).map((text) => text.split(/\d+ de /)[0]))
+      .toEqual(['Média', 'Alta', 'Sem nada'])
+  })
+})

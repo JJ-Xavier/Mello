@@ -1,13 +1,15 @@
-// Cards: criar, mover (arrastar), abrir, a face do card no quadro, copiar (com a lista), arquivar
-// todos os de uma lista, restaurar e excluir. Editar os campos entra nas etapas 4 e 5.
+// Cards: criar, editar (modal), mover (arrastar ou menu), copiar, etiquetas, arquivar, restaurar,
+// excluir, a face no quadro e a busca do filtro do quadro. Nota, anexos e capa entram na etapa 5.
 import { randomUUID } from 'node:crypto'
-import { and, asc, count, eq, inArray, isNull, max, sql, type SQL } from 'drizzle-orm'
-import type { CardDetail, CardSummary } from '../../shared/ipc/cards'
+import { and, asc, count, eq, inArray, isNull, max, or, sql, type SQL } from 'drizzle-orm'
+import type { CardDetail, CardSummary, UpdateCardInput } from '../../shared/ipc/cards'
+import { DESCRIPTION_TEXT_MAX } from '../../shared/limits'
 import { AppError } from '../../shared/result'
 import { doneAfterMove } from '../../shared/rules/finished'
+import { clean, toHtml, toText } from '../../shared/rules/richText'
+import { removeAccents } from '../../shared/text'
 import type { Db, DbOrTx, Tx } from '../db/client'
 import {
-  activity,
   attachment,
   board,
   card,
@@ -17,27 +19,10 @@ import {
   label,
   list
 } from '../db/schema'
+import { addActivity, touch } from './activity'
+import { checklistsOf } from './checklists'
 import { mapLabelsToBoard } from './labels'
 import { keyAfter, keyAt, rebalance, visibleIndex } from './position'
-
-type ActivityKind = (typeof activity.$inferInsert)['kind']
-
-export function addActivity(
-  tx: DbOrTx,
-  cardId: string,
-  kind: ActivityKind,
-  data: Record<string, unknown>,
-  now: number
-): void {
-  tx.insert(activity)
-    .values({ id: randomUUID(), cardId, kind, data: JSON.stringify(data), createdAt: now })
-    .run()
-}
-
-// Zera o envelhecimento (ENV-05): a última alteração do card passa a ser agora.
-export function touch(tx: DbOrTx, cardId: string, now: number): void {
-  tx.update(card).set({ lastActivityAt: now, updatedAt: now }).where(eq(card.id, cardId)).run()
-}
 
 // Copia um card (CAR-07): título, descrição, nota, ✓, etiquetas, prioridade, data, lembrete, capa,
 // checklists com o estado dos itens e anexos. Não copia a atividade nem a repetição. A cópia
@@ -181,7 +166,9 @@ function summaries(db: DbOrTx, where: SQL | undefined): CardSummary[] {
       title: card.title,
       position: card.position,
       isDone: card.isDone,
+      priority: card.priority,
       dueAt: card.dueAt,
+      recurrenceId: card.recurrenceId,
       descriptionText: card.descriptionText,
       noteText: card.noteText
     })
@@ -229,8 +216,9 @@ function summaries(db: DbOrTx, where: SQL | undefined): CardSummary[] {
   }
   const checksOf = new Map(checks.map((c) => [c.cardId, c]))
   const filesOf = new Map(files.map((f) => [f.cardId, f.total]))
-  return rows.map(({ descriptionText, noteText, ...row }) => ({
+  return rows.map(({ descriptionText, noteText, recurrenceId, ...row }) => ({
     ...row,
+    recurring: recurrenceId !== null,
     labels: labelsOf.get(row.id) ?? [],
     hasDescription: descriptionText.trim() !== '',
     hasNote: noteText.trim() !== '',
@@ -250,6 +238,7 @@ export function summariesByList(db: DbOrTx, boardId: string): Map<string, CardSu
   return byList
 }
 
+// O card aberto no modal, inclusive arquivado (o modal mostra o aviso para restaurar).
 export function get(db: DbOrTx, cardId: string): CardDetail {
   const found = db
     .select({
@@ -259,14 +248,161 @@ export function get(db: DbOrTx, cardId: string): CardDetail {
       listTitle: list.title,
       isDoneList: list.isDoneList,
       title: card.title,
-      isDone: card.isDone
+      isDone: card.isDone,
+      priority: card.priority,
+      dueAt: card.dueAt,
+      reminder: card.reminder,
+      descriptionHtml: card.descriptionHtml,
+      lastActivityAt: card.lastActivityAt,
+      archivedAt: card.archivedAt
     })
     .from(card)
     .innerJoin(list, eq(card.listId, list.id))
     .where(eq(card.id, cardId))
     .get()
   if (!found) throw new AppError('NOT_FOUND', 'Card não encontrado.')
-  return found
+  const labelIds = db
+    .select({ id: label.id })
+    .from(cardLabel)
+    .innerJoin(label, eq(cardLabel.labelId, label.id))
+    .where(eq(cardLabel.cardId, cardId))
+    .orderBy(asc(label.position))
+    .all()
+    .map((l) => l.id)
+  return { ...found, labelIds, checklists: checklistsOf(db, cardId) }
+}
+
+// Editar pelo modal. Cada mudança zera o envelhecimento (ENV-05); se nada mudou, não grava.
+// - ✓ (FIN-04, FIN-05): registra na atividade (ATV-02).
+// - Data: sem data não há lembrete (LEM-01); mudar a data ou o lembrete rearma (LEM-04).
+// - Descrição: só fica o que a NOT-04 permite; o main gera o HTML (richText.ts).
+export function update(db: Db, input: UpdateCardInput, now: number): void {
+  db.transaction((tx) => {
+    const current = requireCard(tx, input.cardId)
+    const changes: Partial<typeof card.$inferInsert> = {}
+    if (input.title !== undefined && input.title !== current.title) changes.title = input.title
+    if (input.isDone !== undefined && input.isDone !== current.isDone) {
+      changes.isDone = input.isDone
+      changes.doneAt = input.isDone ? now : null
+    }
+    if (input.priority !== undefined && input.priority !== current.priority) {
+      changes.priority = input.priority
+    }
+    if (input.due !== undefined) {
+      const reminder = input.due.dueAt === null ? 'none' : input.due.reminder
+      if (input.due.dueAt !== current.dueAt || reminder !== current.reminder) {
+        changes.dueAt = input.due.dueAt
+        changes.reminder = reminder
+        changes.reminderFiredAt = null
+      }
+    }
+    if (input.description !== undefined) {
+      const doc = clean(input.description)
+      const text = toText(doc)
+      if (text.length > DESCRIPTION_TEXT_MAX) {
+        throw new AppError('INVALID_INPUT', 'A descrição passou do tamanho máximo.')
+      }
+      const html = toHtml(doc)
+      if (html !== current.descriptionHtml) {
+        changes.descriptionHtml = html
+        changes.descriptionText = html ? text : ''
+      }
+    }
+    if (Object.keys(changes).length === 0) return
+    tx.update(card).set(changes).where(eq(card.id, input.cardId)).run()
+    touch(tx, input.cardId, now)
+    if (changes.isDone !== undefined) {
+      addActivity(tx, input.cardId, changes.isDone ? 'done' : 'undone', {}, now)
+    }
+  })
+}
+
+// Marcar e desmarcar etiquetas no card (ETQ-04). Só etiquetas do quadro do card; adicionar ou
+// remover zera o envelhecimento (ENV-05).
+export function setLabels(db: Db, cardId: string, labelIds: string[], now: number): void {
+  db.transaction((tx) => {
+    const found = tx
+      .select({ boardId: list.boardId })
+      .from(card)
+      .innerJoin(list, eq(card.listId, list.id))
+      .where(eq(card.id, cardId))
+      .get()
+    if (!found) throw new AppError('NOT_FOUND', 'Card não encontrado.')
+    const wanted = new Set(labelIds)
+    const valid = tx
+      .select({ id: label.id })
+      .from(label)
+      .where(eq(label.boardId, found.boardId))
+      .all()
+      .map((l) => l.id)
+    if ([...wanted].some((id) => !valid.includes(id))) {
+      throw new AppError('CONFLICT', 'Etiqueta de outro quadro.')
+    }
+    const current = new Set(
+      tx
+        .select({ labelId: cardLabel.labelId })
+        .from(cardLabel)
+        .where(eq(cardLabel.cardId, cardId))
+        .all()
+        .map((r) => r.labelId)
+    )
+    const removed = [...current].filter((id) => !wanted.has(id))
+    const added = [...wanted].filter((id) => !current.has(id))
+    if (removed.length === 0 && added.length === 0) return
+    if (removed.length > 0) {
+      tx.delete(cardLabel)
+        .where(and(eq(cardLabel.cardId, cardId), inArray(cardLabel.labelId, removed)))
+        .run()
+    }
+    for (const labelId of added) tx.insert(cardLabel).values({ cardId, labelId }).run()
+    touch(tx, cardId, now)
+  })
+}
+
+// CAR-05: arquivar tira o card do quadro (e do calendário, da busca e dos lembretes). Não zera o
+// envelhecimento; restaurar, sim.
+export function archive(db: Db, cardId: string, now: number): void {
+  db.transaction((tx) => {
+    const found = requireCard(tx, cardId)
+    if (found.archivedAt !== null) return
+    tx.update(card).set({ archivedAt: now, updatedAt: now }).where(eq(card.id, cardId)).run()
+    addActivity(tx, cardId, 'archived', {}, now)
+  })
+}
+
+// "% texto %" para o LIKE, com os caracteres especiais escapados.
+function likePattern(keyword: string): string {
+  const plain = removeAccents(keyword.trim()).toLowerCase()
+  return `%${plain.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
+}
+
+// FLT-01: os cards ativos do quadro com a palavra-chave no título, na descrição, na nota ou no
+// nome de uma etiqueta, sem diferenciar acento nem maiúscula (função unaccent do SQLite).
+export function matching(db: DbOrTx, boardId: string, keyword: string): string[] {
+  const pattern = likePattern(keyword)
+  const has = (column: SQL | typeof card.title) =>
+    sql`lower(unaccent(${column})) like ${pattern} escape '\\'`
+  return db
+    .selectDistinct({ id: card.id })
+    .from(card)
+    .innerJoin(list, eq(card.listId, list.id))
+    .leftJoin(cardLabel, eq(cardLabel.cardId, card.id))
+    .leftJoin(label, eq(cardLabel.labelId, label.id))
+    .where(
+      and(
+        eq(list.boardId, boardId),
+        isNull(list.archivedAt),
+        isNull(card.archivedAt),
+        or(
+          has(card.title),
+          has(sql`${card.descriptionText}`),
+          has(sql`${card.noteText}`),
+          has(sql`coalesce(${label.name}, '')`)
+        )
+      )
+    )
+    .all()
+    .map((row) => row.id)
 }
 
 // CAR-02: o card novo entra no fim da lista, com nível 0 (última alteração = agora). Criado direto
@@ -319,6 +455,40 @@ function positionInList(tx: Tx, listId: string, exceptId: string, index: number)
     tx.update(card).set({ position }).where(eq(card.id, id)).run()
   }
   return keyAt(siblingsOf(tx, listId, exceptId), index)!
+}
+
+// CAR-07: "Copiar" do menu do card, com o título, a lista e a posição escolhidos (a lista pode ser
+// de outro quadro; as etiquetas são recriadas lá, LIS-05). O ✓ vem como está no original.
+export function copy(
+  db: Db,
+  input: { cardId: string; title: string; listId: string; index: number },
+  now: number
+): CardSummary {
+  let id = ''
+  db.transaction((tx) => {
+    const source = requireCard(tx, input.cardId)
+    const fromBoard = tx
+      .select({ boardId: list.boardId })
+      .from(list)
+      .where(eq(list.id, source.listId))
+      .get()!.boardId
+    const to = requireTargetList(tx, input.listId)
+    const position = positionInList(tx, input.listId, '', input.index)
+    let labelMap: Map<string, string> | undefined
+    if (fromBoard !== to.boardId) {
+      const used = tx.select().from(cardLabel).where(eq(cardLabel.cardId, source.id)).all()
+      labelMap = mapLabelsToBoard(
+        tx,
+        used.map((u) => u.labelId),
+        to.boardId
+      )
+    }
+    id = copyCard(tx, source.id, { listId: input.listId, position, labelMap }, now)
+    if (input.title !== source.title) {
+      tx.update(card).set({ title: input.title }).where(eq(card.id, id)).run()
+    }
+  })
+  return summaries(db, eq(card.id, id))[0]!
 }
 
 // Arrastar ou mover o card para a posição `index` (entre os cards visíveis, sem ele) da lista

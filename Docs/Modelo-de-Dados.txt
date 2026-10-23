@@ -1,7 +1,7 @@
 Modelo de dados — Mello
 
 Status: criado na etapa 1 (21/10/2026); a etapa 3 (22/10/2026) registrou o conteúdo de
-activity.data, sem migração nova. Fonte no código: src/main/db/schema.ts.
+activity.data e a etapa 4 (23/10/2026) a origem de description_html, sem migração nova. Fonte no código: src/main/db/schema.ts.
 Qualquer migração nova atualiza este documento (seções 3 e 4).
 
 
@@ -41,6 +41,8 @@ card — cards
   id TEXT PK (também é a semente do fog()) | list_id → list ON DELETE CASCADE
   title TEXT NOT NULL | position TEXT NOT NULL
   description_html, description_text, note_html, note_text TEXT NOT NULL DEFAULT ''
+    (o *_html é escrito pelo main a partir do documento do editor, só com as marcas da NOT-04;
+    o *_text é o texto puro, um bloco por linha, para o filtro e a busca; etapa 4)
   is_done INTEGER NOT NULL DEFAULT 0 (o ✓ circular) | done_at INTEGER NULL
   priority INTEGER NULL, CHECK (priority BETWEEN 1 AND 5) — NULL = sem prioridade
   due_at TEXT NULL | reminder TEXT NOT NULL DEFAULT 'none' (none | at_time | day_before)

@@ -1,6 +1,6 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 3 (161 testes, em 22/10/2026).
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 4 (280 testes, em 23/10/2026).
 Atualizado a cada etapa.
 
 
@@ -145,7 +145,7 @@ src/renderer/src/features/board/BoardPage.test.tsx
 - Fechar o quadro volta ao Início; quadro fechado aberto pelo endereço mostra o aviso e reabre.
 - "Mudar de quadros" lista os quadros, marca o atual e abre o escolhido.
 
-Etapa 3 — 49 testes novos
+Etapa 3 — 49 testes novos (os arquivos da etapa 3 ganharam testes na etapa 4; ver abaixo)
 
 src/shared/rules/finished.test.ts
 - FIN-01 (finalizado = lista de conclusão E ✓; ✓ fora dela não finaliza).
@@ -191,6 +191,78 @@ src/renderer/src/features/board/BoardCards.test.tsx
 - "Criar card" no menu "Criar" cria na lista escolhida.
 - Teclado: setas escolhem a lista e a posição, espaço solta e grava; FIN-02 e FIN-03 marcam e
   desmarcam o ✓; CAR-03: pegar e soltar no mesmo lugar não grava nada, e Esc cancela.
+
+Etapa 4 — 119 testes novos
+
+src/shared/rules/richText.test.ts (NOT-04, NOT-07)
+- As marcas permitidas viram o HTML que o TipTap entende (título, negrito, itálico, lista, lista de
+  tarefas, link).
+- O texto é escapado: <script> e onerror chegam como texto, nunca como marca.
+- Link só http, https ou mailto; javascript: (em qualquer caixa), data: e caminho relativo são
+  descartados; aspas no endereço não escapam do atributo.
+- Nós e marcas fora da lista são descartados; título vira sempre h3; entrada que não é documento
+  vira documento vazio; item de lista começa com parágrafo; listas aninhadas demais são cortadas.
+- Texto puro um bloco por linha; documento sem texto vira HTML vazio.
+
+src/shared/rules/cardRules.test.ts
+- PRI-01 e PRI-05 (níveis, ícones, cores; ordenação estável com "sem prioridade" no fim).
+- Etiquetas: texto escuro só no amarelo e no cinza, como no protótipo.
+- CHK-02 (porcentagem arredondada, vazio 0%) e CHK-06 (cinza, vermelho, verde).
+- Campos de data: "dd/mm/aaaa" e "hh:mm", recusando o que não existe (29/02/2026, 24:00);
+  validação do que chega pelo IPC; DAT-04 (dia inteiro depois de um horário no mesmo dia).
+- Grade do mês do seletor (domingo a sábado; 4, 5 ou 6 semanas).
+- FLT-01 a FLT-04 (prioridades, só recorrentes, critérios somados; a palavra-chave não esconde
+  nada enquanto a busca não volta).
+
+src/main/modules/cards.test.ts (13 novos)
+- Abrir o card traz todos os campos do modal.
+- Título (o mesmo título não grava nada); FIN-04 e FIN-05 pelo ✓ do modal, com a atividade.
+- PRI-01; DAT-01 e LEM-01 (sem data não há lembrete); LEM-04 (mudar a data rearma o lembrete).
+- NOT-07: a descrição é limpa, vira HTML e texto; HTML proibido é descartado; vazia vira "".
+- ETQ-04: marcar e desmarcar zera o envelhecimento; o mesmo conjunto não grava; etiqueta de outro
+  quadro é recusada.
+- CAR-07: cópia com outro título, na lista e posição escolhidas, com checklist; em outro quadro,
+  com as etiquetas recriadas.
+- CAR-05: arquivar não zera e registra; restaurar zera.
+- FLT-01: palavra-chave no título, na descrição, na nota e na etiqueta, sem acento e sem
+  maiúscula; % não vira curinga; arquivados ficam de fora.
+
+src/main/modules/labels.test.ts
+- ETQ-01 (paleta, nome opcional de até 40), lista em ordem, a nova vai para o fim.
+- Editar nome e cor não mexe nos cards (ENV-06); ETQ-04: excluir tira de todos os cards.
+
+src/main/modules/checklists.test.ts
+- CHK-01 (vários checklists, renomear, reordenar, excluir; mesmo lugar não grava); CHK-04 fica
+  salvo e não zera; CHK-05 (item novo sem data e no calendário; data só com o dia).
+- Cada mudança de item zera o envelhecimento; o mesmo valor não grava; CHK-03 soma todos.
+
+src/main/modules/lists.test.ts (3 novos)
+- LIS-08 com PRI-05 e DAT-04 (arquivados ficam depois); ordenar não zera (ENV-06).
+
+src/main/ipc/events.test.ts (tabela de eventos, PLANO.md 6.2)
+- ENV-05: 17 eventos que zeram, mais restaurar e reordenar checklist e item.
+- ENV-06: 22 eventos que não zeram (abrir, mesmo lugar, arquivar, copiar, opções da lista,
+  ordenar, etiquetas, quadro, filtro…).
+- Cobertura: todo canal do IPC está classificado; um canal novo sem classificação faz o teste
+  falhar.
+
+src/renderer/src/features/board/cardDrag.test.ts (5 novos)
+- Com filtro ativo, a posição entre os visíveis vira a posição na lista inteira.
+- Rolagem automática: perto das bordas rola, mais rápido quanto mais perto; no meio, não.
+
+src/renderer/src/features/card/CardModal.test.tsx
+- Título editável e ✓ (FIN-04); campos vazios não aparecem e a última movimentação sim (CAR-09).
+- Adicionar: prioridade (e "Sem prioridade"); data com hora e lembrete, "Em atraso" e remover;
+  data inválida não é salva; dia escolhido na grade; etiquetas (marcar, buscar, criar, editar).
+- Checklist: criar, adicionar itens, marcar (50%), ocultar marcados, excluir item; data da
+  tarefa com "Mostrar no calendário" (CHK-05).
+- Descrição em modo leitura, entrar em edição e cancelar; o convite abre o editor.
+- Seletor de lista (CAR-06), "Mover" para outra posição e lista, "Copiar" logo abaixo (CAR-07),
+  arquivar com o aviso e restaurar (CAR-10), excluir com confirmação fecha o modal.
+
+src/renderer/src/features/board/BoardCards.test.tsx (5 novos)
+- PRI-02 na face; FLT-02 e FLT-04 (contador "visíveis/total", botão destacado, limpar); FLT-01
+  sem acento e maiúscula; FLT-05 (trocar de quadro limpa); LIS-08 pelo menu da lista.
 
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
@@ -244,5 +316,15 @@ Etapa 3 (conferido em 22/10/2026, no app real pelo Playwright)
 [x] "Adicionar um cartão": Enter adiciona e o campo continua aberto para o próximo.
 [x] Nenhum erro no console durante a conferência.
 [x] Capturas da etapa 3 conferidas com as telas 2, 3, 8, 9 e 16, nos dois temas.
+
+Etapa 4 (conferido em 23/10/2026, no app real pelo Playwright)
+[x] Descrição digitada com negrito e link salva o HTML esperado (NOT-04).
+[x] Esc no título, num item ou na descrição em edição cancela só a edição; o modal continua.
+[x] Com um popover do modal aberto, o primeiro clique fora fecha só o popover.
+[x] Reordenar item do checklist com o mouse e com o teclado (espaço, seta, espaço).
+[x] Rolagem automática no arraste: o quadro rola nas bordas (card e lista) e volta; a lista longa
+    rola no pé; depois de um arraste cancelado, o próximo não rola o quadro sozinho.
+[x] Nenhum erro no console durante a conferência.
+[x] Capturas da etapa 4 conferidas com as telas 4, 9, 14 e 16, nos dois temas.
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

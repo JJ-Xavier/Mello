@@ -33,6 +33,24 @@ export function useCard(cardId: string) {
   })
 }
 
+export function useLabels(boardId: string) {
+  return useQuery({
+    queryKey: queryKeys.labels(boardId),
+    queryFn: () => unwrap(api().labels.list({ boardId }))
+  })
+}
+
+// FLT-01: os cards do quadro com a palavra-chave (o main procura sem acento e sem diferenciar
+// maiúsculas). Sem palavra-chave, não consulta.
+export function useMatching(boardId: string, keyword: string) {
+  const trimmed = keyword.trim()
+  return useQuery({
+    queryKey: queryKeys.matching(boardId, trimmed),
+    queryFn: () => unwrap(api().cards.matching({ boardId, keyword: trimmed })),
+    enabled: trimmed !== ''
+  })
+}
+
 export function useArchived(boardId: string) {
   return useQuery({
     queryKey: queryKeys.archived(boardId),

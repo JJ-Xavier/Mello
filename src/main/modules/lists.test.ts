@@ -298,3 +298,60 @@ describe('cards arquivados', () => {
     expect(() => cards.remove(t.db, cardId)).toThrow(/não encontrado/)
   })
 })
+
+describe('ordenar a lista (LIS-08)', () => {
+  function setup() {
+    const todo = listId('A fazer')
+    const add = (title: string, position: string, values: Partial<typeof card.$inferInsert>) => {
+      const id = insertCard(t.db, todo, { title, position })
+      if (Object.keys(values).length) t.db.update(card).set(values).where(eq(card.id, id)).run()
+      return id
+    }
+    add('Sem nada', 'a0', {})
+    add('Baixa, dia 20', 'a1', { priority: 4, dueAt: '2026-10-20' })
+    add('Muito alta, dia 20 às 10h', 'a2', { priority: 1, dueAt: '2026-10-20T10:00' })
+    add('Baixa, dia 18', 'a3', { priority: 4, dueAt: '2026-10-18' })
+    add('Arquivado', 'a4', { priority: 1, archivedAt: NOW })
+    return todo
+  }
+  const order = () =>
+    t.db
+      .select({ title: card.title })
+      .from(card)
+      .where(eq(card.listId, listId('A fazer')))
+      .orderBy(asc(card.position))
+      .all()
+      .map((c) => c.title)
+
+  it('PRI-05: do 1 ao 5, sem prioridade no fim, empates na ordem em que estavam', () => {
+    lists.sort(t.db, setup(), 'priority')
+    expect(order()).toEqual([
+      'Muito alta, dia 20 às 10h',
+      'Baixa, dia 20',
+      'Baixa, dia 18',
+      'Sem nada',
+      'Arquivado'
+    ])
+  })
+
+  it('DAT-04: do prazo mais cedo ao mais tarde (o dia inteiro vai até o fim do dia)', () => {
+    lists.sort(t.db, setup(), 'due')
+    expect(order()).toEqual([
+      'Baixa, dia 18',
+      'Muito alta, dia 20 às 10h',
+      'Baixa, dia 20',
+      'Sem nada',
+      'Arquivado'
+    ])
+  })
+
+  it('ordenar não zera o envelhecimento (ENV-06)', () => {
+    lists.sort(t.db, setup(), 'priority')
+    const touched = t.db
+      .select()
+      .from(card)
+      .all()
+      .filter((c) => c.lastActivityAt !== 1000)
+    expect(touched).toEqual([])
+  })
+})
