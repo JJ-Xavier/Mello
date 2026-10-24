@@ -1,32 +1,42 @@
-// Cards: criar, editar (modal), mover (arrastar ou menu), copiar, etiquetas, arquivar, restaurar,
-// excluir, a face no quadro e a busca do filtro do quadro. Nota, anexos e capa entram na etapa 5.
+// Cards: criar, editar (modal, inclusive a nota), mover (arrastar ou menu), copiar, etiquetas,
+// arquivar, restaurar, excluir, a face no quadro e a busca do filtro do quadro. Anexos e capa ficam
+// em attachments.ts.
 import { randomUUID } from 'node:crypto'
-import { and, asc, count, eq, inArray, isNull, max, or, sql, type SQL } from 'drizzle-orm'
-import type { CardDetail, CardSummary, UpdateCardInput } from '../../shared/ipc/cards'
-import { DESCRIPTION_TEXT_MAX } from '../../shared/limits'
+import { and, asc, count, desc, eq, inArray, isNull, max, or, sql, type SQL } from 'drizzle-orm'
+import type {
+  ActivityEntry,
+  CardDetail,
+  CardSummary,
+  UpdateCardInput
+} from '../../shared/ipc/cards'
+import { DESCRIPTION_TEXT_MAX, NOTE_TEXT_MAX } from '../../shared/limits'
 import { AppError } from '../../shared/result'
 import { doneAfterMove } from '../../shared/rules/finished'
-import { clean, toHtml, toText } from '../../shared/rules/richText'
+import { clean, textLength, toHtml, toText } from '../../shared/rules/richText'
 import { removeAccents } from '../../shared/text'
 import type { Db, DbOrTx, Tx } from '../db/client'
 import {
+  activity,
   attachment,
   board,
   card,
   cardLabel,
   checklist,
   checklistItem,
+  file,
   label,
   list
 } from '../db/schema'
 import { addActivity, touch } from './activity'
+import { attachmentsOf, coverOf } from './attachments'
 import { checklistsOf } from './checklists'
 import { mapLabelsToBoard } from './labels'
 import { keyAfter, keyAt, rebalance, visibleIndex } from './position'
 
 // Copia um card (CAR-07): título, descrição, nota, ✓, etiquetas, prioridade, data, lembrete, capa,
 // checklists com o estado dos itens e anexos. Não copia a atividade nem a repetição. A cópia
-// nasce com nível 0 e com a atividade "Copiado de <título>" (ENV-07, ATV-02).
+// nasce com nível 0 e com a atividade "Copiado de <título>" (ENV-07, ATV-02). Capa e anexos
+// apontam para os mesmos arquivos guardados (ANX-02): nada é copiado no disco.
 // labelMap troca as etiquetas quando a cópia vai para outro quadro (LIS-05).
 export function copyCard(
   tx: Tx,
@@ -170,10 +180,16 @@ function summaries(db: DbOrTx, where: SQL | undefined): CardSummary[] {
       dueAt: card.dueAt,
       recurrenceId: card.recurrenceId,
       descriptionText: card.descriptionText,
-      noteText: card.noteText
+      noteText: card.noteText,
+      coverKind: card.coverKind,
+      coverValue: card.coverValue,
+      coverExt: file.ext,
+      coverWidth: file.width,
+      coverHeight: file.height
     })
     .from(card)
     .innerJoin(list, eq(card.listId, list.id))
+    .leftJoin(file, and(eq(card.coverKind, 'image'), eq(file.id, card.coverValue)))
     .where(where)
     .orderBy(asc(card.position))
     .all()
@@ -216,16 +232,33 @@ function summaries(db: DbOrTx, where: SQL | undefined): CardSummary[] {
   }
   const checksOf = new Map(checks.map((c) => [c.cardId, c]))
   const filesOf = new Map(files.map((f) => [f.cardId, f.total]))
-  return rows.map(({ descriptionText, noteText, recurrenceId, ...row }) => ({
-    ...row,
-    recurring: recurrenceId !== null,
-    labels: labelsOf.get(row.id) ?? [],
-    hasDescription: descriptionText.trim() !== '',
-    hasNote: noteText.trim() !== '',
-    attachmentCount: filesOf.get(row.id) ?? 0,
-    checkDone: checksOf.get(row.id)?.done ?? 0,
-    checkTotal: checksOf.get(row.id)?.total ?? 0
-  }))
+  return rows.map(
+    ({
+      descriptionText,
+      noteText,
+      recurrenceId,
+      coverKind,
+      coverValue,
+      coverExt,
+      coverWidth,
+      coverHeight,
+      ...row
+    }) => ({
+      ...row,
+      recurring: recurrenceId !== null,
+      cover: coverOf(coverKind, coverValue, {
+        ext: coverExt,
+        width: coverWidth,
+        height: coverHeight
+      }),
+      labels: labelsOf.get(row.id) ?? [],
+      hasDescription: descriptionText.trim() !== '',
+      hasNote: noteText.trim() !== '',
+      attachmentCount: filesOf.get(row.id) ?? 0,
+      checkDone: checksOf.get(row.id)?.done ?? 0,
+      checkTotal: checksOf.get(row.id)?.total ?? 0
+    })
+  )
 }
 
 // Cards ativos do quadro (listas ativas, cards não arquivados), agrupados pela lista.
@@ -236,6 +269,26 @@ export function summariesByList(db: DbOrTx, boardId: string): Map<string, CardSu
     byList.set(summary.listId, [...(byList.get(summary.listId) ?? []), summary])
   }
   return byList
+}
+
+// Atividade do card (ATV-01), do mais recente para o mais antigo. Registros do mesmo instante
+// (mover e o ✓ automático) ficam na ordem inversa da gravação.
+function activityOf(db: DbOrTx, cardId: string): ActivityEntry[] {
+  return db
+    .select()
+    .from(activity)
+    .where(eq(activity.cardId, cardId))
+    .orderBy(desc(activity.createdAt), desc(sql`rowid`))
+    .all()
+    .map((row) => {
+      let data: Record<string, unknown> = {}
+      try {
+        data = JSON.parse(row.data) as Record<string, unknown>
+      } catch {
+        // Registro ilegível: aparece sem os detalhes.
+      }
+      return { id: row.id, kind: row.kind, data, createdAt: row.createdAt }
+    })
 }
 
 // O card aberto no modal, inclusive arquivado (o modal mostra o aviso para restaurar).
@@ -253,14 +306,22 @@ export function get(db: DbOrTx, cardId: string): CardDetail {
       dueAt: card.dueAt,
       reminder: card.reminder,
       descriptionHtml: card.descriptionHtml,
+      noteHtml: card.noteHtml,
+      coverKind: card.coverKind,
+      coverValue: card.coverValue,
+      coverExt: file.ext,
+      coverWidth: file.width,
+      coverHeight: file.height,
       lastActivityAt: card.lastActivityAt,
       archivedAt: card.archivedAt
     })
     .from(card)
     .innerJoin(list, eq(card.listId, list.id))
+    .leftJoin(file, and(eq(card.coverKind, 'image'), eq(file.id, card.coverValue)))
     .where(eq(card.id, cardId))
     .get()
   if (!found) throw new AppError('NOT_FOUND', 'Card não encontrado.')
+  const { coverKind, coverValue, coverExt, coverWidth, coverHeight, ...detail } = found
   const labelIds = db
     .select({ id: label.id })
     .from(cardLabel)
@@ -269,13 +330,37 @@ export function get(db: DbOrTx, cardId: string): CardDetail {
     .orderBy(asc(label.position))
     .all()
     .map((l) => l.id)
-  return { ...found, labelIds, checklists: checklistsOf(db, cardId) }
+  return {
+    ...detail,
+    cover: coverOf(coverKind, coverValue, {
+      ext: coverExt,
+      width: coverWidth,
+      height: coverHeight
+    }),
+    labelIds,
+    checklists: checklistsOf(db, cardId),
+    attachments: attachmentsOf(db, cardId),
+    activity: activityOf(db, cardId)
+  }
+}
+
+// Texto rico (descrição, nota): só o que a NOT-04 permite, com o HTML gerado aqui. Passar do
+// tamanho máximo é recusado (o editor já não deixa digitar além dele).
+function richFields(input: unknown, max: number, what: string) {
+  const doc = clean(input)
+  if (textLength(doc) > max) {
+    throw new AppError('INVALID_INPUT', `${what} passou do tamanho máximo.`)
+  }
+  const html = toHtml(doc)
+  return { html, text: html ? toText(doc) : '' }
 }
 
 // Editar pelo modal. Cada mudança zera o envelhecimento (ENV-05); se nada mudou, não grava.
 // - ✓ (FIN-04, FIN-05): registra na atividade (ATV-02).
 // - Data: sem data não há lembrete (LEM-01); mudar a data ou o lembrete rearma (LEM-04).
-// - Descrição: só fica o que a NOT-04 permite; o main gera o HTML (richText.ts).
+// - Descrição e nota: só fica o que a NOT-04 permite; o main gera o HTML (richText.ts). Cada
+//   salvamento automático da nota que muda o texto conta como alteração (ENV-05) e não entra na
+//   atividade (ATV-03).
 export function update(db: Db, input: UpdateCardInput, now: number): void {
   db.transaction((tx) => {
     const current = requireCard(tx, input.cardId)
@@ -297,15 +382,17 @@ export function update(db: Db, input: UpdateCardInput, now: number): void {
       }
     }
     if (input.description !== undefined) {
-      const doc = clean(input.description)
-      const text = toText(doc)
-      if (text.length > DESCRIPTION_TEXT_MAX) {
-        throw new AppError('INVALID_INPUT', 'A descrição passou do tamanho máximo.')
-      }
-      const html = toHtml(doc)
+      const { html, text } = richFields(input.description, DESCRIPTION_TEXT_MAX, 'A descrição')
       if (html !== current.descriptionHtml) {
         changes.descriptionHtml = html
-        changes.descriptionText = html ? text : ''
+        changes.descriptionText = text
+      }
+    }
+    if (input.note !== undefined) {
+      const { html, text } = richFields(input.note, NOTE_TEXT_MAX, 'A nota')
+      if (html !== current.noteHtml) {
+        changes.noteHtml = html
+        changes.noteText = text
       }
     }
     if (Object.keys(changes).length === 0) return

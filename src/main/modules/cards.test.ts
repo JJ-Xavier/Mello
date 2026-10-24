@@ -316,11 +316,30 @@ describe('face do card (CAR-04)', () => {
       reminder: 'none',
       labelIds: [],
       descriptionHtml: '',
+      noteHtml: '',
+      cover: null,
       lastActivityAt: 1000,
       archivedAt: null,
-      checklists: []
+      checklists: [],
+      attachments: [],
+      activity: []
     })
     expect(() => cards.get(t.db, randomUUID())).toThrow(/não encontrado/)
+  })
+
+  it('ATV-01: a atividade vem do registro mais recente para o mais antigo', () => {
+    const created = cards.create(t.db, listId('A fazer'), 'Compras', NOW)
+    cards.move(t.db, created.id, listId('Concluído'), 0, LATER)
+    expect(cards.get(t.db, created.id).activity).toEqual([
+      { id: expect.any(String), kind: 'done', data: {}, createdAt: LATER },
+      {
+        id: expect.any(String),
+        kind: 'moved',
+        data: { from: 'A fazer', to: 'Concluído' },
+        createdAt: LATER
+      },
+      { id: expect.any(String), kind: 'created', data: { list: 'A fazer' }, createdAt: NOW }
+    ])
   })
 })
 
@@ -417,6 +436,77 @@ describe('editar o card pelo modal', () => {
     cards.update(t.db, { cardId: compras, description: { type: 'doc', content: [] } }, LATER)
     expect(row(compras)).toMatchObject({ descriptionHtml: '', descriptionText: '' })
   })
+
+  const paragraph = (text: string) => ({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text }] }]
+  })
+
+  it('NOT-03 e NOT-04: a nota é limpa e salva; a mesma nota não grava; nada na atividade', () => {
+    const { compras } = threeCards()
+    const note = {
+      type: 'doc',
+      content: [
+        { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Pendências' }] },
+        {
+          type: 'taskList',
+          content: [
+            {
+              type: 'taskItem',
+              attrs: { checked: true },
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'logo',
+                      marks: [{ type: 'link', attrs: { href: 'javascript:alert(1)' } }]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        { type: 'image', attrs: { src: 'x', onerror: 'alert(1)' } }
+      ]
+    }
+    cards.update(t.db, { cardId: compras, note }, LATER)
+    expect(row(compras)).toMatchObject({
+      noteHtml:
+        '<h3>Pendências</h3><ul data-type="taskList"><li data-type="taskItem" data-checked="true"><p>logo</p></li></ul>',
+      noteText: 'Pendências\nlogo',
+      lastActivityAt: LATER
+    })
+    expect(cards.get(t.db, compras).noteHtml).toContain('Pendências')
+    expect(boards.get(t.db, boardId).lists[0]!.cards[0]!.hasNote).toBe(true)
+    const before = row(compras)
+    cards.update(t.db, { cardId: compras, note }, LATER + 1)
+    expect(row(compras)).toEqual(before)
+    expect(activities(compras)).toEqual([])
+    cards.update(t.db, { cardId: compras, note: paragraph('  ') }, LATER + 2)
+    expect(row(compras)).toMatchObject({ noteHtml: '', noteText: '' })
+  })
+
+  it('NOT-01 e NOT-07: nota e descrição até 20 000 caracteres, contados como o editor conta', () => {
+    const { compras } = threeCards()
+    const twoBlocks = (size: number) => ({
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'a'.repeat(size - 1) }] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'b' }] }
+      ]
+    })
+    cards.update(t.db, { cardId: compras, note: twoBlocks(20_000) }, LATER)
+    expect(row(compras).noteText).toHaveLength(20_001)
+    expect(() => cards.update(t.db, { cardId: compras, note: twoBlocks(20_001) }, LATER)).toThrow(
+      /nota passou do tamanho máximo/
+    )
+    expect(() =>
+      cards.update(t.db, { cardId: compras, description: twoBlocks(20_001) }, LATER)
+    ).toThrow(/descrição passou do tamanho máximo/)
+  })
 })
 
 describe('etiquetas no card (ETQ-04)', () => {
@@ -481,6 +571,48 @@ describe('copiar, arquivar e filtrar', () => {
     )
     expect(copied.labels[0]!.id).not.toBe(roxo.id)
     expect(copied.labels[0]!.color).toBe(roxo.color)
+  })
+
+  it('CAR-07: a cópia leva a nota, a capa e os anexos, sem copiar arquivos', () => {
+    const source = insertCard(t.db, listId('A fazer'), { title: 'Viagem' })
+    const fileId = 'a'.repeat(64)
+    t.db
+      .insert(file)
+      .values({
+        id: fileId,
+        ext: 'png',
+        mime: 'image/png',
+        size: 10,
+        width: 4,
+        height: 3,
+        createdAt: NOW
+      })
+      .run()
+    t.db
+      .insert(attachment)
+      .values({ id: randomUUID(), cardId: source, fileId, name: 'praia.png', createdAt: NOW })
+      .run()
+    t.db
+      .update(card)
+      .set({ noteHtml: '<p>levar protetor</p>', coverKind: 'image', coverValue: fileId })
+      .where(eq(card.id, source))
+      .run()
+    const copied = cards.copy(
+      t.db,
+      { cardId: source, title: 'Viagem (cópia)', listId: listId('A fazer'), index: 1 },
+      LATER
+    )
+    expect(copied.cover).toEqual({
+      kind: 'image',
+      fileId,
+      url: `mello-arquivo://arquivos/${fileId}.png`,
+      width: 4,
+      height: 3
+    })
+    const detail = cards.get(t.db, copied.id)
+    expect(detail.noteHtml).toBe('<p>levar protetor</p>')
+    expect(detail.attachments.map((a) => [a.name, a.fileId])).toEqual([['praia.png', fileId]])
+    expect(t.db.select().from(file).all()).toHaveLength(1)
   })
 
   it('CAR-05: arquivar tira do quadro, registra e não zera; restaurar zera', () => {

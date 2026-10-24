@@ -1,16 +1,26 @@
-// Modal do card (Card.dc.html, 1160 × 804 px). Abre por cima da tela atual quando o endereço tem
-// ?card=<id>, então o mesmo modal serve ao quadro e, na etapa 7, ao calendário.
-// Coluna da esquerda (etapa 4): lista, ✓, título, Adicionar, Checklist, etiquetas, prioridade,
-// data de entrega, última movimentação, descrição e checklists. Campos vazios não aparecem: o
-// "Adicionar" inclui (decidido em 23/10/2026). A coluna da direita (nota e atividade), os anexos e
-// a capa entram na etapa 5.
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react'
+// Modal do card (Card.dc.html, 1160 × 804 px; com capa, NovoCardCapaAnexos.dc.html, 836 px). Abre
+// por cima da tela atual quando o endereço tem ?card=<id>, então o mesmo modal serve ao quadro e,
+// na etapa 7, ao calendário.
+// Coluna da esquerda: lista, ✓, título, Adicionar, Checklist, Anexo, etiquetas, prioridade, data de
+// entrega, última movimentação, anexos, descrição e checklists. Campos vazios não aparecem: o
+// "Adicionar" inclui (decidido em 23/10/2026). Coluna da direita: nota e atividade. A capa é a
+// faixa do topo. Arquivos soltos em qualquer parte do modal são anexados.
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type DragEvent,
+  type FormEvent
+} from 'react'
 import { useSearchParams } from 'react-router'
 import type { CardDetail, UpdateCardInput } from '../../../../shared/ipc/cards'
 import { CHECKLIST_TITLE_MAX } from '../../../../shared/limits'
 import { isOverdue } from '../../../../shared/rules/dates'
 import { isFinished } from '../../../../shared/rules/finished'
 import { priorityLevel } from '../../../../shared/rules/priority'
+import { Cover } from '../../components/Cover'
 import { DoneMark } from '../../components/DoneMark'
 import { EditableTitle } from '../../components/EditableTitle'
 import { Icon } from '../../components/Icon'
@@ -23,13 +33,18 @@ import { formatDateTime, formatDue } from '../../lib/format'
 import { useAction, useBoard, useCard, useLabels } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
 import { useNow } from '../../lib/useNow'
+import { Activity } from './Activity'
+import { Attachments } from './Attachments'
 import { CardMenu } from './CardMenu'
 import styles from './CardModal.module.css'
 import { Checklists } from './Checklists'
+import { CoverPicker } from './CoverPicker'
 import { DatePicker } from './DatePicker'
 import { Description } from './Description'
 import { LabelChip, LabelPicker } from './LabelPicker'
+import { Note } from './Note'
 import { PriorityPicker } from './PriorityPicker'
+import { useAttach } from './useAttach'
 import { useCardAction } from './useCardAction'
 import { useDeleteCard } from './useDeleteCard'
 
@@ -279,17 +294,44 @@ function ArchivedBanner({ card, onDeleted }: { card: CardDetail; onDeleted: () =
   )
 }
 
+const hasFiles = (event: DragEvent) => event.dataTransfer.types.includes('Files')
+
 function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => void }) {
   const listId = useId()
+  const coverId = useId()
   const menuId = useId()
   const addId = useId()
   const checklistId = useId()
   const now = useNow()
   const act = useCardAction(card)
+  const attach = useAttach(card)
+  const [dropping, setDropping] = useState(false)
   const finished = isFinished(card.isDone, card)
 
+  // Soltar arquivos do Explorer em qualquer parte do modal anexa (ANX-01). Na fase de captura,
+  // para o editor de texto não receber o arquivo.
+  const drag = {
+    onDragOverCapture: (event: DragEvent) => {
+      if (!hasFiles(event)) return
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'copy'
+      setDropping(true)
+    },
+    onDragLeave: (event: DragEvent) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropping(false)
+    },
+    onDropCapture: (event: DragEvent) => {
+      if (!hasFiles(event)) return
+      event.preventDefault()
+      event.stopPropagation()
+      setDropping(false)
+      void attach.drop(Array.from(event.dataTransfer.files))
+    }
+  }
+
   return (
-    <>
+    <div className={styles.content} {...drag}>
+      {card.cover && <Cover cover={card.cover} height={96} />}
       <div className={styles.top}>
         <button type="button" className={styles.list} popoverTarget={listId}>
           {card.listTitle}
@@ -303,11 +345,13 @@ function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => v
           type="button"
           className={styles.iconButton}
           aria-label="Capa do card"
-          disabled
-          title="Chega na etapa 5"
+          popoverTarget={coverId}
         >
           <Icon name="image" size={20} />
         </button>
+        <Popover id={coverId} label="Capa" placement="belowEnd">
+          {(close) => <CoverPicker card={card} close={close} />}
+        </Popover>
         <button
           type="button"
           className={styles.iconButton}
@@ -371,7 +415,12 @@ function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => v
             <Popover id={checklistId} label="Adicionar checklist">
               {(close) => <AddChecklist card={card} close={close} />}
             </Popover>
-            <button type="button" className={styles.outline} disabled title="Chega na etapa 5">
+            <button
+              type="button"
+              className={styles.outline}
+              title="Escolha ou solte arquivos no card"
+              onClick={() => void attach.choose()}
+            >
               <Icon name="attachment" />
               Anexo
             </button>
@@ -381,18 +430,22 @@ function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => v
             </button>
           </div>
           <Fields card={card} now={now} />
+          <Attachments card={card} attach={attach} />
           <Description card={card} />
           <Checklists card={card} now={now} />
         </div>
-        <aside className={styles.aside} aria-label="Nota">
-          <div className={styles.asideHead}>
-            <Icon name="note" size={20} />
-            <h2 className={styles.asideTitle}>Nota</h2>
-          </div>
-          <p className={styles.asideNotice}>A nota e a atividade do card chegam na etapa 5.</p>
+        <aside className={styles.aside} aria-label="Nota e atividade">
+          <Note key={card.id} card={card} />
+          <Activity entries={card.activity} />
         </aside>
       </div>
-    </>
+      {dropping && (
+        <div className={styles.dropZone} aria-hidden="true">
+          <Icon name="attachment" size={24} />
+          Solte para anexar ao card
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -425,7 +478,7 @@ function CardDialog({ cardId, onClose }: { cardId: string; onClose: () => void }
     <dialog
       ref={dialog}
       aria-label={card ? card.title : 'Card'}
-      className={styles.modal}
+      className={cx(styles.modal, card?.cover && styles.withCover)}
       onClose={onClose}
       onCancel={(event) => {
         if (popoverWasOpen.current) event.preventDefault()

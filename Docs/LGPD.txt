@@ -1,8 +1,8 @@
 Referente as boas praticas da LGPD e aplicacões em desenvolvimentos de softwere
 
-Status: aprovado em 21/10/2026; revisado na etapa 1 (pasta do modo de desenvolvimento). Este
-documento é revisado também nas etapas 5 (anexos), 10 (backup, exportação e apagar tudo) e 12
-(versão final).
+Status: aprovado em 21/10/2026; revisado na etapa 1 (pasta do modo de desenvolvimento) e na
+etapa 5 (anexos, 24/10/2026). Será revisado também nas etapas 10 (backup, exportação e apagar
+tudo) e 12 (versão final).
 
 
 1. RESUMO
@@ -29,6 +29,12 @@ identificador. Também não sabe quem está usando: não existe cadastro.
 Atenção: anexos e notas podem conter dados pessoais seus ou de outras pessoas (documentos, fotos,
 contatos). Eles ficam guardados como você os colocou, sem criptografia própria do app.
 
+Anexos: o Mello copia para a pasta dele só os arquivos que você escolhe na janela do Windows ou
+arrasta para o card; o original continua onde estava, sem mudança. O mesmo arquivo anexado duas
+vezes é guardado uma vez só. Remover um anexo tira ele do card; a cópia guardada sai da pasta na
+limpeza dos arquivos sem uso (etapa 10). Excluir um card também não apaga na hora os arquivos
+dele. "Apagar tudo" apaga a pasta inteira.
+
 
 3. ONDE OS DADOS FICAM
 
@@ -42,6 +48,10 @@ Tudo fica na pasta de dados do usuário do Windows:
 - %APPDATA%\Mello\logs\ ........... registros técnicos (erros e eventos do app, nunca o conteúdo
                                     dos cards)
 - Outras pastas do Electron em %APPDATA%\Mello (cache do Chromium), sem conteúdo seu.
+- %TEMP%\Mello\ ................... cópias dos anexos que você abriu pelo "Abrir" (só leitura,
+                                    com o nome original). São apagadas na próxima vez que o app
+                                    abre; uma que ainda esteja aberta em outro programa fica para
+                                    a vez seguinte.
 
 No modo de desenvolvimento (npm run dev) a pasta é %APPDATA%\Mello-dev, com a mesma estrutura.
 Ela só existe no computador de quem desenvolve o app e é separada de propósito, para que os testes
@@ -86,8 +96,9 @@ backups que estiverem em pastas sincronizadas com a nuvem.
 - Livre acesso e transparência: este documento diz o que é guardado e onde; a exportação mostra
   tudo em texto legível.
 - Segurança: a interface do app não tem acesso direto ao disco nem ao banco (isolamento do
-  Electron); só a parte principal do app lê e grava os arquivos. Conteúdo digitado é filtrado
-  antes de ser exibido, para que um texto colado não vire código executado.
+  Electron); só a parte principal do app lê e grava os arquivos (a interface não recebe nem o
+  caminho dos arquivos que você anexa). Conteúdo digitado é filtrado antes de ser exibido, para
+  que um texto colado não vire código executado.
 - Eliminação: "Apagar tudo" (seção 5).
 - Portabilidade: exportação em JSON (seção 4).
 - Não discriminação e compartilhamento: nenhum dado é compartilhado com ninguém.

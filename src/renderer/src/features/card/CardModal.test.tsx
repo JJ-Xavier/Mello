@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { MelloApi } from '../../../../shared/ipc/api'
 import type { BoardSummary } from '../../../../shared/ipc/boards'
 import { App } from '../../app/App'
@@ -7,12 +7,15 @@ import { unwrap } from '../../lib/api'
 import { installRealApi } from '../../test/realApi'
 
 let api: MelloApi
+let files: ReturnType<typeof installRealApi>['files']
 let board: BoardSummary
 let lists: Record<string, string>
 let cardId: string
 
+afterEach(() => files.cleanup())
+
 beforeEach(async () => {
-  ;({ api } = installRealApi())
+  ;({ api, files } = installRealApi())
   board = await unwrap(api.boards.create({ title: 'Casa' }))
   const detail = await unwrap(api.boards.get({ boardId: board.id }))
   lists = Object.fromEntries(detail.lists.map((l) => [l.title, l.id]))

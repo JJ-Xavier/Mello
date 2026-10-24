@@ -1,7 +1,7 @@
 To-do list — Mello
 
-Atualizado em: 23/10/2026
-Situação: etapa 4 concluída em 23/10/2026, aguardando o commit do Jackson. A etapa 5 começa
+Atualizado em: 24/10/2026
+Situação: etapa 5 concluída em 24/10/2026, aguardando o commit do Jackson. A etapa 6 começa
           quando for liberada.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
@@ -74,11 +74,14 @@ ETAPA 4 — MODAL DO CARD: DADOS (concluída em 23/10/2026)
 [x] Testes (280 no total, inclui a tabela de eventos ENV-05/06), conferência visual, documentos,
     aviso de pronto para commit
 
-ETAPA 5 — MODAL DO CARD: NOTA, ATIVIDADE, ANEXOS E CAPA
-[ ] Nota com TipTap e salvamento automático (NOT)
-[ ] Atividade recolhida (ATV)
-[ ] Anexos (ANX) e capa (CAP)
-[ ] Testes, conferência visual, documentos (LGPD: anexos), aviso de pronto para commit
+ETAPA 5 — MODAL DO CARD: NOTA, ATIVIDADE, ANEXOS E CAPA (concluída em 24/10/2026)
+[x] Nota com TipTap e salvamento automático (NOT)
+[x] Atividade recolhida (ATV)
+[x] Anexos (ANX) e capa (CAP), com os arquivos guardados pelo hash
+[x] Anexar também arrastando do Explorer; "Abrir" abre cópia temporária; programas mostrados na
+    pasta (ANX-01, ANX-03, decididos em 23/10/2026)
+[x] Testes (336 no total), conferência visual, documentos (LGPD: anexos), aviso de pronto para
+    commit
 
 ETAPA 6 — ENVELHECIMENTO
 [ ] Cálculo do nível e congelamentos (ENV-01..04)
@@ -110,6 +113,7 @@ ETAPA 10 — CONFIGURAÇÕES, TEMA, BACKUP E DADOS
 [ ] Lembretes e bandeja; Dados e backup (seções novas)
 [ ] Tema claro/sistema em todas as telas (TEM)
 [ ] Backup automático, restaurar, exportar, apagar tudo (DAD)
+[ ] Limpeza dos arquivos sem uso (DAD-08), junto com o espelho do backup (DAD-05)
 [ ] Testes, conferência visual, documentos (LGPD), aviso de pronto para commit
 
 ETAPA 11 — BUSCA E MODELOS
@@ -129,6 +133,8 @@ PENDÊNCIAS E OBSERVAÇÕES
 
 - As telas de modelos, capa e lembretes não existem no protótipo; foram desenhadas nas telas novas
   10 a 16 (aprovadas em 21/10/2026).
+- Etapa 12 (desempenho): a capa de imagem é mostrada a partir do arquivo inteiro; com muitas
+  fotos grandes no quadro, avaliar gerar miniaturas.
 - Etapa 12: no electron-builder.yml, deixar fora do instalador os binários do better-sqlite3 de
   outras plataformas e o código-fonte do SQLite que vêm no pacote.
 - O post-it azul do calendário no canvas ainda diz "riscado = ✓ ou Concluído/Entregue"; a regra

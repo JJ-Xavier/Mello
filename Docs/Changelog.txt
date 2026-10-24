@@ -4,6 +4,56 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.5.0 — Etapa 5: modal do card (nota, atividade, anexos e capa) (24/10/2026)
+
+Adicionado
+- Nota na coluna da direita do modal (NOT-01 a NOT-03): o mesmo editor da descrição, sempre
+  aberto, que salva sozinho 800 ms depois da última tecla, ao fechar o modal e ao fechar o app,
+  com "Salvando…" e "Salvo automaticamente". Até 20 000 caracteres.
+- Atividade recolhida embaixo da nota, com a quantidade de registros; aberta, do mais recente
+  para o mais antigo, com data e hora (ATV-01).
+- Anexos (ANX): pela janela "Abrir" do Windows (botões Anexo e Adicionar) ou arrastando arquivos
+  do Explorer para o modal; miniatura das imagens, tamanho e data; Abrir, Usar como capa, Remover
+  capa e Remover (com confirmação); confirmação acima de 200 MB.
+- Capa (CAP): botão "Capa do card" no topo do modal, com prévia, as 8 cores, as imagens anexadas,
+  "Enviar imagem" e "Remover capa"; faixa de 96 px no modal e capa na face do card (cor de 32 px
+  ou imagem com a proporção dela, até 160 px).
+
+Mudou
+- Canais novos: cards:setCover e uploadCover; files:pick e dropped; attachments:add, open e
+  delete. cards:update ganhou a nota, e cards:get traz a nota, a capa, os anexos e a atividade.
+- Arquivos guardados pelo hash do conteúdo, copiados e conferidos na mesma leitura
+  (modules/files.ts). A tela recebe só uma ficha de cada arquivo escolhido ou solto, nunca o
+  caminho; o preload usa o webUtils para os arquivos soltos.
+- O limite de tamanho da descrição passou a contar como o editor conta, e os editores param de
+  aceitar texto no limite.
+- A confirmação ganhou o botão azul, para ações que não perdem nada (anexar arquivo grande).
+- Os botões da barra do editor só acendem com o editor em uso.
+- Script de capturas: anexos de verdade (fotos fictícias geradas no canvas) e opções do Chromium
+  para a janela continuar desenhando coberta ou com o monitor desligado.
+- Dependências novas (só desenvolvimento, empacotadas no build): image-size 2.0.4 (no main) e
+  @tiptap/extensions 3.31.4 (na tela).
+- Versão 0.5.0.
+
+Corrigido
+- Esc dentro da nota não fechava o modal (o ProseMirror segura o Esc); agora fecha e salva.
+- No editor, a caixa de marcar da lista de tarefas ficava numa linha e o texto em outra (o item
+  do TipTap não tem data-type), e o rótulo dela para leitor de tela vinha em inglês.
+- Ao terminar de anexar, a seção Anexos sumia por um instante e voltava.
+
+Decisões tomadas na etapa (23/10/2026)
+- Anexar pelo botão e também arrastando arquivos do Explorer (ANX-01).
+- "Abrir" abre uma cópia temporária só leitura, com o nome original; o anexo guardado nunca muda
+  (ANX-03).
+- Programas (.exe, .bat, .msi, .ps1…) são mostrados na pasta em vez de executados (ANX-03).
+
+Documentação
+- Atualizados: Regras.txt (NOT-01, NOT-03, NOT-05, NOT-07, ATV-02, ATV-03, ANX-01 a ANX-05,
+  CAP-01 a CAP-03, CAR-07, ENV-05, ENV-06; testes ligados a NOT, ATV, ANX e CAP),
+  Arquitetura.txt, Modelo-de-Dados.txt, Testes.txt, Definicao-da-Stack.txt, LGPD.txt (anexos),
+  PLANO.md, To-do-list.txt, README.md.
+
+
 0.4.0 — Etapa 4: modal do card (dados), filtro e ordenar (23/10/2026)
 
 Adicionado

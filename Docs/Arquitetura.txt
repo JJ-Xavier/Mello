@@ -1,6 +1,6 @@
 Arquitetura — Mello
 
-Status: atualizado na etapa 4 (23/10/2026), com o que já existe no código. As partes que ainda vão
+Status: atualizado na etapa 5 (24/10/2026), com o que já existe no código. As partes que ainda vão
 ser construídas estão marcadas com a etapa em que entram.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
 Ver também: Docs/PLANO.md, Docs/Modelo-de-Dados.txt, Docs/Definicao-da-Stack.txt,
@@ -60,7 +60,7 @@ Dentro do main, a direção é uma só: ipc/ → modules/ → db/.
 
 3. PASTAS DO PROJETO
 
-Estado na etapa 4. A estrutura completa prevista está no PLANO.md, seção 3.
+Estado na etapa 5. A estrutura completa prevista está no PLANO.md, seção 3.
 
 Mello/
 ├── Assets/                  identidade visual e imagens de referência
@@ -73,6 +73,7 @@ Mello/
 │   │   ├── index.ts         ciclo de vida, janela, instância única, inicialização
 │   │   ├── paths.ts         pastas de dados (banco, arquivos, backups, logs)
 │   │   ├── protocol.ts      protocolo mello-arquivo://
+│   │   ├── system.ts        janela "Abrir", programa padrão e Explorer (o SystemPort real)
 │   │   ├── db/
 │   │   │   ├── client.ts    conexão, pragmas, função unaccent
 │   │   │   ├── schema.ts    as 13 tabelas (Drizzle)
@@ -83,8 +84,11 @@ Mello/
 │   │   ├── modules/
 │   │   │   ├── boards.ts    quadros (QUA)
 │   │   │   ├── lists.ts     listas (LIS)
-│   │   │   ├── cards.ts     cards: criar, editar, mover, copiar, etiquetas, arquivar,
-│   │   │   │                restaurar, excluir, face no quadro e a busca do filtro
+│   │   │   ├── cards.ts     cards: criar, editar (inclusive a nota), mover, copiar, etiquetas,
+│   │   │   │                arquivar, restaurar, excluir, face no quadro, atividade e filtro
+│   │   │   ├── attachments.ts anexos (ANX) e capa (CAP)
+│   │   │   ├── files.ts     arquivos guardados pelo hash e as fichas dos escolhidos ou soltos
+│   │   │   ├── test-files.ts pasta temporária e Windows falso (só os testes importam)
 │   │   │   ├── checklists.ts checklists e itens (CHK)
 │   │   │   ├── activity.ts  atividade do card e o "zerar o envelhecimento" (touch)
 │   │   │   ├── labels.ts    etiquetas: padrão, editor e recriação no outro quadro (LIS-05)
@@ -95,31 +99,34 @@ Mello/
 │   │       ├── handler.ts   utilitário: Zod + Result (sem Electron, testável)
 │   │       ├── routes.ts    tabela de canais (sem Electron; os testes da tela a usam)
 │   │       └── index.ts     registra as rotas no ipcMain
-│   ├── preload/index.ts     window.mello = createApi(ipcRenderer.invoke)
+│   ├── preload/index.ts     window.mello = createApi(ipcRenderer.invoke, webUtils)
 │   ├── shared/
 │   │   ├── result.ts        Result, ok, fail, AppError
 │   │   ├── text.ts          removeAccents
 │   │   ├── limits.ts        tamanhos máximos dos textos
+│   │   ├── files.ts         endereço mello-arquivo://, imagens aceitas, limite de 200 MB
 │   │   ├── ipc/api.ts       nomes dos canais, o tipo MelloApi e createApi
 │   │   ├── ipc/boards.ts    schemas Zod e tipos de quadros, listas e arquivados
 │   │   ├── ipc/cards.ts     schemas Zod e tipos de cards (face e modal)
 │   │   ├── ipc/labels.ts    etiquetas;  ipc/checklists.ts  checklists e itens
+│   │   ├── ipc/files.ts     anexos, arquivos escolhidos e soltos, capa enviada na hora
 │   │   └── rules/           background.ts (fundos do protótipo), tone.ts (tom, FUN-09),
 │   │                        finished.ts (FIN), dates.ts (datas, DAT), priority.ts (PRI),
 │   │                        color.ts (paleta e texto legível), checklist.ts (CHK),
-│   │                        filter.ts (FLT), richText.ts (texto rico, NOT-04)
+│   │                        filter.ts (FLT), richText.ts (texto rico, NOT-04),
+│   │                        activity.ts (textos da atividade, ATV)
 │   └── renderer/
 │       ├── index.html       com a política de segurança (CSP)
 │       └── src/
 │           ├── app/         rotas, layouts, cabeçalho, menu "Criar", barra flutuante
 │           ├── features/    home/ (Início, criar quadro, fechados), board/ (barra, listas,
 │           │                cards, arrastar, filtro, menus, arquivados), card/ (modal,
-│           │                seletores, checklists, descrição, menu do card, criar card),
-│           │                calendar/, settings/
+│           │                seletores, checklists, descrição, nota, atividade, anexos,
+│           │                capa, menu do card, criar card), calendar/, settings/
 │           ├── components/  Popover, Confirm, Notify, EditableTitle, dnd, DoneMark,
-│           │                PriorityIcon, RichEditor (TipTap), Icon, Logo…
+│           │                PriorityIcon, RichEditor (TipTap), Cover (capa), Icon, Logo…
 │           ├── lib/         api.ts (unwrap), queries.ts (consultas e ações), queryKeys.ts,
-│           │                format.ts (datas), useNow.ts (relógio da tela), useDebounced.ts,
+│           │                format.ts (datas e tamanhos), useNow.ts (relógio da tela), useDebounced.ts,
 │           │                cx.ts
 │           ├── styles/      themes.css (paletas literais), fonts.css, base.css
 │           └── test/        preparação dos testes da tela (setup.ts, realApi.ts)
@@ -141,7 +148,8 @@ Quando o app fica pronto:
 4. Cria as pastas de dados e o arquivo de log.
 5. Abre o banco (src/main/db/open.ts): se houver migração pendente num banco que já tem dados, faz
    um backup antes (DAD-01) e então migra.
-6. Recusa todas as permissões do navegador, registra o protocolo de arquivos e os canais de IPC.
+6. Recusa todas as permissões do navegador, registra o protocolo de arquivos, apaga as cópias de
+   anexos abertos na sessão anterior (seção 8) e registra os canais de IPC.
 7. Cria a janela (1440 × 900, ou menor se a tela for menor; mínimo 1024 × 640).
 
 Se algo falhar na abertura (por exemplo, um banco criado por uma versão mais nova do Mello), o erro
@@ -174,11 +182,12 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   PLANO.md, seção 4. Existem hoje: app:info; boards:list, listClosed, get, create, update, move,
   close, reopen, delete, archived; lists:create, update, move, copy, moveToBoard, archive,
   sort, archiveCards, restore; cards:get, create, update, move, copy, setLabels, archive,
-  restore, delete, matching; labels:list, create, update, delete; checklists:create, update,
-  move, delete; items:create, update, toggle, move, delete.
+  restore, delete, matching, setCover, uploadCover; labels:list, create, update, delete;
+  checklists:create, update, move, delete; items:create, update, toggle, move, delete;
+  files:pick, dropped; attachments:add, open, delete.
 - Editar um card é um canal só (cards:update), com um campo por vez (título, ✓, prioridade, data
-  com lembrete, descrição). Se nada mudou, o main não grava nada e não zera o envelhecimento.
-- Texto rico (descrição; a nota na etapa 5): a tela edita com o TipTap e manda o documento dele
+  com lembrete, descrição, nota). Se nada mudou, o main não grava nada e não zera o envelhecimento.
+- Texto rico (descrição e nota): a tela edita com o TipTap e manda o documento dele
   (JSON). O main passa o documento por shared/rules/richText.ts, que só deixa o que a NOT-04
   permite, e escreve ele mesmo o HTML guardado no banco, com o texto escapado; o texto puro vai
   para o filtro e a busca. Assim o main não precisa de um parser de HTML (nem de um DOM como o
@@ -186,6 +195,15 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
 - Filtro do quadro (FLT-01): a palavra-chave vai ao main (cards:matching), que procura no título,
   na descrição, na nota e no nome das etiquetas com a função unaccent do SQLite. Prioridades e
   "só recorrentes" são decididos na tela (shared/rules/filter.ts).
+- Arquivos (etapa 5): escolher (files:pick, a janela "Abrir" do Windows) ou soltar arquivos no
+  modal (files:dropped) não copia nada. O main guarda o caminho e devolve à tela só uma ficha
+  (token), o nome e o tamanho; com a ficha, a tela confirma os arquivos acima de 200 MB (ANX-05)
+  e então anexa (attachments:add) ou envia a capa (cards:uploadCover). Cada ficha vale uma vez.
+  O caminho nunca chega à tela. O files:dropped é chamado só pelo preload, que tira o caminho do
+  File com o webUtils do Electron: um File criado pela tela não tem caminho e é ignorado.
+- A janela "Abrir", o programa padrão e o Explorer chegam aos módulos por SystemPort
+  (modules/files.ts); a versão do Electron fica em system.ts. Os testes usam uma versão falsa,
+  com uma pasta temporária (modules/test-files.ts).
 - boards:get devolve o quadro inteiro da tela: as listas ativas com os cards ativos de cada uma, já
   com o que a face do card mostra (etiquetas, ✓, data, contadores).
 - Mover (quadro, lista ou card) recebe o índice final entre os itens visíveis, e o main calcula a
@@ -298,6 +316,16 @@ Menus, confirmações e arrastar:
   proteções: com um popover aberto, o primeiro clique fora fecha só o popover (o modal cancela
   o próprio fechamento); e Esc dentro de um campo em edição (título, item, descrição) cancela só
   a edição.
+- Nota (features/card/Note.tsx): o editor recebe o HTML só ao abrir; uma atualização do card
+  enquanto você digita não mexe nele. Salva 800 ms depois da última tecla, ao fechar o modal e ao
+  fechar o app (beforeunload). O ProseMirror segura Enter e Esc dentro do editor, e um Esc
+  segurado não fecha o <dialog>; por isso a nota fecha o modal ela mesma (RichEditor, onEscape).
+  Na descrição em edição, o Esc sai da edição.
+- Soltar arquivos: o modal inteiro aceita arquivos arrastados do Explorer (na fase de captura,
+  para o editor de texto não receber o arquivo) e mostra "Solte para anexar ao card".
+- Depois de uma ação, o TanStack Query entrega os dados novos à tela um instante depois
+  (notifyManager). Um estado da tela que depende deles, como o "Anexando…", é desfeito na mesma
+  fila (notifyManager.schedule); senão a tela mostra um quadro com o estado velho.
 
 Navegador único: o app só roda no Chromium do Electron fixado no package.json (hoje o 152). Por
 isso recursos novos da plataforma (popover, posicionamento por âncora, <dialog closedby>,
@@ -329,6 +357,22 @@ simples. Qualquer outra coisa (.., barras, caminho absoluto, codificação com %
 ou usuário) vira 404. Depois de montar o caminho, ele ainda confere que o arquivo está direto na
 pasta de arquivos.
 
+Guardar (modules/files.ts, etapa 5): o arquivo é copiado para um nome provisório na pasta e o
+SHA-256 é calculado na mesma leitura; depois o nome vira <hash>.<ext>. Se o hash já existe, a
+cópia nova é descartada (ANX-02). Imagens são reconhecidas pelo conteúdo (biblioteca image-size,
+lendo o começo do arquivo): PNG, JPG, GIF, WebP e BMP, com a largura e a altura (foto de celular
+girada pelo EXIF tem as duas trocadas, como o Chromium a mostra). A extensão de uma imagem vem do
+conteúdo; a dos outros arquivos, do nome.
+
+Um arquivo guardado nunca muda (o espelho do backup depende disso, DAD-05). "Abrir" copia o anexo,
+só leitura e com o nome original, para %TEMP%\Mello\<id do anexo>\ (no desenvolvimento,
+%TEMP%\Mello-dev) e abre essa cópia com o programa padrão. Programas (.exe, .bat, .msi, .ps1…) não
+são executados: o Explorer abre com a cópia selecionada. As cópias são apagadas ao abrir o app.
+
+Arquivos sem uso (anexo removido, card excluído) continuam na pasta até a limpeza da DAD-08, que
+entra na etapa 10 junto com o espelho do backup: apagar antes disso poderia deixar um backup sem
+os arquivos dele.
+
 
 9. ONDE FICAM OS DADOS
 
@@ -357,9 +401,10 @@ O Mello não carrega nada da internet. A segurança é o básico do Electron, li
 - Todas as permissões do navegador (câmera, microfone, notificações web…) são recusadas. Os
   lembretes usam a notificação nativa do main (etapa 8).
 - Sem menu na janela. No desenvolvimento, F12 abre as ferramentas de desenvolvedor.
-- O HTML da descrição (e da nota, na etapa 5) é escrito pelo main a partir do documento do
-  editor, só com as marcas da NOT-04 (seção 6). O modo leitura mostra o HTML pelo TipTap, nunca
-  por innerHTML.
+- O HTML da descrição e da nota é escrito pelo main a partir do documento do editor, só com as
+  marcas da NOT-04 (seção 6). O modo leitura mostra o HTML pelo TipTap, nunca por innerHTML.
+- A tela nunca recebe o caminho de um arquivo do computador (seção 6, "Arquivos"), e o main só
+  copia os arquivos escolhidos na janela do Windows ou soltos no modal.
 
 Ficam de fora, por não haver ameaça correspondente num app pessoal e offline: Electron Fuses,
 assinatura de código e verificação do remetente de cada mensagem de IPC.
@@ -396,6 +441,8 @@ HISTÓRICO
              compartilhado entre o preload e os testes; módulos de quadros, listas, posições e
              etiquetas; popovers e confirmação nativos; arrastar com dnd-kit; navegador único,
              sem polyfills.
+24/10/2026 — etapa 5: nota, atividade, anexos e capa; arquivos guardados pelo hash, fichas no
+             lugar dos caminhos, SystemPort (system.ts) e o webUtils no preload.
 23/10/2026 — etapa 4: modal do card (campos, descrição com TipTap, checklists, menu), etiquetas,
              filtro do quadro, ordenar lista; texto rico gerado pelo main; rolagem automática
              própria no arraste; módulos activity.ts e checklists.ts.

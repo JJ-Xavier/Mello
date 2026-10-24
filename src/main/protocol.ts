@@ -3,9 +3,8 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { net, protocol } from 'electron'
+import { FILE_HOST, FILE_SCHEME } from '../shared/files'
 
-export const FILE_SCHEME = 'mello-arquivo'
-const FILE_HOST = 'arquivos'
 const FILE_NAME = /^[a-f0-9]{64}\.[a-z0-9]{1,10}$/
 
 // Precisa ser chamado antes de o app ficar pronto (app.whenReady).
@@ -36,10 +35,6 @@ export function resolveFileRequest(url: string, filesDir: string): string | null
   const full = path.resolve(base, name)
   if (path.dirname(full) !== base) return null
   return full
-}
-
-export function fileUrl(fileId: string, ext: string): string {
-  return `${FILE_SCHEME}://${FILE_HOST}/${fileId}.${ext}`
 }
 
 export function registerFileProtocol(filesDir: string): void {

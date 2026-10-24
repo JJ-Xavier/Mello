@@ -1,7 +1,8 @@
 Modelo de dados — Mello
 
 Status: criado na etapa 1 (21/10/2026); a etapa 3 (22/10/2026) registrou o conteúdo de
-activity.data e a etapa 4 (23/10/2026) a origem de description_html, sem migração nova. Fonte no código: src/main/db/schema.ts.
+activity.data, a etapa 4 (23/10/2026) a origem de description_html e a etapa 5 (24/10/2026)
+os anexos e a capa, sem migração nova. Fonte no código: src/main/db/schema.ts.
 Qualquer migração nova atualiza este documento (seções 3 e 4).
 
 
@@ -42,12 +43,13 @@ card — cards
   title TEXT NOT NULL | position TEXT NOT NULL
   description_html, description_text, note_html, note_text TEXT NOT NULL DEFAULT ''
     (o *_html é escrito pelo main a partir do documento do editor, só com as marcas da NOT-04;
-    o *_text é o texto puro, um bloco por linha, para o filtro e a busca; etapa 4)
+    o *_text é o texto puro, um bloco por linha, para o filtro e a busca; etapa 4; nota, etapa 5)
   is_done INTEGER NOT NULL DEFAULT 0 (o ✓ circular) | done_at INTEGER NULL
   priority INTEGER NULL, CHECK (priority BETWEEN 1 AND 5) — NULL = sem prioridade
   due_at TEXT NULL | reminder TEXT NOT NULL DEFAULT 'none' (none | at_time | day_before)
   reminder_fired_at INTEGER NULL (volta a NULL quando a data ou o lembrete mudam)
-  cover_kind TEXT NULL (color | image) | cover_value TEXT NULL
+  cover_kind TEXT NULL (color | image) | cover_value TEXT NULL (color: o hex da paleta das
+    etiquetas; image: o file.id da imagem; etapa 5)
   is_template INTEGER NOT NULL DEFAULT 0 (MOD-01)
   recurrence_id → recurrence ON DELETE SET NULL | occurrence_date TEXT NULL
   last_activity_at INTEGER NOT NULL (base do envelhecimento, ENV-01)
@@ -86,10 +88,18 @@ activity — histórico do card
 file — arquivos guardados em <pasta de dados>\arquivos\<id>.<ext>
   id TEXT PK (SHA-256) | ext TEXT NOT NULL | mime TEXT NOT NULL | size INTEGER NOT NULL
   width, height INTEGER NULL | avg_color TEXT NULL (imagens) | created_at
+  Imagem (PNG, JPG, GIF, WebP, BMP) é reconhecida pelo conteúdo: ext e mime vêm dele, e width e
+  height já vêm na orientação em que a imagem aparece (EXIF). Outros arquivos: ext do nome
+  ([a-z0-9], até 10; senão "bin"), mime de uma lista curta ou application/octet-stream, width e
+  height NULL. avg_color fica NULL até a etapa 9 (fundo). O mesmo conteúdo com outro nome usa a
+  mesma linha (ANX-02). (etapa 5)
 
 attachment — anexos
   id TEXT PK | card_id → card ON DELETE CASCADE | file_id → file ON DELETE RESTRICT
   name TEXT NOT NULL (nome original) | created_at
+  Copiar um card copia as linhas de attachment (apontando para os mesmos arquivos) e a capa. Card
+  excluído leva os anexos (CASCADE); a linha de file e o arquivo ficam até a limpeza (DAD-08,
+  etapa 10). (etapa 5)
 
 recurrence — repetição de um card
   id TEXT PK | board_id → board ON DELETE CASCADE

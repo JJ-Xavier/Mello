@@ -1,6 +1,6 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 4 (280 testes, em 23/10/2026).
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 5 (336 testes, em 24/10/2026).
 Atualizado a cada etapa.
 
 
@@ -28,6 +28,12 @@ Testes da tela com o main de verdade (desde a etapa 2): src/renderer/src/test/re
 o window.mello com as mesmas rotas do main (routes.ts: Zod + módulos) sobre um SQLite em
 memória. Só o transporte do Electron fica de fora; entradas e respostas passam por
 structuredClone, como no IPC. Assim um teste de tela também confere o contrato com o banco.
+
+Arquivos (desde a etapa 5): src/main/modules/test-files.ts cria uma pasta temporária com a pasta
+de arquivos e um SystemPort falso: a janela "Abrir" devolve os caminhos que o teste combinou, e
+abrir ou mostrar na pasta só ficam anotados. O realApi.ts usa o mesmo, e um File "solto" no modal
+só tem caminho se o teste o registrar (dropPath), como o webUtils do preload faria. Para digitar
+na nota, os testes usam o editor que o TipTap pendura no elemento do texto.
 
 O jsdom não tem o popover nem o <dialog> modal, que o app usa nativos. src/renderer/src/test/
 setup.ts imita o mínimo, só nos testes: abrir e fechar, o evento "toggle", o botão com
@@ -264,18 +270,81 @@ src/renderer/src/features/board/BoardCards.test.tsx (5 novos)
 - PRI-02 na face; FLT-02 e FLT-04 (contador "visíveis/total", botão destacado, limpar); FLT-01
   sem acento e maiúscula; FLT-05 (trocar de quadro limpa); LIS-08 pelo menu da lista.
 
+Etapa 5 — 56 testes novos
+
+src/shared/rules/activity.test.ts (ATV)
+- ATV-02: o texto de cada registro (criado, movido, inclusive entre quadros, ✓, arquivado,
+  restaurado, copiado); registro sem os dados não quebra; ATV-01: "1 registro", "2 registros".
+
+src/shared/rules/richText.test.ts (1 novo)
+- O tamanho do texto conta os caracteres e as quebras de linha, não a passagem entre blocos (o
+  mesmo que o limite do editor).
+
+src/main/modules/files.test.ts (ANX-01 a ANX-03)
+- Copia para a pasta com o hash do conteúdo como nome; o mesmo conteúdo com outro nome é guardado
+  uma vez só; se o arquivo sumiu da pasta, guardar de novo devolve a cópia.
+- Imagem reconhecida pelo conteúdo, com o tamanho; foto girada pelo EXIF tem largura e altura
+  trocadas; PDF e SVG não são imagem; a capa enviada recusa o que não é imagem e não guarda nada.
+- Extensão do nome em minúsculas, ou "bin".
+- Fichas: só arquivos de verdade, com caminho completo; cada ficha vale uma vez; as mais antigas
+  saem quando passam do limite.
+
+src/main/modules/attachments.test.ts (ANX, CAP)
+- Anexar guarda o nome, o tamanho e a miniatura das imagens, zera o envelhecimento e não entra na
+  atividade; ANX-02 com dois anexos do mesmo arquivo; a face mostra a quantidade.
+- ANX-03: abre uma cópia só leitura com o nome original (abrir de novo substitui a cópia); abrir
+  não zera; programa é mostrado na pasta; arquivo que sumiu avisa; nomes que o Windows não aceita
+  viram nomes válidos.
+- ANX-04: remover tira a referência e deixa o arquivo; CAP-03: remover o anexo da capa tira a
+  capa, a não ser que outro anexo tenha o mesmo arquivo.
+- CAP-01: cor da paleta (a mesma não grava; null remove); imagem só se for anexo de imagem do
+  card; imagem enviada vira capa sem virar anexo; CAP-02: a face traz o tamanho da imagem.
+
+src/main/modules/cards.test.ts (4 novos)
+- ATV-01: a atividade do mais recente para o mais antigo (mover e o ✓ automático na ordem certa).
+- NOT-03 e NOT-04: a nota é limpa (link javascript: e imagem com onerror descartados), vira HTML
+  e texto; a mesma nota não grava; nada entra na atividade; nota em branco vira "".
+- NOT-01 e NOT-07: até 20 000 caracteres, contados como o editor conta.
+- CAR-07: a cópia leva a nota, a capa e os anexos, sem copiar arquivos.
+
+src/main/ipc/events.test.ts (8 novos)
+- ENV-05: editar a nota, remover anexo, capa de cor e de imagem anexada; anexar arquivo; enviar
+  imagem de capa e remover a capa.
+- ENV-06: abrir um anexo; remover a capa de um card sem capa.
+- files:pick e files:dropped classificados (não mexem em card).
+
+src/renderer/src/features/card/CardAside.test.tsx
+- NOT-03: salva sozinha ("Salvando…" e depois "Salvo automaticamente"); fechar o modal salva o
+  pendente e a face ganha o ícone (NOT-06); Esc na nota fecha o modal e salva; a caixa de marcar
+  tem o rótulo em português; NOT-02: a barra tem as seis ferramentas.
+- ATV-01: recolhida com a quantidade; aberta, do mais recente para o mais antigo.
+- ANX-01 e ANX-03: anexar pela janela do Windows, abrir e remover (com confirmação); soltar
+  arquivo do Explorer anexa; soltar pasta avisa e não anexa; programa tem "Mostrar na pasta".
+- CAP-01 e CAP-03: imagem anexada vira capa com o selo "Capa" e sai junto com o anexo; cor da
+  paleta pelo botão "Capa do card" e "Remover capa"; "Enviar imagem" vira capa sem virar anexo.
+
+src/renderer/src/features/card/useAttach.test.ts
+- ANX-05: acima de 200 MB pede confirmação, com o botão azul; até 200 MB, não pergunta.
+
+src/renderer/src/features/board/BoardCards.test.tsx (1 novo)
+- CAP-02: a capa fica acima das etiquetas; a imagem com a proporção dela.
+
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
 
 O script scripts/capturar-telas.mts compila o app, abre o Electron com uma pasta de dados
 temporária (MELLO_DATA_DIR) e:
 1. confere que o banco foi criado e que o IPC responde (app:info);
-2. cria dados fictícios pelo window.mello; os campos da face do card que ainda não têm tela
-   para editar (etiquetas, datas, checklist, descrição, nota e anexos, etapas 4 e 5) são gravados
-   direto no banco temporário;
+2. cria dados fictícios pelo window.mello, inclusive nota, anexos e capa (as fotos são
+   gradientes desenhados no canvas, e a janela "Abrir" do Windows é trocada por uma que devolve
+   esses arquivos);
 3. salva uma captura de cada tela da etapa, nos temas escuro e claro, em capturas/etapa-N/
    (pasta ignorada pelo Git), inclusive com um card no meio do arraste;
 4. apaga a pasta temporária.
+
+O Electron do script abre com opções do Chromium que mantêm a janela desenhando mesmo coberta ou
+com o monitor desligado pelo Windows; sem elas, a captura podia esperar um quadro que não chegava
+(visto na etapa 5). Cada captura tem três tentativas.
 
 As capturas são comparadas com o .dc.html correspondente do protótipo (cores, medidas, textos,
 ícones e estados). Numa tela com escala de 125% do Windows, a captura sai 1,25 vez maior
@@ -326,5 +395,17 @@ Etapa 4 (conferido em 23/10/2026, no app real pelo Playwright)
     rola no pé; depois de um arraste cancelado, o próximo não rola o quadro sozinho.
 [x] Nenhum erro no console durante a conferência.
 [x] Capturas da etapa 4 conferidas com as telas 4, 9, 14 e 16, nos dois temas.
+
+Etapa 5 (conferido em 24/10/2026, no app real pelo Playwright)
+[x] Nota digitada de verdade: "Salvando…" logo depois e "Salvo automaticamente" com o HTML no
+    banco em 1,2 s; Esc dentro da nota fecha o modal e salva o que faltava.
+[x] Anexar pela janela "Abrir" (trocada por uma que devolve os arquivos): a miniatura carrega pelo
+    protocolo mello-arquivo:// (sem erro de CSP) e mostra tamanho e data.
+[x] "Abrir" abre uma cópia só leitura, com o nome original, em %TEMP%\Mello-dev\<id>\.
+[x] Arquivo com caminho de verdade (de um <input type=file>) solto no modal é anexado; um File
+    criado pela tela não tem caminho e é ignorado.
+[x] Capa de imagem: faixa de 96 px no modal e até 160 px na face, recortada para cobrir.
+[x] Nenhum erro no console durante a conferência.
+[x] Capturas da etapa 5 conferidas com as telas 4, 14 e 16, nos dois temas.
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

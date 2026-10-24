@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clean, safeHref, toHtml, toText } from './richText'
+import { clean, safeHref, textLength, toHtml, toText } from './richText'
 
 const doc = (...content: unknown[]) => ({ type: 'doc', content })
 const p = (...content: unknown[]) => ({ type: 'paragraph', content })
@@ -119,5 +119,16 @@ describe('texto rico (NOT-04, NOT-07)', () => {
       nested = { type: 'bulletList', content: [{ type: 'listItem', content: [p(), nested] }] }
     }
     expect(toText(clean(doc(nested)))).not.toContain('fundo')
+  })
+
+  it('o tamanho conta os textos e as quebras de linha, não a passagem entre blocos', () => {
+    const value = clean(
+      doc(p(text('abc'), { type: 'hardBreak' }, text('de')), {
+        type: 'bulletList',
+        content: [{ type: 'listItem', content: [p(text('fg'))] }]
+      })
+    )
+    expect(textLength(value)).toBe(8)
+    expect(toText(value)).toHaveLength(9)
   })
 })

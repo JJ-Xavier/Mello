@@ -25,6 +25,7 @@ import type {
   CreateCardInput,
   MatchingInput,
   MoveCardInput,
+  SetCoverInput,
   SetLabelsInput,
   UpdateCardInput
 } from './cards'
@@ -41,6 +42,14 @@ import type {
   UpdateChecklistInput,
   UpdateItemInput
 } from './checklists'
+import type {
+  AddAttachmentsInput,
+  AttachmentIdInput,
+  OpenResult,
+  PickedFile,
+  PickFilesInput,
+  UploadCoverInput
+} from './files'
 import type { CreateLabelInput, Label, LabelIdInput, UpdateLabelInput } from './labels'
 
 export const CHANNELS = {
@@ -74,6 +83,13 @@ export const CHANNELS = {
   cardsRestore: 'cards:restore',
   cardsDelete: 'cards:delete',
   cardsMatching: 'cards:matching',
+  cardsSetCover: 'cards:setCover',
+  cardsUploadCover: 'cards:uploadCover',
+  filesPick: 'files:pick',
+  filesDropped: 'files:dropped',
+  attachmentsAdd: 'attachments:add',
+  attachmentsOpen: 'attachments:open',
+  attachmentsDelete: 'attachments:delete',
   labelsList: 'labels:list',
   labelsCreate: 'labels:create',
   labelsUpdate: 'labels:update',
@@ -133,6 +149,19 @@ export interface MelloApi {
     restore(input: CardIdInput): Promise<Result<null>>
     delete(input: CardIdInput): Promise<Result<null>>
     matching(input: MatchingInput): Promise<Result<string[]>>
+    setCover(input: SetCoverInput): Promise<Result<null>>
+    uploadCover(input: UploadCoverInput): Promise<Result<null>>
+  }
+  files: {
+    // Abre a janela "Abrir" do Windows. Cancelar devolve uma lista vazia.
+    pick(input: PickFilesInput): Promise<Result<PickedFile[]>>
+    // Arquivos soltos no modal. Pastas ficam de fora.
+    dropped(files: File[]): Promise<Result<PickedFile[]>>
+  }
+  attachments: {
+    add(input: AddAttachmentsInput): Promise<Result<null>>
+    open(input: AttachmentIdInput): Promise<Result<OpenResult>>
+    delete(input: AttachmentIdInput): Promise<Result<null>>
   }
   labels: {
     list(input: BoardIdInput): Promise<Result<Label[]>>
@@ -157,8 +186,12 @@ export interface MelloApi {
 
 // Monta window.mello a partir de uma função que entrega (canal, entrada) ao main. O preload passa
 // o ipcRenderer.invoke; os testes da tela passam as rotas do main direto.
+// pathOf dá o caminho de um arquivo solto no modal (no preload, webUtils.getPathForFile). Ele só
+// existe para arquivos de verdade vindos do Windows: um File criado pela tela não tem caminho, e o
+// caminho nunca volta para a tela.
 export function createApi(
-  invoke: (channel: string, input?: unknown) => Promise<unknown>
+  invoke: (channel: string, input?: unknown) => Promise<unknown>,
+  pathOf: (file: File) => string = () => ''
 ): MelloApi {
   const call =
     <T>(channel: string) =>
@@ -201,7 +234,21 @@ export function createApi(
       archive: call(CHANNELS.cardsArchive),
       restore: call(CHANNELS.cardsRestore),
       delete: call(CHANNELS.cardsDelete),
-      matching: call(CHANNELS.cardsMatching)
+      matching: call(CHANNELS.cardsMatching),
+      setCover: call(CHANNELS.cardsSetCover),
+      uploadCover: call(CHANNELS.cardsUploadCover)
+    },
+    files: {
+      pick: call(CHANNELS.filesPick),
+      dropped: (files) =>
+        call<PickedFile[]>(CHANNELS.filesDropped)({
+          paths: files.map((file) => pathOf(file)).filter((path) => path !== '')
+        })
+    },
+    attachments: {
+      add: call(CHANNELS.attachmentsAdd),
+      open: call(CHANNELS.attachmentsOpen),
+      delete: call(CHANNELS.attachmentsDelete)
     },
     labels: {
       list: call(CHANNELS.labelsList),

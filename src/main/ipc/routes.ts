@@ -21,6 +21,7 @@ import {
   createCardInput,
   matchingInput,
   moveCardInput,
+  setCoverInput,
   setLabelsInput,
   updateCardInput
 } from '../../shared/ipc/cards'
@@ -35,11 +36,20 @@ import {
   updateChecklistInput,
   updateItemInput
 } from '../../shared/ipc/checklists'
+import {
+  addAttachmentsInput,
+  attachmentIdInput,
+  droppedFilesInput,
+  pickFilesInput,
+  uploadCoverInput
+} from '../../shared/ipc/files'
 import { createLabelInput, labelIdInput, updateLabelInput } from '../../shared/ipc/labels'
 import type { Db } from '../db/client'
+import * as attachments from '../modules/attachments'
 import * as boards from '../modules/boards'
 import * as cards from '../modules/cards'
 import * as checklists from '../modules/checklists'
+import { createPicks, type FileStore } from '../modules/files'
 import * as labels from '../modules/labels'
 import * as lists from '../modules/lists'
 import { createHandler, type Handler } from './handler'
@@ -48,14 +58,18 @@ export interface RouteContext {
   db: Db
   app: AppInfo
   now: () => number
+  // Pasta dos arquivos guardados e o que o main usa do Windows (janela de abrir, programa padrão).
+  files: FileStore
   onUnexpectedError?: (channel: string, error: unknown) => void
 }
 
 export type Routes = Map<string, Handler<unknown>>
 
-export function createRoutes({ db, app, now, onUnexpectedError }: RouteContext): Routes {
+export function createRoutes({ db, app, now, files, onUnexpectedError }: RouteContext): Routes {
   const routes: Routes = new Map()
   const none = z.undefined()
+  // Arquivos escolhidos ou soltos, à espera da confirmação da tela (modules/files.ts).
+  const picks = createPicks()
 
   function route<S extends z.ZodType, T>(
     channel: string,
@@ -143,6 +157,29 @@ export function createRoutes({ db, app, now, onUnexpectedError }: RouteContext):
     done(() => cards.restore(db, cardId, now()))
   )
   route(CHANNELS.cardsDelete, cardIdInput, ({ cardId }) => done(() => cards.remove(db, cardId)))
+  route(CHANNELS.cardsSetCover, setCoverInput, ({ cardId, cover }) =>
+    done(() => attachments.setCover(db, cardId, cover, now()))
+  )
+  route(CHANNELS.cardsUploadCover, uploadCoverInput, async ({ cardId, token }) => {
+    const [pick] = picks.take([token])
+    await attachments.uploadCover(db, files, cardId, pick!.path, now())
+    return null
+  })
+
+  route(CHANNELS.filesPick, pickFilesInput, async ({ imagesOnly }) =>
+    picks.register(await files.system.chooseFiles({ imagesOnly }))
+  )
+  route(CHANNELS.filesDropped, droppedFilesInput, ({ paths }) => picks.register(paths))
+  route(CHANNELS.attachmentsAdd, addAttachmentsInput, async ({ cardId, tokens }) => {
+    await attachments.add(db, files, cardId, picks.take(tokens), now())
+    return null
+  })
+  route(CHANNELS.attachmentsOpen, attachmentIdInput, ({ attachmentId }) =>
+    attachments.open(db, files, attachmentId)
+  )
+  route(CHANNELS.attachmentsDelete, attachmentIdInput, ({ attachmentId }) =>
+    done(() => attachments.remove(db, attachmentId, now()))
+  )
 
   route(CHANNELS.labelsList, boardIdInput, ({ boardId }) => labels.list(db, boardId))
   route(CHANNELS.labelsCreate, createLabelInput, (input) => labels.create(db, input))

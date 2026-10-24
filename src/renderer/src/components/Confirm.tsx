@@ -1,4 +1,5 @@
-// Confirmação de ações sem volta (excluir). Um <dialog> modal só, no topo do app: abrir o modal
+// Confirmação de ações sem volta (excluir) ou pesadas (anexar arquivo grande). Um <dialog> modal
+// só, no topo do app: abrir o modal
 // fecha os popovers, então a confirmação não pode morar dentro deles. Os componentes pedem a
 // confirmação com useConfirm().
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
@@ -61,7 +62,11 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               <button type="button" className={ui.sec} onClick={() => finish(false)} autoFocus>
                 Cancelar
               </button>
-              <button type="button" className={styles.confirm} onClick={() => finish(true)}>
+              <button
+                type="button"
+                className={options.tone === 'primary' ? ui.pri : styles.confirm}
+                onClick={() => finish(true)}
+              >
                 {options.confirmLabel}
               </button>
             </div>

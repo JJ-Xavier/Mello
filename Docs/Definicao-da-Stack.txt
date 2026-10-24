@@ -1,7 +1,7 @@
 Definição da Stack — Mello
 
 Status: aprovada em 21/10/2026, junto com o Docs/PLANO.md. Versões fixadas na etapa 1 e
-completadas nas etapas 2 e 4 (seção "Versões fixadas", no fim). A etapa 3 não trouxe dependência
+completadas nas etapas 2, 4 e 5 (seção "Versões fixadas", no fim). A etapa 3 não trouxe dependência
 nova.
 A primeira versão deste documento (20/10/2026) está resumida no fim, em "Histórico".
 Como essas peças se encaixam: ver Docs/Arquitetura.txt.
@@ -20,6 +20,7 @@ DADOS (processo main)
 - Zod .................... validação de tudo que chega pelo IPC
 - fractional-indexing .... posição de quadros, listas, cards, checklists e itens no arrastar
 - electron-log ........... logs em arquivo, na pasta de dados do app (sem conteúdo dos cards)
+- image-size ............. largura e altura das imagens anexadas (e a rotação das fotos)
 - Recursos nativos ....... Notification (lembretes), Tray (bandeja), nativeTheme (tema do
                            sistema), protocol (servir imagens e anexos da pasta do app),
                            dialog e shell (escolher e abrir arquivos)
@@ -30,7 +31,8 @@ INTERFACE (renderer)
 - TanStack Query ......... cache e atualização dos dados vindos do IPC
 - Zustand ................ estado de interface (filtro do quadro, popovers, arraste)
 - dnd-kit ................ arrastar listas e cards, com suporte a teclado
-- TipTap ................. editor da nota e da descrição (StarterKit, TaskList, TaskItem, Link)
+- TipTap ................. editor da nota e da descrição (StarterKit, TaskList, TaskItem, Link,
+                           CharacterCount e Placeholder)
 - date-fns ............... datas com locale pt-BR
 - CSS Modules ............ estilos por componente, com as variáveis CSS do protótipo
 - @fontsource/inter ...... fonte Inter em arquivo local (licença OFL), sem depender de internet
@@ -115,10 +117,10 @@ Desnecessário para uso pessoal (fora da stack)
   depois se algum dia fizerem falta.
 
 
-VERSÕES FIXADAS (etapas 1, 2 e 4)
+VERSÕES FIXADAS (etapas 1, 2, 4 e 5)
 
 As versões ficam exatas no package.json (sem ^). Cada biblioteca entra na etapa que a usa:
-date-fns (se o Intl do navegador não bastar; até a etapa 4 bastou) e Zustand (quando houver
+date-fns (se o Intl do navegador não bastar; até a etapa 5 bastou) e Zustand (quando houver
 estado de interface compartilhado) ainda não estão instalados.
 
 Vão dentro do app (dependencies)
@@ -133,7 +135,8 @@ precisam ir como dependência do app)
   @fontsource/inter 5.3.0
   @dnd-kit/core 6.3.1 · @dnd-kit/sortable 10.0.0 · @dnd-kit/utilities 3.2.2 (etapa 2)
   @tiptap/react 3.31.4 · @tiptap/pm 3.31.4 · @tiptap/starter-kit 3.31.4
-  @tiptap/extension-list 3.31.4 (etapa 4)
+  @tiptap/extension-list 3.31.4 (etapa 4) · @tiptap/extensions 3.31.4 (etapa 5)
+  image-size 2.0.4 (etapa 5; usada no main, empacotada no build)
   vitest 5.0.5 · jsdom 30.1.3 · @testing-library/react 16.3.3 · @testing-library/dom 10.4.2
   eslint 10.13.0 · @eslint/js 10.0.1 · typescript-eslint 8.72.0 · eslint-plugin-react-hooks 7.1.1
   eslint-plugin-react-refresh 0.5.7 · eslint-config-prettier 10.1.8 · globals 17.13.0
@@ -162,6 +165,15 @@ Por que essas e não as mais novas
   documento do editor e escreve o HTML com uma lista fechada de marcas (shared/rules/richText.ts).
 - Datas do seletor e do modal ("19 de set., 17:00", "17 de out. de 2026, 18:06") continuam pelo
   Intl; o date-fns não fez falta.
+- image-size 2.0.4 (de 14/09/2026, sem dependências): lê o tamanho das imagens anexadas pelo
+  começo do arquivo, inclusive a rotação EXIF das fotos de celular. Um leitor próprio para PNG,
+  JPG, GIF, WebP e BMP com EXIF seria mais código para manter. Fica em devDependencies: o
+  electron-vite empacota no main o que não está em dependencies, então ela não vai separada no
+  instalador.
+- @tiptap/extensions 3.31.4: já vinha junto do StarterKit; entrou explícita porque a nota usa o
+  CharacterCount (limite de tamanho) e o Placeholder (texto de exemplo). Mesma versão do resto do
+  TipTap.
+- Arquivos soltos no modal usam o webUtils.getPathForFile do próprio Electron, no preload.
 
 
 HISTÓRICO
@@ -182,3 +194,4 @@ HISTÓRICO
 22/10/2026 — etapa 3: nenhuma dependência nova. O arrastar de cards usa o mesmo dnd-kit, com o
              destino calculado pelo próprio app (Arquitetura.txt, seção 7); o campo do card novo
              cresce com o texto pelo CSS (field-sizing), sem biblioteca.
+24/10/2026 — etapa 5: entraram image-size (no main) e @tiptap/extensions (na tela).

@@ -36,6 +36,11 @@
   background: var(--slot);
 }
 
+/* CAP-02: a capa acima das etiquetas, com os cantos de cima do card. */
+.cover {
+  border-radius: 10px 10px 0 0;
+}
+
 .in {
   display: flex;
   flex-direction: column;

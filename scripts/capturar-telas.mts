@@ -1,25 +1,25 @@
 // Abre o app compilado (out/) com uma pasta de dados temporária e salva uma captura de cada tela,
 // nos temas escuro e claro, em capturas/etapa-N/ (pasta ignorada pelo Git). Serve para comparar
 // com o protótipo e também confere a ponta a ponta: banco criado e IPC respondendo.
-// Os dados são fictícios (P16) e criados pelo próprio window.mello. A nota e os anexos (etapa 5)
-// ainda não têm tela para editar e são gravados direto no banco temporário.
+// Os dados são fictícios (P16) e criados pelo próprio window.mello. Os anexos são arquivos
+// fictícios gerados na hora (as fotos são gradientes desenhados no canvas); a janela "Abrir" do
+// Windows é trocada por uma que devolve esses arquivos.
 //
 // Uso: npm run capturas   (compila antes; roda com o Node 24, que entende TypeScript)
-import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
-import playwright, { type Page } from 'playwright-core'
+import playwright, { type ElectronApplication, type Page } from 'playwright-core'
 
-const STAGE = 4
+const STAGE = 5
 const THEMES = ['escuro', 'claro']
 
 const root = path.resolve(import.meta.dirname, '..')
 const require = createRequire(import.meta.url)
 const electronPath = require('electron') as string
-const Database = require('better-sqlite3') as typeof import('better-sqlite3')
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mello-capturas-'))
+const userDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mello-capturas-arquivos-'))
 const outDir = path.join(root, 'capturas', `etapa-${STAGE}`)
 fs.mkdirSync(outDir, { recursive: true })
 
@@ -41,9 +41,18 @@ async function go(page: Page, hash: string) {
   await page.waitForTimeout(400)
 }
 
+// Três tentativas de 15 s: um quadro que não chega (veja as opções do launch) não derruba tudo.
 async function shot(page: Page, name: string, theme: string) {
   const file = path.join(outDir, `${name}-${theme}.png`)
-  await page.screenshot({ path: file })
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await page.screenshot({ path: file, timeout: 15_000 })
+      break
+    } catch (error) {
+      if (attempt === 3) throw error
+      console.log(`Captura ${name}-${theme}: sem quadro, tentando de novo.`)
+    }
+  }
   console.log(`Captura: ${path.relative(root, file)}`)
 }
 
@@ -95,22 +104,60 @@ function doc(title: string, text: string, items: string[] = []) {
   }
 }
 
-// Nota e anexos (etapa 5), direto no banco.
-function writeNoteAndFiles(cardId: string, note: string, files: number) {
-  const sqlite = new Database(path.join(dataDir, 'mello.db'))
-  const fileId = '0'.repeat(64)
-  sqlite
-    .prepare('INSERT INTO file (id, ext, mime, size, created_at) VALUES (?, ?, ?, ?, 0)')
-    .run(fileId, 'jpg', 'image/jpeg', 1)
-  sqlite.prepare('UPDATE card SET note_text = ? WHERE id = ?').run(note, cardId)
-  for (let i = 0; i < files; i++) {
-    sqlite
-      .prepare(
-        'INSERT INTO attachment (id, card_id, file_id, name, created_at) VALUES (?, ?, ?, ?, 0)'
-      )
-      .run(randomUUID(), cardId, fileId, `foto-${i + 1}.jpg`)
+// Nota do card "Pintar o quarto", como a da tela 4: títulos, caixas de marcar e um parágrafo.
+function noteDoc() {
+  const text = (value: string) => [{ type: 'text', text: value }]
+  const task = (value: string, checked: boolean) => ({
+    type: 'taskItem',
+    attrs: { checked },
+    content: [{ type: 'paragraph', content: text(value) }]
+  })
+  return {
+    type: 'doc',
+    content: [
+      { type: 'heading', attrs: { level: 3 }, content: text('Pendências') },
+      {
+        type: 'taskList',
+        content: [task('Comprar fita crepe larga', true), task('Escolher o rolo de lã', false)]
+      },
+      { type: 'heading', attrs: { level: 3 }, content: text('Anotações') },
+      { type: 'paragraph', content: text('A loja do bairro entrega no sábado.') }
+    ]
   }
-  sqlite.close()
+}
+
+// Foto fictícia: um gradiente desenhado no canvas da própria janela, salvo como PNG.
+async function writePhoto(page: Page, name: string, stops: [number, string][]) {
+  const base64 = (await page.evaluate(`(async () => {
+    const canvas = new OffscreenCanvas(480, 320)
+    const context = canvas.getContext('2d')
+    const gradient = context.createLinearGradient(0, 0, 0, 320)
+    for (const [offset, color] of ${JSON.stringify(stops)}) gradient.addColorStop(offset, color)
+    context.fillStyle = gradient
+    context.fillRect(0, 0, 480, 320)
+    const bytes = new Uint8Array(await (await canvas.convertToBlob()).arrayBuffer())
+    let binary = ''
+    for (const byte of bytes) binary += String.fromCharCode(byte)
+    return btoa(binary)
+  })()`)) as string
+  const file = path.join(userDir, name)
+  fs.writeFileSync(file, Buffer.from(base64, 'base64'))
+  return file
+}
+
+// Anexa pelos canais de verdade: a janela "Abrir" (trocada) devolve os arquivos.
+async function attach(app: ElectronApplication, page: Page, cardId: string, files: string[]) {
+  await app.evaluate(({ dialog }, chosen) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: chosen })
+  }, files)
+  const picked = await mello<{ token: string }[]>(page, 'files.pick', { imagesOnly: false })
+  await mello(page, 'attachments.add', { cardId, tokens: picked.map((p) => p.token) })
+  const detail = await mello<{ attachments: { name: string; fileId: string }[] }>(
+    page,
+    'cards.get',
+    { cardId }
+  )
+  return Object.fromEntries(detail.attachments.map((a) => [a.name, a.fileId]))
 }
 
 // Um checklist com itens; done marca os primeiros, dates dá a data (dias a partir de hoje).
@@ -158,7 +205,7 @@ async function dragShot(
   await page.mouse.up()
   await page.waitForTimeout(250)
 }
-async function seed(page: Page): Promise<{ casa: Board }> {
+async function seed(app: ElectronApplication, page: Page): Promise<{ casa: Board }> {
   const create = (title: string) =>
     call<Board>(page, `window.mello.boards.create({ title: '${title}' })`)
   const casa = await create('Casa')
@@ -193,9 +240,13 @@ async function seed(page: Page): Promise<{ casa: Board }> {
   const torneira = await card(list('A fazer'), 'Consertar a torneira da cozinha')
   const condominio = await card(list('A fazer'), 'Pagar o condomínio')
   await card(list('A fazer'), 'Organizar o armário')
-  const pintar = await card(list('Em andamento'), 'Pintar o quarto')
+  // Criado em "A fazer" e movido: a atividade mostra os dois registros, como na tela 4.
+  const pintar = await card(list('A fazer'), 'Pintar o quarto')
+  await mello(page, 'cards.move', { cardId: pintar, listId: list('Em andamento'), index: 0 })
   const lampadas = await card(list('A fazer'), 'Trocar as lâmpadas')
   await card(ideias.id, 'Horta na varanda')
+  const viagem = await card(ideias.id, 'Viagem de férias')
+  const revisao = await card(list('Concluído'), 'Revisão semanal')
   // Movido para Concluído: ganha o ✓ sozinho (FIN-02).
   await call(
     page,
@@ -256,15 +307,58 @@ async function seed(page: Page): Promise<{ casa: Board }> {
     { text: 'Retoques' },
     { text: 'Limpar os pincéis' }
   ])
-  writeNoteAndFiles(pintar, 'Comprar fita crepe larga', 2)
+  await update(pintar, { note: noteDoc() })
+  fs.writeFileSync(path.join(userDir, 'orcamento-da-tinta.pdf'), '%PDF-1.4 orçamento fictício')
+  await attach(app, page, pintar, [path.join(userDir, 'orcamento-da-tinta.pdf')])
   await setLabels(lampadas, [verde])
   await update(lampadas, { due: { dueAt: day(-3), reminder: 'none' } })
+
+  // Tela 14: card com capa de imagem e anexos; tela 16: capa de cor na face.
+  const foto = await writePhoto(page, 'foto-da-pousada.png', [
+    [0, '#7cc4e8'],
+    [0.52, '#bfe3f0'],
+    [0.53, '#e9d8a6'],
+    [1, '#d9c08a']
+  ])
+  const mapa = await writePhoto(page, 'mapa-do-roteiro.png', [
+    [0, '#d7e6c3'],
+    [0.5, '#a9c79a'],
+    [1, '#7fa7c9']
+  ])
+  const passagens = path.join(userDir, 'passagens.pdf')
+  fs.writeFileSync(passagens, '%PDF-1.4 passagens fictícias')
+  const files = await attach(app, page, viagem, [mapa, passagens, foto])
+  await setLabels(viagem, [verde])
+  await update(viagem, {
+    priority: 3,
+    due: { dueAt: day(50), reminder: 'none' },
+    description: doc('Pousada', 'Perto da praia, cinco noites.')
+  })
+  await mello(page, 'cards.setCover', {
+    cardId: viagem,
+    cover: { kind: 'image', fileId: files['foto-da-pousada.png'] }
+  })
+  await setLabels(revisao, [roxo])
+  await mello(page, 'cards.setCover', {
+    cardId: revisao,
+    cover: { kind: 'color', color: '#206a83' }
+  })
   return { casa }
 }
 
+// Com a janela coberta por outra, ou o monitor desligado pelo Windows durante o roteiro, o
+// Chromium para de desenhar e a captura não termina. Estas opções (só do script) mantêm a janela
+// desenhando: sem o corte de janela escondida e sem esperar o sinal de atualização do monitor.
 const app = await playwright._electron.launch({
   executablePath: electronPath,
-  args: [root],
+  args: [
+    root,
+    '--disable-features=CalculateNativeWinOcclusion',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--disable-gpu-vsync',
+    '--disable-frame-rate-limit'
+  ],
   cwd: root,
   env
 })
@@ -297,7 +391,7 @@ try {
   await shot(page, '10-inicio-vazio-criar-quadro', 'escuro')
   await closePopovers(page)
 
-  const { casa } = await seed(page)
+  const { casa } = await seed(app, page)
   await page.evaluate('location.reload()')
   await page.waitForSelector('header')
 
@@ -395,6 +489,36 @@ try {
     await page.waitForTimeout(250)
     await shot(page, '04-descricao-editando', theme)
     await modal.getByRole('button', { name: 'Cancelar' }).click()
+    // Tela 4, coluna da direita: a atividade aberta.
+    await modal.getByRole('button', { name: /Atividade/ }).click()
+    await page.waitForTimeout(200)
+    await shot(page, '04-atividade', theme)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(250)
+
+    // Tela 14: card com capa e anexos, o popover da capa e arquivos arrastados por cima.
+    await page.getByRole('link', { name: /Viagem de férias/ }).click()
+    const travel = page.getByRole('dialog', { name: 'Viagem de férias' })
+    await travel.getByRole('img', { name: 'Miniatura de foto-da-pousada.png' }).waitFor()
+    await page.waitForTimeout(300)
+    await shot(page, '14-capa-e-anexos', theme)
+    await travel.getByRole('button', { name: 'Capa do card' }).click()
+    await page.waitForTimeout(250)
+    await shot(page, '14-capa', theme)
+    await closePopovers(page)
+    // Um arquivo arrastado por cima do modal (sem soltar).
+    await page.evaluate(`{
+      const transfer = new DataTransfer()
+      transfer.items.add(new File(['x'], 'roteiro.txt'))
+      document.querySelector('dialog h1').dispatchEvent(
+        new DragEvent('dragover', { dataTransfer: transfer, bubbles: true })
+      )
+    }`)
+    await page.waitForTimeout(150)
+    await shot(page, '14-soltar-para-anexar', theme)
+    await page.evaluate(
+      `document.querySelector('dialog h1').dispatchEvent(new DragEvent('dragleave', { bubbles: true }))`
+    )
     await page.keyboard.press('Escape')
     await page.waitForTimeout(250)
 
@@ -461,4 +585,5 @@ try {
 } finally {
   await app.close()
   fs.rmSync(dataDir, { recursive: true, force: true })
+  fs.rmSync(userDir, { recursive: true, force: true })
 }

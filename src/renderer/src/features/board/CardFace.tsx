@@ -1,9 +1,10 @@
-// O que o card mostra no quadro (CAR-04): etiquetas, ✓, título, data de entrega, os ícones de
-// descrição, checklist, nota e anexos e a prioridade. Capa, repetição e "Modelo" entram nas etapas
-// 5, 8 e 11.
+// O que o card mostra no quadro (CAR-04): capa, etiquetas, ✓, título, data de entrega, os ícones
+// de descrição, checklist, nota e anexos e a prioridade. Repetição e "Modelo" entram nas etapas 8
+// e 11.
 import type { CardSummary } from '../../../../shared/ipc/cards'
 import { dueDate, isOverdue } from '../../../../shared/rules/dates'
 import { priorityLevel } from '../../../../shared/rules/priority'
+import { Cover } from '../../components/Cover'
 import { DoneMark } from '../../components/DoneMark'
 import { Icon } from '../../components/Icon'
 import { PriorityIcon } from '../../components/PriorityIcon'
@@ -41,75 +42,78 @@ export function CardFace({ card, finished, now }: CardFaceProps) {
     card.attachmentCount > 0
 
   return (
-    <div className={styles.in}>
-      {card.labels.length > 0 && (
-        <div className={styles.labels}>
-          {card.labels.map((label) => (
-            <span
-              key={label.id}
-              className={styles.label}
-              style={{ background: label.color }}
-              title={label.name ?? undefined}
-            />
-          ))}
+    <>
+      {card.cover && <Cover cover={card.cover} className={styles.cover} />}
+      <div className={styles.in}>
+        {card.labels.length > 0 && (
+          <div className={styles.labels}>
+            {card.labels.map((label) => (
+              <span
+                key={label.id}
+                className={styles.label}
+                style={{ background: label.color }}
+                title={label.name ?? undefined}
+              />
+            ))}
+          </div>
+        )}
+        <div className={styles.title}>
+          {card.isDone && <DoneMark done />}
+          <span>{card.title}</span>
         </div>
-      )}
-      <div className={styles.title}>
-        {card.isDone && <DoneMark done />}
-        <span>{card.title}</span>
+        {hasBadges && (
+          <div className={styles.badges}>
+            {card.dueAt !== null && <DueChip dueAt={card.dueAt} finished={finished} now={now} />}
+            {card.hasDescription && (
+              <span
+                className={styles.badge}
+                role="img"
+                aria-label="Tem descrição"
+                title="Tem descrição"
+              >
+                <Icon name="description" />
+              </span>
+            )}
+            {card.checkTotal > 0 && (
+              <span
+                className={styles.badge}
+                title="Checklist"
+                aria-label={`Checklist: ${card.checkDone} de ${card.checkTotal}`}
+                role="img"
+              >
+                <Icon name="checklist" />
+                {card.checkDone}/{card.checkTotal}
+              </span>
+            )}
+            {card.hasNote && (
+              <span className={styles.badge} role="img" aria-label="Tem nota" title="Tem nota">
+                <Icon name="note" />
+              </span>
+            )}
+            {card.attachmentCount > 0 && (
+              <span
+                className={styles.badge}
+                role="img"
+                aria-label={`${card.attachmentCount} ${card.attachmentCount === 1 ? 'anexo' : 'anexos'}`}
+                title="Anexos"
+              >
+                <Icon name="attachment" />
+                {card.attachmentCount}
+              </span>
+            )}
+            {priority && (
+              <span
+                className={styles.priority}
+                role="img"
+                aria-label={`Prioridade ${priority.name.toLowerCase()}`}
+                title={`Prioridade ${priority.name.toLowerCase()}`}
+              >
+                <PriorityIcon value={priority.value} />
+              </span>
+            )}
+          </div>
+        )}
       </div>
-      {hasBadges && (
-        <div className={styles.badges}>
-          {card.dueAt !== null && <DueChip dueAt={card.dueAt} finished={finished} now={now} />}
-          {card.hasDescription && (
-            <span
-              className={styles.badge}
-              role="img"
-              aria-label="Tem descrição"
-              title="Tem descrição"
-            >
-              <Icon name="description" />
-            </span>
-          )}
-          {card.checkTotal > 0 && (
-            <span
-              className={styles.badge}
-              title="Checklist"
-              aria-label={`Checklist: ${card.checkDone} de ${card.checkTotal}`}
-              role="img"
-            >
-              <Icon name="checklist" />
-              {card.checkDone}/{card.checkTotal}
-            </span>
-          )}
-          {card.hasNote && (
-            <span className={styles.badge} role="img" aria-label="Tem nota" title="Tem nota">
-              <Icon name="note" />
-            </span>
-          )}
-          {card.attachmentCount > 0 && (
-            <span
-              className={styles.badge}
-              role="img"
-              aria-label={`${card.attachmentCount} ${card.attachmentCount === 1 ? 'anexo' : 'anexos'}`}
-              title="Anexos"
-            >
-              <Icon name="attachment" />
-              {card.attachmentCount}
-            </span>
-          )}
-          {priority && (
-            <span
-              className={styles.priority}
-              role="img"
-              aria-label={`Prioridade ${priority.name.toLowerCase()}`}
-              title={`Prioridade ${priority.name.toLowerCase()}`}
-            >
-              <PriorityIcon value={priority.value} />
-            </span>
-          )}
-        </div>
-      )}
-    </div>
+    </>
   )
 }

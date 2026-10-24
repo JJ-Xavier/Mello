@@ -1,7 +1,7 @@
-// Editor de texto rico da descrição (NOT-07) e, na etapa 5, da nota (NOT-01). A barra tem as
-// ferramentas do protótipo (NOT-02): Título, Negrito, Itálico, Lista, Caixa de marcar e Link.
+// Editor de texto rico da descrição (NOT-07) e da nota (NOT-01). A barra tem as ferramentas do
+// protótipo (NOT-02): Título, Negrito, Itálico, Lista, Caixa de marcar e Link.
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
-import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { safeHref } from '../../../shared/rules/richText'
 import { cx } from '../lib/cx'
 import { Icon } from './Icon'
@@ -100,16 +100,22 @@ function Tool({
 
 function Toolbar({ editor }: { editor: Editor }) {
   const linkId = useId()
+  // Os botões só acendem com o editor em uso: a nota fica sempre aberta, e o cursor parado no
+  // começo (num título, por exemplo) não deve deixar a barra acesa.
   const state = useEditorState({
     editor,
-    selector: ({ editor: e }) => ({
-      heading: e.isActive('heading', { level: 3 }),
-      bold: e.isActive('bold'),
-      italic: e.isActive('italic'),
-      bulletList: e.isActive('bulletList'),
-      taskList: e.isActive('taskList'),
-      link: e.isActive('link')
-    })
+    selector: ({ editor: e }) => {
+      const on = (name: string, attrs?: Record<string, unknown>) =>
+        e.isFocused && e.isActive(name, attrs)
+      return {
+        heading: on('heading', { level: 3 }),
+        bold: on('bold'),
+        italic: on('italic'),
+        bulletList: on('bulletList'),
+        taskList: on('taskList'),
+        link: on('link')
+      }
+    }
   })
   const chain = () => editor.chain().focus()
   return (
@@ -151,31 +157,72 @@ function Toolbar({ editor }: { editor: Editor }) {
   )
 }
 
-// Edição: a barra e o texto. onReady entrega o editor a quem vai salvar (getJSON()).
+// Edição: a barra e o texto. onReady entrega o editor a quem vai salvar (getJSON()); onChange
+// avisa cada mudança do texto (a nota salva sozinha). O conteúdo vem de `html` só ao montar: uma
+// atualização do card enquanto você digita não mexe no que está no editor.
+// variant "note": a nota, sempre aberta na coluna da direita (Card.dc.html), sem caixa em volta e
+// com o texto rolando abaixo da barra.
+// onEscape: o que o Esc faz. O ProseMirror segura o Esc dentro do editor (o <dialog> do modal não
+// fecha); sem onEscape, a tecla segue para quem estiver em volta (a descrição sai da edição).
 export function RichEditor({
   html,
   label,
-  onReady
+  limit,
+  placeholder,
+  autofocus = true,
+  variant = 'box',
+  onReady,
+  onChange,
+  onEscape
 }: {
   html: string
   label: string
-  onReady: (editor: Editor) => void
+  limit: number
+  placeholder?: string
+  autofocus?: boolean
+  variant?: 'box' | 'note'
+  onReady?: (editor: Editor) => void
+  onChange?: (editor: Editor) => void
+  onEscape?: () => void
 }) {
+  const escape = useRef(onEscape)
+  useEffect(() => {
+    escape.current = onEscape
+  }, [onEscape])
   const editor = useEditor({
-    extensions: richExtensions({ editable: true }),
+    extensions: richExtensions({ editable: true, placeholder, limit }),
     content: html,
-    autofocus: 'end',
+    autofocus: autofocus ? 'end' : false,
     immediatelyRender: true,
-    editorProps: { attributes: { 'aria-label': label, 'aria-multiline': 'true', role: 'textbox' } }
+    onUpdate: ({ editor: changed }) => onChange?.(changed),
+    editorProps: {
+      attributes: { 'aria-label': label, 'aria-multiline': 'true', role: 'textbox' },
+      handleKeyDown: (_view, event) => {
+        if (event.key !== 'Escape' || !escape.current) return false
+        escape.current()
+        return true
+      },
+      // Editando, Ctrl+clique abre o link (no programa padrão, pelo main; NOT-05).
+      handleClick: (_view, _pos, event) => {
+        if (!event.ctrlKey && !event.metaKey) return false
+        const href = (event.target as Element).closest('a[href]')?.getAttribute('href')
+        if (!href || !safeHref(href)) return false
+        window.open(href, '_blank', 'noopener')
+        return true
+      }
+    }
   })
   useEffect(() => {
-    if (editor) onReady(editor)
+    if (editor) onReady?.(editor)
   }, [editor, onReady])
   if (!editor) return null
   return (
-    <div className={styles.editor}>
+    <div className={cx(styles.editor, variant === 'note' && styles.noteEditor)}>
       <Toolbar editor={editor} />
-      <EditorContent editor={editor} className={cx(styles.rich, styles.editable)} />
+      <EditorContent
+        editor={editor}
+        className={cx(styles.rich, variant === 'note' ? styles.noteText : styles.editable)}
+      />
     </div>
   )
 }

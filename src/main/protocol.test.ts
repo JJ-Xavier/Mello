@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { fileUrl, resolveFileRequest } from './protocol'
+import { fileUrl } from '../shared/files'
+import { resolveFileRequest } from './protocol'
 
 const FILES = path.resolve('C:/Users/teste/AppData/Roaming/Mello/arquivos')
 const HASH = 'a'.repeat(32) + '0123456789abcdef0123456789abcdef'

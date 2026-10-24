@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { card as cardTable, label } from '../../../../main/db/schema'
+import { card as cardTable, file as fileTable, label } from '../../../../main/db/schema'
 import { insertCard } from '../../../../main/db/test-db'
 import type { MelloApi } from '../../../../shared/ipc/api'
 import type { BoardSummary } from '../../../../shared/ipc/boards'
@@ -124,6 +124,40 @@ describe('cards no quadro', () => {
     expect(within(faxina).getByRole('img', { name: 'Concluído' })).toBeTruthy()
     expect(within(faxina).getByText(', concluído')).toBeTruthy()
     expect(within(faxina).queryByText(', em atraso')).toBeNull()
+  })
+
+  it('CAP-02: a capa fica acima das etiquetas; a imagem com a proporção dela', async () => {
+    const colored = await addCard('A fazer', 'Revisão semanal')
+    await unwrap(
+      api.cards.setCover({ cardId: colored.id, cover: { kind: 'color', color: '#206a83' } })
+    )
+    const photo = await addCard('A fazer', 'Viagem')
+    const fileId = 'c'.repeat(64)
+    db.insert(fileTable)
+      .values({
+        id: fileId,
+        ext: 'jpg',
+        mime: 'image/jpeg',
+        size: 1,
+        width: 400,
+        height: 300,
+        createdAt: 0
+      })
+      .run()
+    db.update(cardTable)
+      .set({ coverKind: 'image', coverValue: fileId })
+      .where(eq(cardTable.id, photo.id))
+      .run()
+    renderBoard()
+
+    const band = (await screen.findByRole('link', { name: 'Revisão semanal' }))
+      .firstElementChild as HTMLElement
+    expect(band.getAttribute('aria-hidden')).toBe('true')
+    expect(band.style.background).toBe('rgb(32, 106, 131)')
+    const image = screen.getByRole('link', { name: 'Viagem' }).firstElementChild as HTMLElement
+    expect(image.tagName).toBe('IMG')
+    expect(image.getAttribute('src')).toBe(`mello-arquivo://arquivos/${fileId}.jpg`)
+    expect(image.style.aspectRatio).toBe('400 / 300')
   })
 
   it('clicar no card abre o modal com a lista e o título; fechar volta ao quadro', async () => {

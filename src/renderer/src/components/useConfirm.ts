@@ -4,6 +4,9 @@ export interface ConfirmOptions {
   title: string
   message: string
   confirmLabel: string
+  // 'danger' (padrão): botão vermelho, para excluir. 'primary': azul, para ações que não perdem
+  // nada (anexar arquivo grande, ANX-05).
+  tone?: 'danger' | 'primary'
 }
 
 export type Confirm = (options: ConfirmOptions) => Promise<boolean>

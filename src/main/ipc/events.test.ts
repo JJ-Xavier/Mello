@@ -1,12 +1,16 @@
 // Tabela de eventos do envelhecimento (PLANO.md, seção 6.2): para cada canal que mexe num card,
 // confere se ele zera (ENV-05) ou não (ENV-06) a última alteração. O último teste confere que todo
 // canal do IPC está nesta tabela: um canal novo sem classificação faz o teste falhar.
+import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CHANNELS } from '../../shared/ipc/api'
+import type { PickedFile } from '../../shared/ipc/files'
 import { createTestDb, insertCard } from '../db/test-db'
-import { card, checklist, checklistItem, label } from '../db/schema'
+import { attachment, card, checklist, checklistItem, label } from '../db/schema'
 import * as boards from '../modules/boards'
+import { storeFile } from '../modules/files'
+import { createTestFiles, PNG_1X1 } from '../modules/test-files'
 import { createRoutes, type Routes } from './routes'
 
 const BEFORE = 1000
@@ -21,15 +25,27 @@ interface Fixture {
   labelIds: string[]
   checklistId: string
   itemId: string
+  // Uma imagem já anexada ao card "Alvo".
+  attachmentId: string
+  fileId: string
 }
 
 let routes: Routes
 let db: ReturnType<typeof createTestDb>['db']
+let files: ReturnType<typeof createTestFiles>
 let f: Fixture
 
-beforeEach(() => {
+afterEach(() => files.cleanup())
+
+beforeEach(async () => {
   ;({ db } = createTestDb())
-  routes = createRoutes({ db, app: { version: '0', dataDir: '', dev: true }, now: () => NOW })
+  files = createTestFiles()
+  routes = createRoutes({
+    db,
+    app: { version: '0', dataDir: '', dev: true },
+    now: () => NOW,
+    files: files.store
+  })
   const boardId = boards.create(db, 'Casa', BEFORE).id
   const otherBoardId = boards.create(db, 'Estudos', BEFORE).id
   const lists = Object.fromEntries(boards.get(db, boardId).lists.map((l) => [l.title, l.id]))
@@ -48,12 +64,37 @@ beforeEach(() => {
   const otherCardId = insertCard(db, lists['A fazer']!, { title: 'Outro', position: 'a1' })
   const checklistId = db.select().from(checklist).get()!.id
   const itemId = db.select().from(checklistItem).get()!.id
-  f = { boardId, otherBoardId, lists, cardId, otherCardId, labelIds, checklistId, itemId }
+  const fileId = (await storeFile(db, files.store, files.sample('foto.png', PNG_1X1), BEFORE)).id
+  const attachmentId = randomUUID()
+  db.insert(attachment)
+    .values({ id: attachmentId, cardId, fileId, name: 'foto.png', createdAt: BEFORE })
+    .run()
+  f = {
+    boardId,
+    otherBoardId,
+    lists,
+    cardId,
+    otherCardId,
+    labelIds,
+    checklistId,
+    itemId,
+    attachmentId,
+    fileId
+  }
 })
 
-async function call(channel: string, input?: unknown) {
-  const result = (await routes.get(channel)!(input)) as { ok: boolean; error?: unknown }
+async function call<T = unknown>(channel: string, input?: unknown): Promise<T> {
+  const result = (await routes.get(channel)!(input)) as { ok: boolean; data: T; error?: unknown }
   expect(result, JSON.stringify(result.error)).toMatchObject({ ok: true })
+  return result.data
+}
+
+// Um arquivo "solto no modal", pronto para anexar ou virar capa.
+async function dropped(name: string, content: string | Uint8Array): Promise<string> {
+  const [picked] = await call<PickedFile[]>(CHANNELS.filesDropped, {
+    paths: [files.sample(name, content)]
+  })
+  return picked!.token
 }
 
 const lastActivity = (id: string) =>
@@ -149,7 +190,33 @@ const TOUCHES: Scenario[] = [
     channel: CHANNELS.itemsToggle,
     input: (f) => ({ itemId: f.itemId, isDone: true })
   },
-  { name: 'excluir item', channel: CHANNELS.itemsDelete, input: (f) => ({ itemId: f.itemId }) }
+  { name: 'excluir item', channel: CHANNELS.itemsDelete, input: (f) => ({ itemId: f.itemId }) },
+  {
+    name: 'editar a nota (cada salvamento automático)',
+    channel: CHANNELS.cardsUpdate,
+    input: (f) => ({
+      cardId: f.cardId,
+      note: {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'lembrar' }] }]
+      }
+    })
+  },
+  {
+    name: 'remover anexo',
+    channel: CHANNELS.attachmentsDelete,
+    input: (f) => ({ attachmentId: f.attachmentId })
+  },
+  {
+    name: 'capa: uma cor',
+    channel: CHANNELS.cardsSetCover,
+    input: (f) => ({ cardId: f.cardId, cover: { kind: 'color', color: '#216e4e' } })
+  },
+  {
+    name: 'capa: uma imagem anexada',
+    channel: CHANNELS.cardsSetCover,
+    input: (f) => ({ cardId: f.cardId, cover: { kind: 'image', fileId: f.fileId } })
+  }
 ]
 
 // ENV-06: não zeram o envelhecimento do card "Alvo".
@@ -255,6 +322,16 @@ const KEEPS: Scenario[] = [
     name: 'filtrar o quadro',
     channel: CHANNELS.cardsMatching,
     input: (f) => ({ boardId: f.boardId, keyword: 'alvo' })
+  },
+  {
+    name: 'abrir um anexo',
+    channel: CHANNELS.attachmentsOpen,
+    input: (f) => ({ attachmentId: f.attachmentId })
+  },
+  {
+    name: 'remover a capa de um card sem capa',
+    channel: CHANNELS.cardsSetCover,
+    input: (f) => ({ cardId: f.cardId, cover: null })
   }
 ]
 
@@ -270,9 +347,17 @@ const NOT_APPLICABLE = [
   CHANNELS.boardsArchived,
   CHANNELS.listsCreate,
   CHANNELS.labelsList,
-  CHANNELS.cardsDelete
+  CHANNELS.cardsDelete,
+  CHANNELS.filesPick,
+  CHANNELS.filesDropped
 ]
-const OWN_TEST = [CHANNELS.cardsRestore, CHANNELS.checklistsMove, CHANNELS.itemsMove]
+const OWN_TEST = [
+  CHANNELS.cardsRestore,
+  CHANNELS.checklistsMove,
+  CHANNELS.itemsMove,
+  CHANNELS.attachmentsAdd,
+  CHANNELS.cardsUploadCover
+]
 
 describe('ENV-05: zeram o envelhecimento', () => {
   it.each(TOUCHES)('$name', async ({ channel, input }) => {
@@ -295,6 +380,22 @@ describe('ENV-05: zeram o envelhecimento', () => {
     await call(CHANNELS.itemsCreate, { checklistId: f.checklistId, text: 'Dois' })
     db.update(card).set({ lastActivityAt: BEFORE }).where(eq(card.id, f.cardId)).run()
     await call(CHANNELS.itemsMove, { itemId: f.itemId, index: 1 })
+    expect(lastActivity(f.cardId)).toBe(NOW)
+  })
+
+  it('anexar arquivo', async () => {
+    const token = await dropped('lista.txt', 'pão, leite')
+    await call(CHANNELS.attachmentsAdd, { cardId: f.cardId, tokens: [token] })
+    expect(lastActivity(f.cardId)).toBe(NOW)
+    expect(lastActivity(f.otherCardId)).toBe(BEFORE)
+  })
+
+  it('enviar imagem de capa e remover a capa', async () => {
+    const token = await dropped('capa.png', PNG_1X1)
+    await call(CHANNELS.cardsUploadCover, { cardId: f.cardId, token })
+    expect(lastActivity(f.cardId)).toBe(NOW)
+    db.update(card).set({ lastActivityAt: BEFORE }).where(eq(card.id, f.cardId)).run()
+    await call(CHANNELS.cardsSetCover, { cardId: f.cardId, cover: null })
     expect(lastActivity(f.cardId)).toBe(NOW)
   })
 })

@@ -11,6 +11,12 @@ const dateTime = new Intl.DateTimeFormat('pt-BR', {
   minute: '2-digit'
 })
 const monthYear = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
+const fullDate = new Intl.DateTimeFormat('pt-BR', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric'
+})
+const oneDecimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 })
 
 // "3 de set.", "15 de out." (mês abreviado do pt-BR, com ponto).
 export function formatShortDate(epochMs: number): string {
@@ -37,4 +43,17 @@ export function formatDateTime(epochMs: number): string {
 // Cabeçalho do seletor de data: "setembro de 2026".
 export function formatMonth(year: number, month: number): string {
   return monthYear.format(new Date(year, month - 1, 1))
+}
+
+// Anexo "adicionado em 20 de out. de 2026" (NovoCardCapaAnexos.dc.html).
+export function formatDate(epochMs: number): string {
+  return fullDate.format(epochMs)
+}
+
+// Tamanho de arquivo: "312 KB", "1,8 MB", "1,2 GB" (NovoCardCapaAnexos.dc.html).
+export function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} ${bytes === 1 ? 'byte' : 'bytes'}`
+  if (bytes < 1024 ** 2) return `${Math.round(bytes / 1024)} KB`
+  if (bytes < 1024 ** 3) return `${oneDecimal.format(bytes / 1024 ** 2)} MB`
+  return `${oneDecimal.format(bytes / 1024 ** 3)} GB`
 }

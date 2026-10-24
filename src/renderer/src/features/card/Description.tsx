@@ -3,6 +3,7 @@
 import type { Editor } from '@tiptap/react'
 import { useCallback, useRef, useState } from 'react'
 import type { CardDetail } from '../../../../shared/ipc/cards'
+import { DESCRIPTION_TEXT_MAX } from '../../../../shared/limits'
 import { Icon } from '../../components/Icon'
 import { RichContent, RichEditor } from '../../components/RichEditor'
 import ui from '../../components/ui.module.css'
@@ -52,7 +53,12 @@ export function Description({ card }: { card: CardDetail }) {
               }
             }}
           >
-            <RichEditor html={card.descriptionHtml} label="Descrição" onReady={onReady} />
+            <RichEditor
+              html={card.descriptionHtml}
+              label="Descrição"
+              limit={DESCRIPTION_TEXT_MAX}
+              onReady={onReady}
+            />
             <div className={styles.buttonRow}>
               <button type="button" className={ui.pri} onClick={() => void save()}>
                 Salvar

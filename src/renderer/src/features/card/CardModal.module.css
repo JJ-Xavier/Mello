@@ -24,6 +24,39 @@
   flex-direction: column;
 }
 
+/* Com capa, a faixa de 96 px no topo e o modal mais alto (NovoCardCapaAnexos.dc.html). */
+.withCover {
+  height: min(836px, calc(100vh - 56px));
+  margin-top: 32px;
+}
+
+.content {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Arquivos arrastados do Explorer por cima do modal. */
+.dropZone {
+  position: absolute;
+  inset: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--modal) 88%, transparent);
+  color: var(--strong);
+  font:
+    600 16px Inter,
+    sans-serif;
+  pointer-events: none;
+}
+
 .modal::backdrop {
   background: rgba(5, 8, 12, 0.68);
   overflow: hidden;
@@ -125,10 +158,98 @@
   color: var(--strong);
 }
 
-.asideNotice {
+/* ---- Nota (NOT) ---- */
+.note {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.noteStatus {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.noteError {
+  color: var(--danger-txt);
+}
+
+/* ---- Atividade (ATV) ---- */
+.activity {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.activityToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--txt);
+  text-align: left;
+  font:
+    600 14px Inter,
+    sans-serif;
+}
+
+.activityToggle:hover {
+  background: var(--btn);
+}
+
+.activityCount {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.activityList {
+  max-height: 240px;
   margin: 0;
-  font-size: 14px;
-  line-height: 21px;
+  padding: 0 0 0 8px;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--a5) transparent;
+}
+
+.activityEntry {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--txt);
+  overflow-wrap: anywhere;
+}
+
+.activityDot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  flex: none;
+  border-radius: 4px;
+  background: #738496;
+}
+
+.activityRecent {
+  background: var(--accent);
+}
+
+.activityDate {
+  display: block;
+  font-size: 12px;
   color: var(--muted);
 }
 
@@ -786,4 +907,205 @@
   gap: 8px;
   font-size: 13px;
   color: var(--txt);
+}
+
+/* ---- Anexos (ANX, NovoCardCapaAnexos.dc.html) ---- */
+.attachments {
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attachment {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.thumb {
+  width: 96px;
+  height: 64px;
+  flex: none;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--modal-btn);
+}
+
+.fileThumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--modal-line);
+  color: var(--strong);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.attachmentInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.attachmentName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.attachmentTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.coverTag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: rgba(87, 157, 255, 0.16);
+  color: #85b8ff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+:global(.tema-claro) .coverTag {
+  color: var(--accent);
+}
+
+.attachmentMeta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.attachmentActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.attachmentButton {
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--modal-btn);
+  color: var(--strong);
+  font:
+    500 12px Inter,
+    sans-serif;
+}
+
+.attachmentButton:hover {
+  background: var(--modal-line);
+}
+
+.attaching {
+  padding: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---- Capa (CAP, NovoCardCapaAnexos.dc.html) ---- */
+.coverPreview {
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--list);
+}
+
+.coverPreviewCard {
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.coverPreviewIn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+.coverPreviewLabels {
+  display: flex;
+  gap: 4px;
+}
+
+.coverPreviewLabels > span {
+  width: 40px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.coverPreviewTitle {
+  font-size: 13px;
+  color: var(--strong);
+  overflow-wrap: anywhere;
+}
+
+.coverCaption {
+  margin: 6px 0 2px;
+}
+
+.coverImages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.coverImageButton {
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--slot);
+}
+
+.coverImageButton img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coverImageButton[aria-pressed='true'] {
+  box-shadow:
+    0 0 0 2px var(--pop),
+    0 0 0 4px var(--accent);
+}
+
+.coverUpload {
+  margin-top: 6px;
+}
+
+.coverRemove {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--dashed);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sec-txt);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.coverRemove:hover {
+  background: var(--pop-hover);
 }

@@ -86,6 +86,7 @@ CAR-07  "Copiar" cria uma cópia logo abaixo, ou na lista escolhida, com título
         Não copia a atividade nem a repetição. A cópia nasce com nível 0 e atividade
         "Copiado de <título>". O título da cópia pode ser mudado no menu (começa com
         "<título> (cópia)"); o ✓ vem como está no original, também em outra lista. (etapa 4)
+        Capa e anexos apontam para os mesmos arquivos guardados: nada é copiado no disco. (etapa 5)
 CAR-08  "Acompanhar card" (o ícone de olho do protótipo) não existe no Mello: sem outras pessoas,
         ele não teria função. (aprovada 21/10)
 CAR-09  No modal, Etiquetas, Prioridade e Data de entrega só aparecem quando preenchidas; o botão
@@ -148,13 +149,14 @@ ENV-05  Zeram o envelhecimento (última alteração = agora):
           - criar, renomear, reordenar ou excluir checklist (reordenar: etapa 4);
           - adicionar, editar, marcar, desmarcar, datar, reordenar ou excluir item do checklist
             (também quando a tarefa é marcada pelo calendário);
-          - editar a nota (cada salvamento automático conta);
-          - anexar ou remover arquivo;
-          - mudar ou remover a capa;
+          - editar a nota (cada salvamento automático que muda o texto conta) (etapa 5);
+          - anexar ou remover arquivo (etapa 5);
+          - mudar ou remover a capa (etapa 5);
           - configurar ou remover a repetição;
           - restaurar o card do arquivo.
 ENV-06  NÃO zeram o envelhecimento:
           - abrir ou fechar o modal;
+          - abrir um anexo (etapa 5);
           - pegar e soltar no mesmo lugar (CAR-03);
           - "Ocultar itens marcados";
           - mudanças em outras coisas: renomear a lista, trocar o fundo, editar o nome ou a cor de
@@ -286,24 +288,34 @@ LEM-07  Com "Manter o Mello na bandeja" ligado (o padrão), fechar a janela esco
 
 12. NOTA E DESCRIÇÃO (NOT)
 Testes (descrição, etapa 4): src/shared/rules/richText.test.ts, src/main/modules/cards.test.ts e
-src/renderer/src/features/card/CardModal.test.tsx. A nota entra na etapa 5.
+src/renderer/src/features/card/CardModal.test.tsx. Nota (etapa 5): cards.test.ts,
+src/main/ipc/events.test.ts e src/renderer/src/features/card/CardAside.test.tsx.
 
 NOT-01  Cada card tem uma nota, sempre aberta na coluna da direita do modal. Não há comentários.
+        Texto de até 20 000 caracteres: o editor para de aceitar texto no limite. (etapa 5)
 NOT-02  Ferramentas do editor: Título, Negrito, Itálico, Lista, Caixa de marcar e Link.
 NOT-03  A nota salva sozinha 800 ms depois que você para de digitar, e também ao fechar o modal.
         Depois de salvar, mostra "Salvo automaticamente".
+        Enquanto há texto por salvar, mostra "Salvando…". Esc dentro da nota fecha o modal e salva
+        o que estiver pendente (não há edição para cancelar). Fechar o app também salva. (etapa 5)
 NOT-04  A nota é guardada como HTML que só aceita estas marcas: título (h3), parágrafo, negrito,
         itálico, lista, lista de tarefas com caixa de marcar e link (http, https ou mailto). Tudo o
         que não está nessa lista é descartado ao salvar e ao abrir.
 NOT-05  Links da nota e da descrição abrem no navegador padrão, nunca dentro do app (http,
         https e mailto; o mailto abre o programa de e-mail padrão). (etapa 4)
+        Na nota (sempre em edição) e na descrição em edição, o clique põe o cursor no link e o
+        Ctrl+clique abre. (etapa 5)
 NOT-06  A face do card mostra o ícone de nota quando a nota tem algum texto.
 NOT-07  A descrição usa o mesmo editor e as mesmas regras, em modo leitura, com o botão "Editar".
         (aprovada 21/10) Texto de até 20 000 caracteres. A tela manda o documento do editor e o
         main gera o HTML guardado, só com as marcas da NOT-04. (etapa 4)
+        O tamanho conta os caracteres do texto como o editor conta, sem a passagem de um bloco para
+        o outro. (etapa 5)
 
 
 13. ATIVIDADE (ATV)
+Testes (etapa 5): src/shared/rules/activity.test.ts, src/main/modules/cards.test.ts e
+src/renderer/src/features/card/CardAside.test.tsx.
 
 ATV-01  "Atividade" fica recolhida embaixo da nota e mostra a quantidade ("2 registros").
         Aberta, lista os registros do mais recente para o mais antigo, com data e hora.
@@ -311,25 +323,46 @@ ATV-02  São registrados: criado em <lista>; movido de <lista> para <lista> (inc
         quadros); ✓ marcado ou desmarcado; arquivado e restaurado; copiado de <card>; criado a
         partir do modelo <card>; criado pela repetição de <data>; repetição de <data> pulada;
         repetição de <data> não criada porque o app estava fechado.
+        O registro mais recente tem o ponto azul. Os textos de modelo e de repetição ganham o
+        título e a data nas etapas 11 e 8, quando esses registros passam a existir. (etapa 5)
 ATV-03  Edições de texto, etiquetas, checklist e nota não são registradas, para a atividade não
-        virar ruído.
+        virar ruído. Anexos e capa também não (não estão na lista da ATV-02). (etapa 5)
 
 
 14. ANEXOS E CAPA (ANX / CAP)
+Testes (etapa 5): src/main/modules/files.test.ts, src/main/modules/attachments.test.ts,
+src/main/ipc/events.test.ts, src/renderer/src/features/card/CardAside.test.tsx,
+src/renderer/src/features/card/useAttach.test.ts e src/renderer/src/features/board/BoardCards.test.tsx.
 
 ANX-01  Aceita qualquer tipo de arquivo. Ele é copiado para a pasta de arquivos do app
         (%APPDATA%\Mello\arquivos) e o nome original é guardado.
+        Anexa pela janela "Abrir" do Windows (botões Anexo e Adicionar, vários de uma vez) ou
+        arrastando arquivos do Explorer para o modal; pastas ficam de fora. A seção Anexos aparece
+        quando há anexos, do mais recente para o mais antigo. (decidido em 23/10, etapa 5)
 ANX-02  O mesmo arquivo anexado mais de uma vez é guardado uma vez só (identificado pelo hash do
         conteúdo).
 ANX-03  Imagens mostram miniatura. "Abrir" usa o programa padrão do Windows.
+        Imagem é reconhecida pelo conteúdo: PNG, JPG, GIF, WebP e BMP (SVG e o resto viram arquivo
+        comum, com a extensão no lugar da miniatura). "Abrir" abre uma cópia só leitura, com o
+        nome original, numa pasta temporária: o arquivo guardado nunca muda, e uma edição feita no
+        programa não volta para o anexo. Programas (.exe, .bat, .msi, .ps1…) não são executados:
+        o botão vira "Mostrar na pasta". (decidido em 23/10, etapa 5)
 ANX-04  Remover um anexo apaga a referência. O arquivo só é apagado do disco quando nada mais o
         usa (DAD-08).
+        Remover pede confirmação. A limpeza dos arquivos sem uso entra na etapa 10, junto com o
+        espelho do backup. (etapa 5)
 ANX-05  Arquivos acima de 200 MB pedem confirmação antes de copiar.
+        Cancelar não anexa nenhum dos arquivos escolhidos. (etapa 5)
 CAP-01  Capa pode ser: nenhuma, uma cor (paleta das etiquetas) ou uma imagem (enviada na hora ou
         escolhida entre os anexos de imagem do card).
+        A imagem enviada na hora fica só como capa (não vira anexo). Escolher não fecha o
+        seletor, para a prévia mostrar a mudança. (etapa 5)
 CAP-02  Na face do card: faixa de cor de 32 px ou imagem de até 160 px de altura (recortada para
         cobrir), acima das etiquetas. No modal: faixa no topo.
+        A imagem tem a proporção dela até os 160 px. No modal, a faixa tem 96 px e o modal cresce
+        para 836 px (NovoCardCapaAnexos.dc.html). (etapa 5)
 CAP-03  Remover o anexo usado como capa remove a capa.
+        Se outro anexo do card tem o mesmo arquivo, a capa fica. (etapa 5)
 
 
 15. REPETIÇÃO (REP)

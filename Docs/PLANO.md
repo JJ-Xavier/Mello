@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026 e etapa 4 em 23/10/2026**; a etapa 4 aguarda o commit. A etapa 5 começa quando for liberada.
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026 e etapa 5 em 24/10/2026**; a etapa 5 aguarda o commit. A etapa 6 começa quando for liberada.
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -433,8 +433,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** cada campo do modal salva e reflete na face do card; ordenar e filtrar funcionam.
 - **Testes:** PRI-01..05, DAT-01..04, CHK-01..06, FLT-01..05, ETQ-01..04, CAR-05..07; a tabela de eventos de ENV-05 e ENV-06 para tudo o que existe até aqui.
 
-### Etapa 5 — Modal do card: nota, atividade, anexos e capa
+### Etapa 5 — Modal do card: nota, atividade, anexos e capa ✅ concluída em 24/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 336 testes no total (56 novos), lint e tipos limpos; capturas conferidas com as telas 4, 14 e 16 nos dois temas; conferência no app real (nota digitada, anexar pela janela do Windows e soltando arquivo, abrir a cópia, capa na face e no modal). Decisões da etapa: anexar também arrastando do Explorer (`ANX-01`); "Abrir" abre uma cópia temporária só leitura com o nome original, e programas são mostrados na pasta (`ANX-03`). A tela recebe uma ficha de cada arquivo, nunca o caminho. A limpeza dos arquivos sem uso fica para a etapa 10, com o espelho do backup. Entraram image-size 2.0.4 e @tiptap/extensions 3.31.4. Detalhes no `Changelog.txt`.
 - **Entrega:** coluna da direita com a Nota (TipTap com Título, Negrito, Itálico, Lista, Caixa de marcar e Link; salvamento automático; "Salvo automaticamente") e a Atividade recolhida, com a contagem; seção de Anexos (escolher arquivo, copiar com hash, miniatura de imagem, abrir, remover); Capa (cor ou imagem); ícone de nota e de anexos na face.
 - **Telas:** 4 (coluna da direita e barra do topo); 14 (capa e anexos); 16 (capa na face do card).
 - **Aceite:** a nota sobrevive a reiniciar o app; anexar o mesmo arquivo duas vezes guarda uma cópia só; a capa aparece na face e no modal.

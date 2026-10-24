@@ -1,4 +1,5 @@
 // Processo principal: ciclo de vida do app, banco, protocolo de arquivos, IPC e a janela.
+import fs from 'node:fs'
 import path from 'node:path'
 import { app, BrowserWindow, dialog, Menu, nativeTheme, screen, session, shell } from 'electron'
 import log from 'electron-log/main'
@@ -7,6 +8,7 @@ import { openDatabase, type OpenedDatabase } from './db/open'
 import { registerIpc } from './ipc'
 import { dataPaths, ensureDataFolders } from './paths'
 import { registerFileProtocol, registerFileSchemeAsPrivileged } from './protocol'
+import { electronSystem } from './system'
 
 const APP_ID = 'com.jjxavier.mello'
 const isDev = !app.isPackaged
@@ -90,7 +92,18 @@ async function start(): Promise<void> {
     callback(false)
   })
   registerFileProtocol(paths.files)
-  registerIpc({ dataDir: paths.root, db: database.db })
+
+  // Cópias dos anexos abertos por "Abrir" (ANX-03). As da sessão anterior saem ao abrir o app; uma
+  // que ainda esteja aberta num programa fica para a próxima vez.
+  const openedCopies = path.join(app.getPath('temp'), isDev ? 'Mello-dev' : 'Mello')
+  await fs.promises
+    .rm(openedCopies, { recursive: true, force: true, maxRetries: 0 })
+    .catch((error: unknown) => log.warn('Cópias de anexos não apagadas', error))
+  registerIpc({
+    dataDir: paths.root,
+    db: database.db,
+    files: { dir: paths.files, system: electronSystem(openedCopies) }
+  })
 
   mainWindow = createWindow()
   mainWindow.on('closed', () => {

@@ -1,4 +1,4 @@
-// Texto rico da descrição (NOT-07) e, na etapa 5, da nota (NOT-04). A tela edita com o TipTap e
+// Texto rico da descrição (NOT-07) e da nota (NOT-01, NOT-04). A tela edita com o TipTap e
 // manda o documento dele (JSON). O main passa o documento por clean(), que só deixa o que a NOT-04
 // permite, e gera o HTML guardado no banco com toHtml(): título (h3), parágrafo, negrito, itálico,
 // lista, lista de tarefas e link http, https ou mailto. Como o HTML é escrito aqui, a partir de uma
@@ -182,4 +182,20 @@ export function toText(doc: RichDoc): string {
   }
   walk(doc.content)
   return lines.join('\n')
+}
+
+// Tamanho do texto para os limites (NOTE_TEXT_MAX, DESCRIPTION_TEXT_MAX), contado como o limite do
+// editor conta (CharacterCount do TipTap): os caracteres dos textos, mais um por quebra de linha
+// dentro do parágrafo, sem contar a passagem de um bloco para o outro.
+export function textLength(doc: RichDoc): number {
+  let total = 0
+  const walk = (nodes: RichNode[] = []) => {
+    for (const node of nodes) {
+      if (node.type === 'text') total += node.text?.length ?? 0
+      else if (node.type === 'hardBreak') total += 1
+      else walk(node.content)
+    }
+  }
+  walk(doc.content)
+  return total
 }
