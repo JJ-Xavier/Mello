@@ -89,11 +89,16 @@ export function sortByDue<T extends { dueAt: string | null }>(cards: readonly T[
   })
 }
 
-// As semanas de um mês para o seletor de data, de domingo a sábado (como no protótipo), com os
-// dias do mês anterior e do seguinte que completam a primeira e a última semana.
-export function monthGrid(year: number, month: number): { day: string; inMonth: boolean }[][] {
+// As semanas de um mês, com os dias do mês anterior e do seguinte que completam a primeira e a
+// última semana. O seletor de data começa no domingo (como no protótipo); o calendário pode
+// começar na segunda (firstWeekday = 1, CAL-03).
+export function monthGrid(
+  year: number,
+  month: number,
+  firstWeekday: 0 | 1 = 0
+): { day: string; inMonth: boolean }[][] {
   const first = new Date(year, month - 1, 1)
-  const start = new Date(year, month - 1, 1 - first.getDay())
+  const start = new Date(year, month - 1, 1 - ((first.getDay() - firstWeekday + 7) % 7))
   const weeks: { day: string; inMonth: boolean }[][] = []
   const cursor = new Date(start)
   do {

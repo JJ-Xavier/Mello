@@ -58,8 +58,22 @@ export function useArchived(boardId: string) {
   })
 }
 
+// Um mês do calendário, de um quadro ou de todos (boardId null), CAL-02.
+export function useCalendar(boardId: string | null, year: number, month: number) {
+  return useQuery({
+    queryKey: queryKeys.calendar(boardId ?? 'all', year, month),
+    queryFn: () => unwrap(api().calendar.month({ year, month, boardId }))
+  })
+}
+
+export function useSettings() {
+  return useQuery({ queryKey: queryKeys.settings, queryFn: () => unwrap(api().settings.get()) })
+}
+
 // run(tarefa, chaves) executa a tarefa, invalida as chaves (mesmo se falhar, para a tela voltar ao
-// estado real) e devolve o resultado, ou undefined se deu erro.
+// estado real) e devolve o resultado, ou undefined se deu erro. O calendário junta cards de todos
+// os quadros, então toda ação que muda dados também invalida o calendário: aberto, ele recarrega o
+// mês; fechado, recarrega quando abrir.
 export function useAction() {
   const queryClient = useQueryClient()
   const notify = useNotify()
@@ -71,7 +85,8 @@ export function useAction() {
         notify(error instanceof Error ? error.message : String(error))
         return undefined
       } finally {
-        await Promise.all(invalidate.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
+        const keys = invalidate.length > 0 ? [...invalidate, queryKeys.calendarAll] : []
+        await Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
       }
     },
     [queryClient, notify]

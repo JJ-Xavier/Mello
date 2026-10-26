@@ -1,8 +1,9 @@
 Modelo de dados — Mello
 
 Status: criado na etapa 1 (21/10/2026); a etapa 3 (22/10/2026) registrou o conteúdo de
-activity.data, a etapa 4 (23/10/2026) a origem de description_html e a etapa 5 (24/10/2026)
-os anexos e a capa, sem migração nova. Fonte no código: src/main/db/schema.ts.
+activity.data, a etapa 4 (23/10/2026) a origem de description_html, a etapa 5 (24/10/2026)
+os anexos e a capa e a etapa 7 (24/10/2026) as configurações do calendário, sem migração nova.
+Fonte no código: src/main/db/schema.ts.
 Qualquer migração nova atualiza este documento (seções 3 e 4).
 
 
@@ -126,6 +127,10 @@ setting — configurações
   key TEXT PK | value TEXT NOT NULL (JSON)
   Chaves: theme, aging.enabled, calendar.showTasks, calendar.strikeDone, calendar.weekStart,
   tray.keep, app.autoStart, backup.folder, backup.lastAt.
+  Lidas desde a etapa 7 (src/main/modules/settings.ts): calendar.showTasks (true/false, padrão
+  true), calendar.strikeDone (true/false, padrão true) e calendar.weekStart ("sunday" ou
+  "monday", padrão "sunday"). Chave ausente ou valor inválido vale o padrão
+  (src/shared/ipc/settings.ts). A tela que grava entra na etapa 10.
 
 _migrations — controle das migrações (criada pelo app, fora do schema do Drizzle)
   tag TEXT PK (nome da migração) | applied_at INTEGER NOT NULL

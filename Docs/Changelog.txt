@@ -4,6 +4,60 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.7.0 — Etapa 7: calendário (24/10/2026)
+
+A etapa 7 veio antes da 6 (envelhecimento), por decisão de 24/10/2026. A 6 entra depois, com a
+versão que for combinada.
+
+Adicionado
+- Calendário mensal (CAL-01), aberto no mês atual, nas duas telas do protótipo: o do quadro
+  (tela 5, pela barra de baixo, com a barra do quadro e o X que volta ao quadro) e o de todos os
+  quadros (tela 13, pelo menu lateral do Início, com o seletor "Quadros no calendário"), CAL-02.
+- Grade de 5 ou 6 semanas, começando no domingo ou na segunda (Configurações); dias de fora do
+  mês mais escuros e sem itens; hoje no círculo azul (CAL-03, CAL-04).
+- Cards no dia da entrega, com etiquetas, ✓, relógio vermelho de atraso, ↻, prioridade e, em
+  todos os quadros, o nome do quadro; tarefas com a caixa de marcar e o card embaixo (CAL-05,
+  CAL-08, CAL-14). Riscado = finalizado, pela FIN-01, com a legenda (CAL-07).
+- Filtros "Cards" e "Tarefas do checklist" (CAL-09); ordem do dia (CAL-10).
+- Clicar no card abre o modal por cima do calendário; clicar na tarefa marca e desmarca, e conta
+  como alteração do card (CAL-11).
+- "Adicionar" ao passar o mouse (ou com o foco) num dia: popover com o título; o card entra na
+  primeira lista que não é de conclusão, com a data do dia; em todos os quadros, pergunta o
+  quadro (CAL-12).
+- "+N mais" quando os itens não cabem no dia, com a lista completa num popover (CAL-13).
+- Seletor de mês (ano e os 12 meses), além de "‹ Hoje ›".
+
+Mudou
+- Canais novos: calendar:month, calendar:addCard e settings:get (só leitura; gravar entra na
+  etapa 10, com a tela de Configurações). Configurações lidas: calendar.showTasks,
+  calendar.strikeDone e calendar.weekStart, com os padrões quando não há nada gravado.
+- cards.create aceita a data de entrega (usada pelo "Adicionar" do calendário).
+- O modal do card também abre por cima do Início e do calendário de todos os quadros (?card=).
+- Toda ação da tela invalida também o calendário, que junta cards de todos os quadros.
+- O aviso de quadro fechado virou um componente (ClosedBoardNotice), usado pelo quadro e pelo
+  calendário do quadro.
+- O Popover avisa quando abre e fecha (onToggle).
+- monthGrid (shared/rules/dates.ts) aceita começar na segunda.
+- Variáveis novas de tema para o calendário (--cal, --cal-day, --cal-item, --cal-out,
+  --cal-done), com o equivalente claro.
+- Script de capturas: etapa 7, com cards e tarefas no calendário e um dia cheio.
+- Versão 0.7.0.
+
+Corrigido
+- (Durante a etapa) num dia cheio, o "Adicionar" cobria o "+N mais": agora vira só o "+" à
+  direita.
+
+Decisões tomadas na etapa (24/10/2026)
+- A etapa 7 vem antes da 6.
+- Um mês que cabe em 4 semanas ganha a semana seguinte (CAL-03).
+- Quadros-modelo ficam fora do calendário, como os cards-modelo (CAL-06).
+- A lista do "+N mais" é a mesma do dia: os cards abrem o modal e as tarefas se marcam (CAL-11).
+
+Documentação
+- Atualizados: Regras.txt (CAL, com os testes), Arquitetura.txt, Modelo-de-Dados.txt (chaves das
+  configurações lidas), Testes.txt, PLANO.md, To-do-list.txt, README.md.
+
+
 0.5.0 — Etapa 5: modal do card (nota, atividade, anexos e capa) (24/10/2026)
 
 Adicionado

@@ -14,19 +14,32 @@ interface PopoverProps {
   label: string
   placement?: PopoverPlacement
   width?: number
+  // Avisa quando abre e fecha (o botão que abriu pode precisar continuar visível).
+  onToggle?: (open: boolean) => void
   children: (close: () => void) => ReactNode
 }
 
-export function Popover({ id, label, placement = 'belowStart', width, children }: PopoverProps) {
+export function Popover({
+  id,
+  label,
+  placement = 'belowStart',
+  width,
+  onToggle,
+  children
+}: PopoverProps) {
   const [element, setElement] = useState<HTMLDivElement | null>(null)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
     if (!element) return
-    const onToggle = (event: Event) => setOpen((event as ToggleEvent).newState === 'open')
-    element.addEventListener('toggle', onToggle)
-    return () => element.removeEventListener('toggle', onToggle)
-  }, [element])
+    const toggle = (event: Event) => {
+      const isOpen = (event as ToggleEvent).newState === 'open'
+      setOpen(isOpen)
+      onToggle?.(isOpen)
+    }
+    element.addEventListener('toggle', toggle)
+    return () => element.removeEventListener('toggle', toggle)
+  }, [element, onToggle])
 
   const close = () => element?.hidePopover()
 

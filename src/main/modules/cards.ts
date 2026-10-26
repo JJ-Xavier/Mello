@@ -494,8 +494,14 @@ export function matching(db: DbOrTx, boardId: string, keyword: string): string[]
 
 // CAR-02: o card novo entra no fim da lista, com nível 0 (última alteração = agora). Criado direto
 // numa lista de conclusão, nasce sem o ✓: o ✓ automático é só para quem chega arrastado ou movido
-// (FIN-02, decidido na etapa 3).
-export function create(db: Db, listId: string, title: string, now: number): CardSummary {
+// (FIN-02, decidido na etapa 3). O "Adicionar" do calendário já cria com a data de entrega (CAL-12).
+export function create(
+  db: Db,
+  listId: string,
+  title: string,
+  now: number,
+  dueAt: string | null = null
+): CardSummary {
   const id = randomUUID()
   db.transaction((tx) => {
     const target = requireTargetList(tx, listId)
@@ -511,6 +517,7 @@ export function create(db: Db, listId: string, title: string, now: number): Card
         listId,
         title,
         position: keyAfter(last),
+        dueAt,
         lastActivityAt: now,
         createdAt: now,
         updatedAt: now

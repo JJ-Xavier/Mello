@@ -58,7 +58,7 @@ describe('casca do app', () => {
 
   it('as Configurações mostram a versão vinda do main pelo IPC', async () => {
     renderAt('#/settings')
-    expect(await screen.findByText(/Mello 0\.5\.0 \(desenvolvimento\)/)).toBeTruthy()
+    expect(await screen.findByText(/Mello 0\.7\.0 \(desenvolvimento\)/)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Voltar ao início' })).toBeTruthy()
   })
 
@@ -67,7 +67,7 @@ describe('casca do app', () => {
     const menu = screen.getByRole('navigation', { name: 'Navegação principal' })
     fireEvent.click(within(menu).getByRole('link', { name: 'Configurações' }))
     fireEvent.click(await screen.findByRole('link', { name: 'Voltar ao calendário' }))
-    expect(await screen.findByText('Calendário de todos os quadros')).toBeTruthy()
+    expect(await screen.findByRole('region', { name: /todos os quadros$/ })).toBeTruthy()
   })
 
   it('um endereço desconhecido volta ao Início', () => {

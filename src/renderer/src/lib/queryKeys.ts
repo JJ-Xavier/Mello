@@ -9,5 +9,10 @@ export const queryKeys = {
   archived: (boardId: string) => ['board', boardId, 'archived'] as const,
   labels: (boardId: string) => ['board', boardId, 'labels'] as const,
   matching: (boardId: string, keyword: string) => ['board', boardId, 'matching', keyword] as const,
-  card: (cardId: string) => ['card', cardId] as const
+  card: (cardId: string) => ['card', cardId] as const,
+  // Mês do calendário, de um quadro ou de todos ('all'). calendarAll cobre todos os meses.
+  calendarAll: ['calendar'] as const,
+  calendar: (scope: string, year: number, month: number) =>
+    ['calendar', scope, year, month] as const,
+  settings: ['settings'] as const
 }

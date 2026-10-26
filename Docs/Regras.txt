@@ -3,7 +3,8 @@ Regras de negócio — Mello
 Status: aprovado em 21/10/2026 (inclusive as regras que eram propostas). Atualizado na etapa 2
 (QUA-10 e esclarecimentos em LIS-05, LIS-06 e ENV-06), na etapa 3 (FIN-02: card criado numa
 lista de conclusão) e na etapa 4 (CAR-09 e CAR-10, limites de tamanho e esclarecimentos em CAR-07,
-ENV-05, ENV-06, ETQ-04, FLT-03 e NOT-05).
+ENV-05, ENV-06, ETQ-04, FLT-03 e NOT-05). A etapa 7 (calendário) veio antes da 6, por decisão de
+24/10/2026, e esclareceu as regras CAL.
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -422,34 +423,54 @@ REP-17  Resumo da regra: "Todo dia, 08:00", "Toda segunda, 08:00", "Toda segunda
 
 
 16. CALENDÁRIO (CAL)
+Testes (etapa 7): src/shared/rules/calendar.test.ts (grade, ordem, "+N mais", lista do
+"Adicionar"), src/main/modules/calendar.test.ts (o que aparece e o "Adicionar"),
+src/main/modules/settings.test.ts (valores das Configurações) e
+src/renderer/src/features/calendar/CalendarPage.test.tsx (as duas telas).
 
-CAL-01  Só visão mensal. Abre no mês atual.
+CAL-01  Só visão mensal. Abre no mês atual. O mês, os filtros e o quadro escolhido não ficam
+        salvos: voltar ao calendário abre de novo no mês atual. (etapa 7)
 CAL-02  Tem tela própria. Aberto pela barra de baixo de um quadro, mostra aquele quadro. Aberto
         pelo menu lateral do Início, mostra todos os quadros, com um seletor para escolher um
-        quadro. (aprovada 21/10)
+        quadro. (aprovada 21/10) Um quadro escolhido que depois é fechado ou excluído volta para
+        "Todos os quadros". O calendário de um quadro fechado, aberto pelo endereço, mostra o
+        aviso para reabrir, como o quadro. (etapa 7)
 CAL-03  Grade de 7 colunas, começando no domingo ou na segunda (Configurações), com 5 ou 6
         semanas, conforme o mês precisar. Dias de fora do mês ficam com fundo mais escuro e sem
-        itens, como no protótipo.
+        itens, como no protótipo. Um mês que cabe em 4 semanas (fevereiro de 2026, começando no
+        domingo) ganha a semana seguinte, para a grade ter sempre 5 ou 6. (etapa 7)
 CAL-04  O dia de hoje tem o número num círculo azul.
 CAL-05  Cards aparecem no dia da data de entrega. Tarefas são os itens de checklist com data e
         "Mostrar no calendário" ligado.
 CAL-06  Não aparecem: cards arquivados, modelos, cards de lista arquivada e de quadro fechado.
+        As tarefas desses cards também não. Quadros-modelo (MOD-04, etapa 11) também ficam de
+        fora. (etapa 7)
 CAL-07  Riscado (com "Riscar itens finalizados" ligado): card finalizado (FIN-01, com o ✓ verde)
-        ou tarefa marcada. Com a opção desligada, nada fica riscado.
+        ou tarefa marcada. Com a opção desligada, nada fica riscado, e a legenda "Riscado =
+        finalizado" some. Um card com ✓ fora de uma lista de conclusão mostra o ✓, mas não fica
+        riscado (FIN-04). (etapa 7)
 CAL-08  Card atrasado (DAT-02) mostra o relógio vermelho. Tarefa atrasada tem o texto vermelho.
 CAL-09  Os filtros "Cards" e "Tarefas do checklist" são independentes. O valor inicial de
         "Tarefas" vem das Configurações.
 CAL-10  Ordem dentro do dia: cards antes das tarefas. Entre cards: sem hora primeiro, depois pela
-        hora; empate por prioridade e depois pelo título.
+        hora; empate por prioridade e depois pelo título. Entre tarefas: juntas por card (pelo
+        título do card) e, dentro do card, na ordem do checklist. (etapa 7)
 CAL-11  Clicar num card abre o modal dele por cima do calendário. Clicar numa tarefa marca ou
         desmarca o item (ENV-05). (aprovada 21/10: o protótipo também marcava o card ao clicar, mas pela
-        regra FIN-01 marcar o ✓ sozinho não finaliza)
+        regra FIN-01 marcar o ✓ sozinho não finaliza) Vale também para os itens da lista do
+        "+N mais". (etapa 7)
 CAL-12  "Adicionar" aparece ao passar o mouse num dia. Cria um card com data de entrega naquele
         dia, sem hora, na primeira lista do quadro que não é de conclusão. No modo "todos os
-        quadros", pergunta antes em qual quadro.
+        quadros", pergunta antes em qual quadro. O "Adicionar" abre um popover com o título do
+        card (CAR-01) e diz em que lista ele vai entrar; no modo "todos os quadros", o seletor de
+        quadro começa no quadro escolhido no calendário. Um quadro sem nenhuma lista que não
+        seja de conclusão avisa e não cria. Também aparece com o foco no dia (teclado). (etapa 7)
 CAL-13  Quando os itens não cabem no dia, aparece "+N mais", que abre a lista completa do dia.
+        O que cabe depende da altura do dia na janela, e é medido de novo quando ela muda.
+        (etapa 7)
 CAL-14  Tarefas mostram o título do card embaixo. No modo "todos os quadros", os cards mostram
-        também o nome do quadro.
+        também o nome do quadro. (No modo "todos os quadros", as tarefas mostram "card ·
+        quadro", como no protótipo.)
 
 
 17. FUNDO DO QUADRO (FUN)

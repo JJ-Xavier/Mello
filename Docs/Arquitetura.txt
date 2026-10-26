@@ -1,7 +1,8 @@
 Arquitetura — Mello
 
-Status: atualizado na etapa 5 (24/10/2026), com o que já existe no código. As partes que ainda vão
-ser construídas estão marcadas com a etapa em que entram.
+Status: atualizado na etapa 7 (24/10/2026), com o que já existe no código. As partes que ainda vão
+ser construídas estão marcadas com a etapa em que entram. A etapa 7 (calendário) veio antes da 6
+(envelhecimento), por decisão de 24/10/2026.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
 Ver também: Docs/PLANO.md, Docs/Modelo-de-Dados.txt, Docs/Definicao-da-Stack.txt,
 Docs/Pipeline.txt, Docs/LGPD.txt.
@@ -60,7 +61,7 @@ Dentro do main, a direção é uma só: ipc/ → modules/ → db/.
 
 3. PASTAS DO PROJETO
 
-Estado na etapa 5. A estrutura completa prevista está no PLANO.md, seção 3.
+Estado na etapa 7. A estrutura completa prevista está no PLANO.md, seção 3.
 
 Mello/
 ├── Assets/                  identidade visual e imagens de referência
@@ -93,6 +94,8 @@ Mello/
 │   │   │   ├── activity.ts  atividade do card e o "zerar o envelhecimento" (touch)
 │   │   │   ├── labels.ts    etiquetas: padrão, editor e recriação no outro quadro (LIS-05)
 │   │   │   ├── position.ts  posições de ordem manual (fractional indexing)
+│   │   │   ├── calendar.ts  calendário: cards e tarefas do mês, "Adicionar" num dia (CAL)
+│   │   │   ├── settings.ts  configurações gravadas, com os valores padrão (etapa 7: só lê)
 │   │   │   └── backup.ts    backup pela API do SQLite (etapa 1: antes de migrar)
 │   │   └── ipc/
 │   │       ├── events.test.ts tabela de eventos do envelhecimento (ENV-05, ENV-06)
@@ -110,11 +113,14 @@ Mello/
 │   │   ├── ipc/cards.ts     schemas Zod e tipos de cards (face e modal)
 │   │   ├── ipc/labels.ts    etiquetas;  ipc/checklists.ts  checklists e itens
 │   │   ├── ipc/files.ts     anexos, arquivos escolhidos e soltos, capa enviada na hora
+│   │   ├── ipc/calendar.ts  o mês do calendário e o "Adicionar"
+│   │   ├── ipc/settings.ts  chaves das configurações, schemas e valores padrão
 │   │   └── rules/           background.ts (fundos do protótipo), tone.ts (tom, FUN-09),
 │   │                        finished.ts (FIN), dates.ts (datas, DAT), priority.ts (PRI),
 │   │                        color.ts (paleta e texto legível), checklist.ts (CHK),
 │   │                        filter.ts (FLT), richText.ts (texto rico, NOT-04),
-│   │                        activity.ts (textos da atividade, ATV)
+│   │                        activity.ts (textos da atividade, ATV), calendar.ts (grade do
+│   │                        mês, ordem do dia, "+N mais" e lista do "Adicionar", CAL)
 │   └── renderer/
 │       ├── index.html       com a política de segurança (CSP)
 │       └── src/
@@ -122,7 +128,8 @@ Mello/
 │           ├── features/    home/ (Início, criar quadro, fechados), board/ (barra, listas,
 │           │                cards, arrastar, filtro, menus, arquivados), card/ (modal,
 │           │                seletores, checklists, descrição, nota, atividade, anexos,
-│           │                capa, menu do card, criar card), calendar/, settings/
+│           │                capa, menu do card, criar card), calendar/ (página, dia,
+│           │                itens), settings/
 │           ├── components/  Popover, Confirm, Notify, EditableTitle, dnd, DoneMark,
 │           │                PriorityIcon, RichEditor (TipTap), Cover (capa), Icon, Logo…
 │           ├── lib/         api.ts (unwrap), queries.ts (consultas e ações), queryKeys.ts,
@@ -184,7 +191,15 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   sort, archiveCards, restore; cards:get, create, update, move, copy, setLabels, archive,
   restore, delete, matching, setCover, uploadCover; labels:list, create, update, delete;
   checklists:create, update, move, delete; items:create, update, toggle, move, delete;
-  files:pick, dropped; attachments:add, open, delete.
+  files:pick, dropped; attachments:add, open, delete; calendar:month, addCard; settings:get.
+- Calendário (etapa 7): calendar:month recebe o ano, o mês e o quadro (ou null, todos os
+  quadros) e devolve os cards com data de entrega no mês e as tarefas (itens de checklist com
+  data e "Mostrar no calendário"), já sem o que a CAL-06 tira; o card vem com finished (FIN-01).
+  A tela agrupa por dia e ordena (shared/rules/calendar.ts, CAL-10). calendar:addCard cria o card
+  na primeira lista que não é de conclusão (CAL-12): quem escolhe a lista é o main. A tarefa é
+  marcada pelo items:toggle de sempre.
+- Configurações (etapa 7): settings:get devolve todas as chaves conhecidas, com o padrão no lugar
+  do que não foi gravado ou está inválido (shared/ipc/settings.ts). Gravar entra na etapa 10.
 - Editar um card é um canal só (cards:update), com um campo por vez (título, ✓, prioridade, data
   com lembrete, descrição, nota). Se nada mudou, o main não grava nada e não zera o envelhecimento.
 - Texto rico (descrição e nota): a tela edita com o TipTap e manda o documento dele
@@ -247,14 +262,15 @@ Rotas (HashRouter, porque o app instalado carrega a tela por file://):
     #/                          Início (menu lateral: Quadros, Calendário, Configurações)
     #/calendar                  Calendário de todos os quadros (CAL-02)
     #/boards/:boardId           Quadro, com a barra flutuante de baixo
-    ...?card=<id>               Modal do card por cima do quadro (e, na etapa 7, do calendário)
+    ...?card=<id>               Modal do card por cima do quadro, do calendário (CAL-11) e do
+                                Início
     #/boards/:boardId/calendar  Calendário do quadro, com a barra flutuante
     #/settings                  Configurações ("Voltar" leva para a tela de onde veio)
     qualquer outro              volta ao Início
 
-Layouts (src/renderer/src/app/Layouts.tsx): HomeLayout (cabeçalho + menu lateral), BoardLayout
-(cabeçalho + conteúdo + barra flutuante + modal do card) e SettingsLayout (cabeçalho com
-"Voltar").
+Layouts (src/renderer/src/app/Layouts.tsx): HomeLayout (cabeçalho + menu lateral + modal do
+card), BoardLayout (cabeçalho + conteúdo + barra flutuante + modal do card) e SettingsLayout
+(cabeçalho com "Voltar").
 
 Cabeçalho de 56 px, em três variações, como no protótipo:
 - home (Início e calendário de todos): busca "Pesquisar cards, tarefas e quadros", com a borda
@@ -269,14 +285,18 @@ Estado:
   dados só mudam quando o próprio app os altera, e então a chave correspondente é invalidada.
   Chaves (lib/queryKeys.ts): ['boards'] (abertos), ['boards', 'closed'], ['board', id] (quadro
   com as listas e os cards), ['board', id, 'archived'], ['board', id, 'labels'], ['board', id,
-  'matching', palavra] (filtro) e ['card', id] (o card aberto no modal). As ações do modal
-  recarregam o card e o quadro (features/card/useCardAction.ts).
+  'matching', palavra] (filtro), ['card', id] (o card aberto no modal), ['calendar', quadro ou
+  'all', ano, mês] (etapa 7) e ['settings']. As ações do modal recarregam o card e o quadro
+  (features/card/useCardAction.ts).
 - Ações (lib/queries.ts, useAction): chamam o main, invalidam as chaves afetadas (mesmo se
   falharem, para a tela voltar ao estado real) e, em caso de erro, mostram o aviso no canto da
-  tela (components/Notify.tsx).
+  tela (components/Notify.tsx). Como o calendário junta cards de todos os quadros, toda ação que
+  invalida alguma chave invalida também ['calendar']: aberto, ele recarrega o mês (por exemplo,
+  ao editar um card no modal por cima dele); fechado, recarrega quando abrir.
 - Arrastar listas, cards e quadros atualiza o cache na hora (otimista) e depois confirma no main.
 - Estado de interface: useState. O filtro do quadro fica na página do quadro e passa por
-  propriedade para a barra e as listas; não fica salvo e some ao trocar de quadro (FLT-05).
+  propriedade para a barra e as listas; não fica salvo e some ao trocar de quadro (FLT-05). No
+  calendário, o mês, os filtros Cards e Tarefas e o quadro escolhido também ficam na página.
   Zustand continua fora: até aqui nenhum estado precisou ser compartilhado entre telas.
 - Estado na URL: o quadro e a tela abertos, e o card aberto (?card=<id>). Fechar o modal tira o
   parâmetro sem criar um passo a mais no histórico.
@@ -323,6 +343,14 @@ Menus, confirmações e arrastar:
   Na descrição em edição, o Esc sai da edição.
 - Soltar arquivos: o modal inteiro aceita arquivos arrastados do Explorer (na fase de captura,
   para o editor de texto não receber o arquivo) e mostra "Solte para anexar ao card".
+- Calendário (features/calendar/, etapa 7): CalendarPage monta a barra (mês, ‹ Hoje ›, seletor
+  de quadro, filtros, legenda) e a grade; cada dia (DayCell) mede onde os itens terminam e mostra
+  os que cabem, com o "+N mais" logo abaixo (CAL-13, shared/rules/calendar.ts, visibleCount). Os
+  que não cabem continuam no lugar, invisíveis e inertes, para a próxima medida: um
+  ResizeObserver mede de novo quando a janela muda de tamanho, sem a medida mexer no layout. O
+  "Adicionar" aparece com o mouse ou o foco no dia; num dia com "+N mais", vira só o "+" à
+  direita. O card do dia é um link para ?card=<id>, e a tarefa, um botão que chama o
+  items:toggle.
 - Depois de uma ação, o TanStack Query entrega os dados novos à tela um instante depois
   (notifyManager). Um estado da tela que depende deles, como o "Anexando…", é desfeito na mesma
   fila (notifyManager.schedule); senão a tela mostra um quadro com o estado velho.
@@ -441,6 +469,9 @@ HISTÓRICO
              compartilhado entre o preload e os testes; módulos de quadros, listas, posições e
              etiquetas; popovers e confirmação nativos; arrastar com dnd-kit; navegador único,
              sem polyfills.
+24/10/2026 — etapa 7: calendário (calendar:month e calendar:addCard), leitura das
+             configurações (settings:get), modal do card também no Início, ['calendar']
+             invalidado por toda ação, "+N mais" medido na tela.
 24/10/2026 — etapa 5: nota, atividade, anexos e capa; arquivos guardados pelo hash, fichas no
              lugar dos caminhos, SystemPort (system.ts) e o webUtils no preload.
 23/10/2026 — etapa 4: modal do card (campos, descrição com TipTap, checklists, menu), etiquetas,

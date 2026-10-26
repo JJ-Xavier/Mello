@@ -17,6 +17,14 @@ const fullDate = new Intl.DateTimeFormat('pt-BR', {
   year: 'numeric'
 })
 const oneDecimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 })
+const monthShortYear = new Intl.DateTimeFormat('pt-BR', { month: 'short', year: 'numeric' })
+const monthShort = new Intl.DateTimeFormat('pt-BR', { month: 'short' })
+const weekdayShort = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
+const dayLong = new Intl.DateTimeFormat('pt-BR', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'long'
+})
 
 // "3 de set.", "15 de out." (mês abreviado do pt-BR, com ponto).
 export function formatShortDate(epochMs: number): string {
@@ -43,6 +51,28 @@ export function formatDateTime(epochMs: number): string {
 // Cabeçalho do seletor de data: "setembro de 2026".
 export function formatMonth(year: number, month: number): string {
   return monthYear.format(new Date(year, month - 1, 1))
+}
+
+// Calendário (Calendario.dc.html): o mês da barra, "out. de 2026".
+export function formatMonthShort(year: number, month: number): string {
+  return monthShortYear.format(new Date(year, month - 1, 1))
+}
+
+// Os meses do seletor de mês: "jan." a "dez.".
+export const MONTH_NAMES = Array.from({ length: 12 }, (_, i) =>
+  monthShort.format(new Date(2026, i, 1))
+)
+
+// Cabeçalho das colunas: "dom." a "sáb.", começando no domingo ou na segunda (CAL-03). O dia
+// 4 de outubro de 2026 é um domingo.
+export function weekdayNames(weekStart: 'sunday' | 'monday'): string[] {
+  const first = weekStart === 'monday' ? 5 : 4
+  return Array.from({ length: 7 }, (_, i) => weekdayShort.format(new Date(2026, 9, first + i)))
+}
+
+// A lista completa de um dia (NovoCalendarioTodos.dc.html): "qua., 21 de outubro".
+export function formatDayLong(day: string): string {
+  return dayLong.format(dueDate(day))
 }
 
 // Anexo "adicionado em 20 de out. de 2026" (NovoCardCapaAnexos.dc.html).

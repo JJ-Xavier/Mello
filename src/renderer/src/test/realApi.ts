@@ -14,7 +14,7 @@ export function installRealApi(options: { now?: () => number } = {}) {
   const paths = new WeakMap<File, string>()
   const routes = createRoutes({
     db,
-    app: { version: '0.5.0', dataDir: 'C:\\dados', dev: true },
+    app: { version: '0.7.0', dataDir: 'C:\\dados', dev: true },
     now: options.now ?? Date.now,
     files: files.store
   })

@@ -17,6 +17,7 @@ import type {
   UpdateBoardInput,
   UpdateListInput
 } from './boards'
+import type { CalendarAddCardInput, CalendarMonth, CalendarMonthInput } from './calendar'
 import type {
   CardDetail,
   CardIdInput,
@@ -51,6 +52,7 @@ import type {
   UploadCoverInput
 } from './files'
 import type { CreateLabelInput, Label, LabelIdInput, UpdateLabelInput } from './labels'
+import type { Settings } from './settings'
 
 export const CHANNELS = {
   appInfo: 'app:info',
@@ -102,7 +104,10 @@ export const CHANNELS = {
   itemsUpdate: 'items:update',
   itemsToggle: 'items:toggle',
   itemsMove: 'items:move',
-  itemsDelete: 'items:delete'
+  itemsDelete: 'items:delete',
+  calendarMonth: 'calendar:month',
+  calendarAddCard: 'calendar:addCard',
+  settingsGet: 'settings:get'
 } as const
 
 export interface AppInfo {
@@ -181,6 +186,13 @@ export interface MelloApi {
     toggle(input: ToggleItemInput): Promise<Result<null>>
     move(input: MoveItemInput): Promise<Result<null>>
     delete(input: ItemIdInput): Promise<Result<null>>
+  }
+  calendar: {
+    month(input: CalendarMonthInput): Promise<Result<CalendarMonth>>
+    addCard(input: CalendarAddCardInput): Promise<Result<CardSummary>>
+  }
+  settings: {
+    get(): Promise<Result<Settings>>
   }
 }
 
@@ -268,6 +280,13 @@ export function createApi(
       toggle: call(CHANNELS.itemsToggle),
       move: call(CHANNELS.itemsMove),
       delete: call(CHANNELS.itemsDelete)
+    },
+    calendar: {
+      month: call(CHANNELS.calendarMonth),
+      addCard: call(CHANNELS.calendarAddCard)
+    },
+    settings: {
+      get: call(CHANNELS.settingsGet)
     }
   }
 }

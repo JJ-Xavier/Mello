@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026 e etapa 5 em 24/10/2026**; a etapa 5 aguarda o commit. A etapa 6 começa quando for liberada.
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026 e etapa 7 em 24/10/2026**; a etapa 7 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro). A etapa 6 começa quando for liberada.
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -448,8 +448,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** com o relógio adiantado no modo de desenvolvimento, os cards passam pelos 5 níveis e o visual bate com o protótipo; qualquer alteração volta o card ao nível 0.
 - **Testes:** seção 6.1 completa; `fog()` determinístico (mesma semente, mesmo resultado); tom derivado de cor e de gradiente; desempenho (200 cards no quadro sem travar o arraste).
 
-### Etapa 7 — Calendário
+### Etapa 7 — Calendário ✅ concluída em 24/10/2026 (antes da etapa 6)
 
+- **Resultado:** tudo da entrega abaixo foi feito; 387 testes no total (51 novos), lint e tipos limpos; capturas conferidas com as telas 5 e 13 nos dois temas. Canais novos `calendar:month`, `calendar:addCard` e `settings:get` (o calendário já lê as três configurações dele; gravar é da etapa 10). Decisões da etapa: a 7 antes da 6; mês de 4 semanas ganha a seguinte (`CAL-03`); quadros-modelo fora do calendário (`CAL-06`); a lista do "+N mais" é interativa (`CAL-11`); num dia cheio o "Adicionar" vira só o "+". Detalhes no `Changelog.txt`.
 - **Entrega:** tela do calendário mensal com escopo de quadro ou de todos os quadros (P2); "‹ Hoje ›" e o seletor de mês; filtros Cards e Tarefas; "Riscado = finalizado"; células com cards (etiqueta, ✓, relógio de atraso, ↻, prioridade) e tarefas (caixa e card de origem); hoje destacado; início da semana configurável; "Adicionar" ao passar o mouse; "+N mais"; clicar no card abre o modal por cima; clicar na tarefa marca e desmarca.
 - **Telas:** 5; 13 (todos os quadros).
 - **Aceite:** um mês com cards finalizados, atrasados e tarefas marcadas aparece como no protótipo; trocar de mês e de escopo funciona.

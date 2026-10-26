@@ -4,49 +4,19 @@ import { useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 import type { BoardDetail } from '../../../../shared/ipc/boards'
 import { cardMatches, NO_FILTER, type BoardFilter } from '../../../../shared/rules/filter'
-import ui from '../../components/ui.module.css'
-import { api, unwrap } from '../../lib/api'
-import { useAction, useBoard, useMatching } from '../../lib/queries'
-import { queryKeys } from '../../lib/queryKeys'
+import { useBoard, useMatching } from '../../lib/queries'
 import { useDebounced } from '../../lib/useDebounced'
 import { BoardBar } from './BoardBar'
 import styles from './BoardPage.module.css'
+import { ClosedBoardNotice } from './ClosedBoardNotice'
 import { ListsArea } from './ListsArea'
 
 export function BoardPage() {
   const { boardId = '' } = useParams()
   const { data: board } = useBoard(boardId)
-  const run = useAction()
 
   if (!board) return null
-
-  if (board.closedAt !== null) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.closedNotice} role="status">
-          <h2>Este quadro está fechado</h2>
-          <p>
-            &ldquo;{board.title}&rdquo; não aparece no Início. Reabra para voltar a usar, ou exclua
-            de vez em &ldquo;Ver todos os quadros fechados&rdquo;.
-          </p>
-          <button
-            type="button"
-            className={ui.pri}
-            style={{ alignSelf: 'flex-start' }}
-            onClick={() =>
-              run(
-                () => unwrap(api().boards.reopen({ boardId })),
-                [queryKeys.boards, queryKeys.board(boardId)]
-              )
-            }
-          >
-            Reabrir quadro
-          </button>
-        </div>
-      </div>
-    )
-  }
-
+  if (board.closedAt !== null) return <ClosedBoardNotice board={board} />
   return <OpenBoard key={board.id} board={board} />
 }
 

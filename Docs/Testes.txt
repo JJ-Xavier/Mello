@@ -1,7 +1,7 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 5 (336 testes, em 24/10/2026).
-Atualizado a cada etapa.
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 7 (387 testes, em 24/10/2026; a 7
+veio antes da 6). Atualizado a cada etapa.
 
 
 1. COMO RODAR
@@ -41,6 +41,12 @@ popovertarget e o modal fechando os popovers. O arrastar com o mouse não funcio
 tudo mede 0 px): ele é conferido no app real (seção 5), e as contas de onde o card cai são
 testadas em funções puras (cardDrag.test.ts). O arrastar de cards pelo teclado roda no jsdom e é
 testado na tela (BoardCards.test.tsx).
+
+Calendário (desde a etapa 7): os testes da tela fixam "hoje" trocando só o Date
+(vi.useFakeTimers({ toFake: ['Date'] })), e os temporizadores continuam de verdade. Como no jsdom
+tudo mede 0 px (e então todos os itens cabem no dia), o "+N mais" é testado com medidas falsas
+num teste só, além da função pura (visibleCount), e conferido no app real mudando o tamanho da
+janela.
 
 Limites de tempo dos testes da tela (desde a etapa 3): 5 s para os findBy… e o expect.poll e
 20 s por teste. Cada teste monta o app inteiro com o banco de verdade, e os limites padrão (1 s e
@@ -329,6 +335,57 @@ src/renderer/src/features/card/useAttach.test.ts
 src/renderer/src/features/board/BoardCards.test.tsx (1 novo)
 - CAP-02: a capa fica acima das etiquetas; a imagem com a proporção dela.
 
+Etapa 7 — 51 testes novos (feita antes da 6)
+
+src/shared/rules/calendar.test.ts (CAL-03, CAL-10, CAL-12, CAL-13)
+- Grade: outubro de 2026 começando no domingo e na segunda; maio de 2026 com 6 e 5 semanas;
+  agosto de 2026 com 6 nos dois; fevereiro de 2026 (4 semanas) ganha a seguinte; ano bissexto
+  (fevereiro de 2028 com o dia 29); virada de ano sem dias repetidos.
+- Intervalo do mês (inclusive dezembro) e ‹ › passando pela virada do ano.
+- CAL-10: sem hora primeiro, depois pela hora, prioridade e título (sem diferenciar acento);
+  tarefas juntas por card.
+- CAL-12: a primeira lista que não é de conclusão; nenhuma, null.
+- CAL-13: todos cabem; os que cabem deixando lugar para o "+N mais"; dia baixo demais; sem
+  medidas (0 px, como no jsdom) aparecem todos.
+
+src/main/modules/calendar.test.ts (CAL-02, CAL-05 a CAL-07, CAL-12)
+- Cards do mês pela data de entrega, com e sem hora; tarefas com data e "Mostrar no
+  calendário", com o card e o quadro; etiquetas na ordem do quadro e a prioridade.
+- CAL-07 com a FIN-01: finalizado só com o ✓ numa lista de conclusão.
+- CAL-06: arquivado, modelo, lista arquivada e quadro fechado ficam de fora, e as tarefas deles.
+- CAL-02: um quadro ou todos, com o nome do quadro; a entrada recusa mês fora de 1 a 12.
+- CAL-12: na primeira lista que não é de conclusão (mesmo com Concluído em primeiro), no fim,
+  com a data sem hora e nível 0; pula a lista arquivada; recusa quadro sem lista comum,
+  fechado ou inexistente; a entrada recusa dia que não existe, hora e título vazio.
+
+src/main/modules/settings.test.ts
+- Padrões sem nada gravado; o valor gravado vale; valor inválido, ilegível ou chave desconhecida
+  voltam ao padrão.
+
+src/main/ipc/events.test.ts (2 novos)
+- ENV-06: abrir o calendário e adicionar outro card pelo calendário não mexem no card "Alvo";
+  settings:get classificado (não mexe em card). Marcar a tarefa pelo calendário usa o
+  items:toggle, que já estava na tabela (ENV-05).
+
+src/renderer/src/features/calendar/CalendarPage.test.tsx (relógio falso só no Date: "hoje" é
+quarta, 21 de outubro de 2026)
+- Calendário do quadro: CAL-01, CAL-03 e CAL-04 (mês atual, 35 dias a partir do domingo, hoje
+  marcado, dia de fora sem "Adicionar"); CAL-05 e CAL-14 (card no dia, tarefa com o card
+  embaixo, sem o nome do quadro, fora do mês não aparece); CAL-07 (finalizado, ✓ fora da
+  conclusão, legenda; com a opção desligada, a legenda some); CAL-08 e CAL-10 (atrasados, ordem
+  do dia); CAL-09 (filtros independentes, Tarefas desligado pelas Configurações); CAL-03 (semana
+  na segunda); ‹ Hoje › e o seletor de mês; CAL-11 (card abre o modal por cima e fechar volta;
+  tarefa marca e desmarca e zera o envelhecimento); CAL-12 (Adicionar cria no dia, na lista
+  "A fazer"); CAL-13 ("+N mais" com medidas falsas, o "Adicionar" compacto e a lista completa
+  em ordem); CAL-06 (arquivado de fora); quadro fechado mostra o aviso; o X volta ao quadro.
+- Calendário de todos os quadros: CAL-02 e CAL-14 (todos, com o nome do quadro); o seletor
+  escolhe um quadro e volta para todos; CAL-12 pergunta o quadro; CAL-06 (quadro fechado de
+  fora) e o modal por cima do Início.
+
+src/renderer/src/app/App.test.tsx
+- O "Voltar" das Configurações volta para o calendário de todos os quadros (agora pela região do
+  calendário, no lugar do aviso "Em construção").
+
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
 
@@ -407,5 +464,17 @@ Etapa 5 (conferido em 24/10/2026, no app real pelo Playwright)
 [x] Capa de imagem: faixa de 96 px no modal e até 160 px na face, recortada para cobrir.
 [x] Nenhum erro no console durante a conferência.
 [x] Capturas da etapa 5 conferidas com as telas 4, 14 e 16, nos dois temas.
+
+Etapa 7 (conferido em 24/10/2026, no app real pelo Playwright; feita antes da 6)
+[x] "+N mais" medido de novo ao mudar a janela: com 5 cards no dia, 1 visível a 900 px, 4 a
+    1300 px e nenhum a 700 px (só o "+5 mais").
+[x] Num dia cheio, o "+N mais" abre a lista com o mouse em cima do dia (o "Adicionar" vira só o
+    "+" à direita e não cobre mais o botão: problema achado pela própria captura).
+[x] Com o foco do teclado num item do dia, o "Adicionar" aparece.
+[x] Marcar a tarefa pelo calendário grava no banco; o card abre o modal por cima do calendário
+    do quadro e do de todos os quadros.
+[x] Nenhum erro nem aviso no console durante a conferência.
+[x] Capturas da etapa 7 conferidas com as telas 5 e 13, nos dois temas (o protótipo só tem o
+    escuro; o claro usa as variáveis --cal* claras).
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

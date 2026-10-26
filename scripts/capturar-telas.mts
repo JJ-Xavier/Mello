@@ -12,7 +12,7 @@ import os from 'node:os'
 import path from 'node:path'
 import playwright, { type ElectronApplication, type Page } from 'playwright-core'
 
-const STAGE = 5
+const STAGE = 7
 const THEMES = ['escuro', 'claro']
 
 const root = path.resolve(import.meta.dirname, '..')
@@ -74,6 +74,17 @@ function day(offset: number): string {
   date.setDate(date.getDate() + offset)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+// Nome de um dia no calendário, como a tela o lê: "qua., 21 de outubro".
+function dayLabel(offset: number): string {
+  const date = new Date()
+  date.setDate(date.getDate() + offset)
+  return new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'long'
+  }).format(date)
 }
 
 // Chama window.mello.<caminho>(entrada) e devolve o resultado.
@@ -205,6 +216,28 @@ async function dragShot(
   await page.mouse.up()
   await page.waitForTimeout(250)
 }
+// O "+N mais" de hoje (se a janela não couber tudo) e o "Adicionar" de daqui a 3 dias.
+async function calendarPopovers(page: Page, theme: string, screen: string) {
+  const more = page.getByRole('group', { name: dayLabel(0) }).getByRole('button', { name: /mais$/ })
+  if ((await more.count()) > 0) {
+    await more.click()
+    await page.waitForTimeout(250)
+    await shot(page, `${screen}-calendario-mais`, theme)
+    await closePopovers(page)
+  } else {
+    console.log(`Captura ${screen}-calendario-mais: tudo coube no dia, sem "+N mais".`)
+  }
+  // Perto do fim do mês, o dia pode cair no mês seguinte, que não tem "Adicionar".
+  const later = page.getByRole('group', { name: dayLabel(3) })
+  const add = later.getByRole('button', { name: 'Adicionar' })
+  if ((await add.count()) === 0) return
+  await later.hover()
+  await add.click()
+  await page.waitForTimeout(250)
+  await shot(page, `${screen}-calendario-adicionar`, theme)
+  await closePopovers(page)
+}
+
 async function seed(app: ElectronApplication, page: Page): Promise<{ casa: Board }> {
   const create = (title: string) =>
     call<Board>(page, `window.mello.boards.create({ title: '${title}' })`)
@@ -343,6 +376,36 @@ async function seed(app: ElectronApplication, page: Page): Promise<{ casa: Board
     cardId: revisao,
     cover: { kind: 'color', color: '#206a83' }
   })
+
+  // Telas 5 e 13: um dia cheio hoje (para o "+N mais"), tarefas do condomínio e cards do quadro
+  // "Estudos" no calendário de todos os quadros.
+  const dentista = await card(ideias.id, 'Dentista')
+  await setLabels(dentista, [verde])
+  await update(dentista, { due: { dueAt: `${day(0)}T15:00`, reminder: 'none' } })
+  const encanador = await card(ideias.id, 'Ligar para o encanador')
+  await setLabels(encanador, [vermelho])
+  await update(encanador, { priority: 2, due: { dueAt: day(0), reminder: 'none' } })
+  await addChecklist(page, condominio, 'Antes de pagar', [
+    { text: 'Separar o boleto', date: 0 },
+    { text: 'Conferir a taxa extra', date: 0, done: true }
+  ])
+  const estudosLists = (
+    await mello<{ lists: { id: string }[] }>(page, 'boards.get', { boardId: estudos.id })
+  ).lists
+  const estudosLabels = (
+    await mello<{ id: string }[]>(page, 'labels.list', { boardId: estudos.id })
+  ).map((l) => l.id)
+  const prova = await card(estudosLists[0]!.id, 'Prova de inglês')
+  await mello(page, 'cards.setLabels', { cardId: prova, labelIds: [estudosLabels[1]] })
+  await update(prova, { priority: 1, due: { dueAt: day(2), reminder: 'none' } })
+  const trabalho = await card(estudosLists[0]!.id, 'Entregar trabalho')
+  await mello(page, 'cards.setLabels', { cardId: trabalho, labelIds: [estudosLabels[3]] })
+  await update(trabalho, { priority: 3, due: { dueAt: day(4), reminder: 'none' } })
+  const curso = await card(estudosLists[1]!.id, 'Curso de inglês')
+  await addChecklist(page, curso, 'Capítulos', [
+    { text: 'Ler o capítulo 3', date: -3 },
+    { text: 'Fazer os exercícios', date: 0 }
+  ])
   return { casa }
 }
 
@@ -577,8 +640,37 @@ try {
     await shot(page, '09-mudar-de-quadros', theme)
     await closePopovers(page)
 
+    // Tela 5: calendário do quadro, com o "Adicionar", o "+N mais", o seletor de mês e o modal.
+    // O mouse fica na borda da janela: parado sobre um dia, ele mostraria o "Adicionar".
     await go(page, `#/boards/${casa.id}/calendar`)
+    await page.getByRole('link', { name: /Consertar a torneira/ }).waitFor()
+    await page.mouse.move(2, 600)
+    await page.waitForTimeout(300)
     await shot(page, '05-calendario-do-quadro', theme)
+    await calendarPopovers(page, theme, '05')
+    await page.getByRole('button', { name: /Escolher mês/ }).click()
+    await page.waitForTimeout(250)
+    await shot(page, '05-calendario-escolher-mes', theme)
+    await closePopovers(page)
+    await page.getByRole('link', { name: /Consertar a torneira/ }).click()
+    await page.getByRole('dialog', { name: 'Consertar a torneira da cozinha' }).waitFor()
+    await page.waitForTimeout(300)
+    await shot(page, '05-calendario-modal', theme)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(250)
+
+    // Tela 13: calendário de todos os quadros e o seletor de quadro.
+    await go(page, '#/calendar')
+    await page.getByRole('link', { name: /Prova de inglês/ }).waitFor()
+    await page.mouse.move(2, 600)
+    await page.waitForTimeout(300)
+    await shot(page, '13-calendario-todos', theme)
+    await page.getByRole('button', { name: /Quadros no calendário/ }).click()
+    await page.waitForTimeout(250)
+    await shot(page, '13-calendario-escolher-quadro', theme)
+    await closePopovers(page)
+    await calendarPopovers(page, theme, '13')
+
     await go(page, '#/settings')
     await shot(page, '07-configuracoes', theme)
   }

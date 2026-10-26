@@ -13,7 +13,8 @@ function sideClass({ isActive }: { isActive: boolean }): string {
   return cx(styles.sideItem, isActive && styles.sideActive)
 }
 
-// Início e calendário de todos os quadros: cabeçalho + menu lateral (Main.dc.html).
+// Início e calendário de todos os quadros: cabeçalho + menu lateral (Main.dc.html) + o modal do
+// card (?card=<id>), que o calendário abre por cima (CAL-11).
 export function HomeLayout() {
   const location = useLocation()
   return (
@@ -42,6 +43,7 @@ export function HomeLayout() {
           <Outlet />
         </main>
       </div>
+      <CardModal />
     </div>
   )
 }

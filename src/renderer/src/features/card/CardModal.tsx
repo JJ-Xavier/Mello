@@ -1,6 +1,6 @@
 // Modal do card (Card.dc.html, 1160 × 804 px; com capa, NovoCardCapaAnexos.dc.html, 836 px). Abre
-// por cima da tela atual quando o endereço tem ?card=<id>, então o mesmo modal serve ao quadro e,
-// na etapa 7, ao calendário.
+// por cima da tela atual quando o endereço tem ?card=<id>, então o mesmo modal serve ao quadro e
+// ao calendário (CAL-11).
 // Coluna da esquerda: lista, ✓, título, Adicionar, Checklist, Anexo, etiquetas, prioridade, data de
 // entrega, última movimentação, anexos, descrição e checklists. Campos vazios não aparecem: o
 // "Adicionar" inclui (decidido em 23/10/2026). Coluna da direita: nota e atividade. A capa é a

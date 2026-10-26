@@ -15,6 +15,7 @@ import {
   updateBoardInput,
   updateListInput
 } from '../../shared/ipc/boards'
+import { calendarAddCardInput, calendarMonthInput } from '../../shared/ipc/calendar'
 import {
   cardIdInput,
   copyCardInput,
@@ -47,11 +48,13 @@ import { createLabelInput, labelIdInput, updateLabelInput } from '../../shared/i
 import type { Db } from '../db/client'
 import * as attachments from '../modules/attachments'
 import * as boards from '../modules/boards'
+import * as calendar from '../modules/calendar'
 import * as cards from '../modules/cards'
 import * as checklists from '../modules/checklists'
 import { createPicks, type FileStore } from '../modules/files'
 import * as labels from '../modules/labels'
 import * as lists from '../modules/lists'
+import * as settings from '../modules/settings'
 import { createHandler, type Handler } from './handler'
 
 export interface RouteContext {
@@ -215,6 +218,13 @@ export function createRoutes({ db, app, now, files, onUnexpectedError }: RouteCo
   route(CHANNELS.itemsDelete, itemIdInput, ({ itemId }) =>
     done(() => checklists.removeItem(db, itemId, now()))
   )
+
+  route(CHANNELS.calendarMonth, calendarMonthInput, (input) => calendar.month(db, input))
+  route(CHANNELS.calendarAddCard, calendarAddCardInput, (input) =>
+    calendar.addCard(db, input, now())
+  )
+
+  route(CHANNELS.settingsGet, none, () => settings.get(db))
 
   return routes
 }

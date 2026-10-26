@@ -1,8 +1,9 @@
 To-do list — Mello
 
 Atualizado em: 24/10/2026
-Situação: etapa 5 concluída em 24/10/2026, aguardando o commit do Jackson. A etapa 6 começa
-          quando for liberada.
+Situação: etapa 7 concluída em 24/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
+          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro); a 6 começa quando for
+          liberada.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -89,11 +90,12 @@ ETAPA 6 — ENVELHECIMENTO
 [ ] Indicador no modal (ENV-08); recálculo de hora em hora (ENV-10)
 [ ] Testes (inclui desempenho), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 7 — CALENDÁRIO
-[ ] Tela mensal com escopo quadro/todos (CAL-01..03)
-[ ] Cards e tarefas, riscado, atraso, hoje, filtros (CAL-04..10)
-[ ] Abrir modal, marcar tarefa, Adicionar, "+N mais" (CAL-11..14)
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 7 — CALENDÁRIO (concluída em 24/10/2026, antes da 6)
+[x] Tela mensal com escopo quadro/todos (CAL-01..03), seletor de mês e "‹ Hoje ›"
+[x] Cards e tarefas, riscado, atraso, hoje, filtros (CAL-04..10)
+[x] Abrir modal, marcar tarefa, Adicionar, "+N mais" (CAL-11..14)
+[x] Configurações do calendário lidas do banco (settings:get; a tela que grava é da etapa 10)
+[x] Testes (387 no total), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 8 — AGENDADOR: REPETIÇÃO E LEMBRETES
 [ ] Diálogo Repetir (REP-01..06, REP-17)
@@ -139,3 +141,8 @@ PENDÊNCIAS E OBSERVAÇÕES
   outras plataformas e o código-fonte do SQLite que vêm no pacote.
 - O post-it azul do calendário no canvas ainda diz "riscado = ✓ ou Concluído/Entregue"; a regra
   que vale é a FIN-01 (lista de conclusão E ✓), registrada no post-it verde "Telas novas".
+- Versão: a etapa 7 é a 0.7.0. A etapa 6, feita depois, precisa de um número combinado (a
+  regra "0.N.0 na etapa N" não cabe, porque a versão não pode voltar para 0.6.0).
+- Etapa 10: a seção Calendário das Configurações grava as chaves que o calendário já lê
+  (calendar.showTasks, calendar.strikeDone, calendar.weekStart); a chave do envelhecimento
+  (etapa 6) entra no mesmo src/shared/ipc/settings.ts.

@@ -113,6 +113,8 @@ const paths = {
     </>
   ),
   move: <path d="M5 12h14M13 6l6 6-6 6" />,
+  // Filtro "Tarefas do checklist" do calendário (Calendario.dc.html)
+  square: <rect x="3" y="3" width="18" height="18" rx="3" />,
   copy: (
     <>
       <rect x="8" y="8" width="13" height="13" rx="2" />

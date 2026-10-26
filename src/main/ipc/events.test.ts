@@ -332,6 +332,16 @@ const KEEPS: Scenario[] = [
     name: 'remover a capa de um card sem capa',
     channel: CHANNELS.cardsSetCover,
     input: (f) => ({ cardId: f.cardId, cover: null })
+  },
+  {
+    name: 'abrir o calendário',
+    channel: CHANNELS.calendarMonth,
+    input: (f) => ({ year: 2026, month: 10, boardId: f.boardId })
+  },
+  {
+    name: 'adicionar outro card pelo calendário',
+    channel: CHANNELS.calendarAddCard,
+    input: (f) => ({ boardId: f.boardId, day: '2026-10-23', title: 'Novo' })
   }
 ]
 
@@ -349,7 +359,8 @@ const NOT_APPLICABLE = [
   CHANNELS.labelsList,
   CHANNELS.cardsDelete,
   CHANNELS.filesPick,
-  CHANNELS.filesDropped
+  CHANNELS.filesDropped,
+  CHANNELS.settingsGet
 ]
 const OWN_TEST = [
   CHANNELS.cardsRestore,
