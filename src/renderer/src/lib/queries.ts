@@ -6,6 +6,10 @@ import { useNotify } from '../components/useNotify'
 import { api, unwrap } from './api'
 import { queryKeys } from './queryKeys'
 
+export function useAppInfo() {
+  return useQuery({ queryKey: queryKeys.appInfo, queryFn: () => unwrap(api().app.info()) })
+}
+
 export function useBoards() {
   return useQuery({ queryKey: queryKeys.boards, queryFn: () => unwrap(api().boards.list()) })
 }

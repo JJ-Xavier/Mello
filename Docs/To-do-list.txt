@@ -1,9 +1,8 @@
 To-do list — Mello
 
-Atualizado em: 24/10/2026
-Situação: etapa 7 concluída em 24/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
-          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro); a 6 começa quando for
-          liberada.
+Atualizado em: 26/10/2026
+Situação: etapa 6 concluída em 26/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
+          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 8.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -84,11 +83,13 @@ ETAPA 5 — MODAL DO CARD: NOTA, ATIVIDADE, ANEXOS E CAPA (concluída em 24/10/2
 [x] Testes (336 no total), conferência visual, documentos (LGPD: anexos), aviso de pronto para
     commit
 
-ETAPA 6 — ENVELHECIMENTO
-[ ] Cálculo do nível e congelamentos (ENV-01..04)
-[ ] fog() do protótipo no tamanho real do card, com tom do fundo (ENV-09)
-[ ] Indicador no modal (ENV-08); recálculo de hora em hora (ENV-10)
-[ ] Testes (inclui desempenho), conferência visual, documentos, aviso de pronto para commit
+ETAPA 6 — ENVELHECIMENTO (concluída em 26/10/2026, depois da 7)
+[x] Cálculo do nível e congelamentos (ENV-01..04), na tela
+[x] fog() do protótipo no tamanho real do card, com tom do fundo (ENV-09)
+[x] Indicador no modal (ENV-08); recálculo a cada minuto (ENV-10)
+[x] Relógio de teste do modo de desenvolvimento: atalho e selo (decidido em 24/10/2026)
+[x] Testes (423 no total, inclusive o desempenho no app real), conferência visual, documentos,
+    aviso de pronto para commit
 
 ETAPA 7 — CALENDÁRIO (concluída em 24/10/2026, antes da 6)
 [x] Tela mensal com escopo quadro/todos (CAL-01..03), seletor de mês e "‹ Hoje ›"
@@ -141,8 +142,13 @@ PENDÊNCIAS E OBSERVAÇÕES
   outras plataformas e o código-fonte do SQLite que vêm no pacote.
 - O post-it azul do calendário no canvas ainda diz "riscado = ✓ ou Concluído/Entregue"; a regra
   que vale é a FIN-01 (lista de conclusão E ✓), registrada no post-it verde "Telas novas".
-- Versão: a etapa 7 é a 0.7.0. A etapa 6, feita depois, precisa de um número combinado (a
-  regra "0.N.0 na etapa N" não cabe, porque a versão não pode voltar para 0.6.0).
+- Versão: a etapa 7 é a 0.7.0 e a 6, feita depois, é a 0.7.1 (decisão de 25/10/2026). As
+  próximas seguem "0.N.0 na etapa N" (a 8 é a 0.8.0).
 - Etapa 10: a seção Calendário das Configurações grava as chaves que o calendário já lê
-  (calendar.showTasks, calendar.strikeDone, calendar.weekStart); a chave do envelhecimento
-  (etapa 6) entra no mesmo src/shared/ipc/settings.ts.
+  (calendar.showTasks, calendar.strikeDone, calendar.weekStart). A seção Envelhecimento grava
+  aging.enabled (lida desde a etapa 6) e mostra a prévia dos 6 níveis com o fog() de
+  src/renderer/src/lib/fog.ts.
+- Etapa 8: a repetição e os lembretes usam o relógio único do main (src/main/clock.ts), para o
+  relógio de teste valer também para eles.
+- Relógio de teste: se Ctrl+Alt+seta girar a tela (atalho de alguns drivers Intel), trocar o
+  atalho.

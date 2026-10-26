@@ -1,9 +1,12 @@
 // Configurações: chave → valor (JSON na tabela setting). Cada chave tem o schema e o valor padrão,
 // que vale enquanto ela não foi gravada ou quando o que está gravado não é válido. Por enquanto só
-// as do calendário (etapa 7); a tela de Configurações, que grava, entra na etapa 10.
+// as do envelhecimento (etapa 6) e do calendário (etapa 7); a tela de Configurações, que grava,
+// entra na etapa 10.
 import { z } from 'zod'
 
 export const SETTING_SCHEMAS = {
+  // ENV-03: desligado, nenhum card envelhece.
+  'aging.enabled': z.boolean(),
   // CAL-09: valor inicial do filtro "Tarefas do checklist".
   'calendar.showTasks': z.boolean(),
   // CAL-07: "Riscar itens finalizados".
@@ -16,6 +19,7 @@ export type SettingKey = keyof typeof SETTING_SCHEMAS
 export type Settings = { [K in SettingKey]: z.infer<(typeof SETTING_SCHEMAS)[K]> }
 
 export const SETTING_DEFAULTS: Settings = {
+  'aging.enabled': true,
   'calendar.showTasks': true,
   'calendar.strikeDone': true,
   'calendar.weekStart': 'sunday'

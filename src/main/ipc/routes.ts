@@ -44,7 +44,10 @@ import {
   pickFilesInput,
   uploadCoverInput
 } from '../../shared/ipc/files'
+import { setClockInput } from '../../shared/ipc/dev'
 import { createLabelInput, labelIdInput, updateLabelInput } from '../../shared/ipc/labels'
+import { AppError } from '../../shared/result'
+import type { Clock } from '../clock'
 import type { Db } from '../db/client'
 import * as attachments from '../modules/attachments'
 import * as boards from '../modules/boards'
@@ -60,7 +63,8 @@ import { createHandler, type Handler } from './handler'
 export interface RouteContext {
   db: Db
   app: AppInfo
-  now: () => number
+  // O "agora" de tudo o que o main grava; no modo de desenvolvimento, pode estar adiantado.
+  clock: Clock
   // Pasta dos arquivos guardados e o que o main usa do Windows (janela de abrir, programa padrão).
   files: FileStore
   onUnexpectedError?: (channel: string, error: unknown) => void
@@ -68,8 +72,9 @@ export interface RouteContext {
 
 export type Routes = Map<string, Handler<unknown>>
 
-export function createRoutes({ db, app, now, files, onUnexpectedError }: RouteContext): Routes {
+export function createRoutes({ db, app, clock, files, onUnexpectedError }: RouteContext): Routes {
   const routes: Routes = new Map()
+  const now = () => clock.now()
   const none = z.undefined()
   // Arquivos escolhidos ou soltos, à espera da confirmação da tela (modules/files.ts).
   const picks = createPicks()
@@ -225,6 +230,16 @@ export function createRoutes({ db, app, now, files, onUnexpectedError }: RouteCo
   )
 
   route(CHANNELS.settingsGet, none, () => settings.get(db))
+
+  // Relógio de teste (decidido em 24/10/2026). O app instalado só informa que não está adiantado.
+  route(CHANNELS.devClock, none, () => ({ offset: clock.offset() }))
+  route(CHANNELS.devSetClock, setClockInput, ({ offset }) => {
+    if (!app.dev) {
+      throw new AppError('CONFLICT', 'O relógio de teste só existe no modo de desenvolvimento.')
+    }
+    clock.setOffset(offset)
+    return { offset }
+  })
 
   return routes
 }

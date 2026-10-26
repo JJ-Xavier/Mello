@@ -51,6 +51,7 @@ import type {
   PickFilesInput,
   UploadCoverInput
 } from './files'
+import type { DevClock, SetClockInput } from './dev'
 import type { CreateLabelInput, Label, LabelIdInput, UpdateLabelInput } from './labels'
 import type { Settings } from './settings'
 
@@ -107,7 +108,9 @@ export const CHANNELS = {
   itemsDelete: 'items:delete',
   calendarMonth: 'calendar:month',
   calendarAddCard: 'calendar:addCard',
-  settingsGet: 'settings:get'
+  settingsGet: 'settings:get',
+  devClock: 'dev:clock',
+  devSetClock: 'dev:setClock'
 } as const
 
 export interface AppInfo {
@@ -193,6 +196,11 @@ export interface MelloApi {
   }
   settings: {
     get(): Promise<Result<Settings>>
+  }
+  // Relógio de teste: só muda no modo de desenvolvimento.
+  dev: {
+    clock(): Promise<Result<DevClock>>
+    setClock(input: SetClockInput): Promise<Result<DevClock>>
   }
 }
 
@@ -287,6 +295,10 @@ export function createApi(
     },
     settings: {
       get: call(CHANNELS.settingsGet)
+    },
+    dev: {
+      clock: call(CHANNELS.devClock),
+      setClock: call(CHANNELS.devSetClock)
     }
   }
 }

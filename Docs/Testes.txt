@@ -1,7 +1,7 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 7 (387 testes, em 24/10/2026; a 7
-veio antes da 6). Atualizado a cada etapa.
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 6 (423 testes, em 26/10/2026; a 6
+veio depois da 7). Atualizado a cada etapa.
 
 
 1. COMO RODAR
@@ -386,6 +386,55 @@ src/renderer/src/app/App.test.tsx
 - O "Voltar" das Configurações volta para o calendário de todos os quadros (agora pela região do
   calendário, no lugar do aviso "Em construção").
 
+Etapa 6 — 36 testes novos (feita depois da 7)
+
+src/shared/rules/aging.test.ts (ENV-01 a ENV-04)
+- ENV-02: o nível muda no dia 3, 6, 9, 12 e 14, e 1 ms antes ainda não; a tabela completa de
+  dias; 100 dias é nível 5.
+- ENV-01: dias inteiros; card novo é nível 0; relógio atrás da alteração conta 0 dias.
+- ENV-03 e ENV-04: cada motivo congela no nível 0 sem perder os dias; sem a condição, o nível
+  volta pela última alteração.
+- FIN-04: card com ✓ fora de lista de conclusão envelhece.
+
+src/renderer/src/lib/fog.test.ts (ENV-09)
+- No tamanho do protótipo (252 × 100), o fog() dá exatamente o desenho da função do protótipo,
+  nos 5 níveis e nos dois temas (as cores --fog1 a --fog5 de themes.css são as do protótipo).
+- Nível 0 é o card normal; a mesma semente dá o mesmo desenho; outra semente ou outro nível, outro.
+- Usa o tamanho real: num card mais alto, as manchas das laterais descem até embaixo.
+- Card com menos de 100 px: as manchas encolhem na proporção da altura (decidido em
+  26/10/2026); de 100 px para cima, não muda; card ainda sem tamanho não trava.
+
+src/main/clock.test.ts (relógio de teste)
+- Soma o adiantamento; no modo de desenvolvimento, o que o main grava usa o relógio adiantado; o
+  app instalado recusa mudar o relógio; adiantamento negativo é recusado.
+
+src/main/modules/cards.test.ts (1 novo)
+- ENV-08: o card leva a última alteração, se é modelo e se a lista não envelhece.
+
+src/main/modules/settings.test.ts (sem testes novos)
+- aging.enabled entrou nos padrões, no valor gravado e no valor inválido.
+
+src/main/ipc/events.test.ts (sem testes novos)
+- dev:clock e dev:setClock classificados (não mexem em card).
+
+src/renderer/src/features/board/cardDrag.test.ts (1 novo)
+- ENV-05: o card solto fica novo na hora; os outros não mudam.
+
+src/renderer/src/features/board/Aging.test.tsx (ENV-03, ENV-05, ENV-08, ENV-09, FUN-09, FIN-04)
+- Card parado fica gasto, com o cinza do nível e o tom de baixo; o leitor de tela ouve há quantos
+  dias; o card novo fica normal; o tom é o do fundo do quadro.
+- ENV-03: lista que não envelhece e envelhecimento desligado ficam normais; FIN-04.
+- ENV-05: mover o card pelo teclado o deixa novo na hora e grava.
+- ENV-08: "Parado há 9 dias · nível 3 de 5" com as 5 barrinhas; "menos de 1 dia" no card novo;
+  "Não envelhece" com os motivos lista congelada, finalizado e desligado nas Configurações.
+
+src/renderer/src/app/DevClock.test.tsx (relógio de teste)
+- Ctrl+Alt+→ adianta 1 dia, com Shift 1 hora, ← volta, e o selo mostra quanto; Ctrl+Alt+0 volta
+  ao real, menos dentro de um campo de texto; o que é gravado com o relógio adiantado nasce
+  novo; o app instalado não tem o relógio de teste.
+- Aceite da etapa: adiantando o relógio dia a dia, o card passa pelos níveis 0 a 5 nos dias
+  certos (3, 6, 9, 12 e 14).
+
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
 
@@ -397,7 +446,10 @@ temporária (MELLO_DATA_DIR) e:
    esses arquivos);
 3. salva uma captura de cada tela da etapa, nos temas escuro e claro, em capturas/etapa-N/
    (pasta ignorada pelo Git), inclusive com um card no meio do arraste;
-4. apaga a pasta temporária.
+4. desde a etapa 6, numa fase final, adianta o relógio de teste pelo atalho (Ctrl+Alt+→) e mexe
+   em cada card num dia diferente, para os 5 níveis do envelhecimento aparecerem; o selo do
+   relógio sai numa captura própria e fica escondido nas outras;
+5. apaga a pasta temporária.
 
 O Electron do script abre com opções do Chromium que mantêm a janela desenhando mesmo coberta ou
 com o monitor desligado pelo Windows; sem elas, a captura podia esperar um quadro que não chegava
@@ -476,5 +528,22 @@ Etapa 7 (conferido em 24/10/2026, no app real pelo Playwright; feita antes da 6)
 [x] Nenhum erro nem aviso no console durante a conferência.
 [x] Capturas da etapa 7 conferidas com as telas 5 e 13, nos dois temas (o protótipo só tem o
     escuro; o claro usa as variáveis --cal* claras).
+
+Etapa 6 (conferido em 26/10/2026, no app real pelo Playwright; feita depois da 7)
+[x] Desempenho: 200 cards no quadro, arraste com o mouse indo e voltando entre as listas. Cards
+    novos: 17 ms por quadro no p95. Todos no nível 5 (a maioria cards de uma linha, com as manchas
+    proporcionais): 17 ms no p95 e nenhum quadro acima de 50 ms, com contain: paint; sem ele, o
+    arraste chegava a 2 s por quadro (problema achado e corrigido na etapa).
+[x] Relógio de teste pelas teclas de verdade: 30 vezes Ctrl+Alt+→ deixa os 200 cards no nível 5;
+    Ctrl+Alt+0 volta todos ao normal e o selo some.
+[x] O contorno de foco do teclado aparece no card gasto (o contain: paint não o corta).
+[x] Nenhum erro no console durante a conferência.
+[x] Capturas da etapa 6 conferidas com as telas 2, 4 e 8, nos dois temas: os 5 níveis no
+    quadro (o tom de baixo vem do gradiente "Mello", azul claro, no lugar do bege do protótipo,
+    FUN-09), o card arrastado gasto, o indicador "Parado há 10 dias · nível 3 de 5" e o
+    "Não envelhece · lista congelada" no modal, e o selo do relógio de teste.
+[ ] No seu computador: Ctrl+Alt+→ com o npm run dev. Em alguns computadores com placa de vídeo
+    Intel, Ctrl+Alt+seta gira a tela (atalho do driver); se acontecer, o atalho do relógio
+    precisa mudar.
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

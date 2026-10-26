@@ -114,13 +114,23 @@ export function fullIndex(
 }
 
 // O quadro como fica depois de soltar, para a tela mudar na hora (o main confirma em seguida). O ✓
-// segue FIN-02 e FIN-03, como no main.
-export function applyMove(board: BoardDetail, cardId: string, target: DropTarget): BoardDetail {
+// segue FIN-02 e FIN-03, como no main, e mover zera o envelhecimento (ENV-05).
+export function applyMove(
+  board: BoardDetail,
+  cardId: string,
+  target: DropTarget,
+  now: number
+): BoardDetail {
   const from = board.lists.find((l) => l.cards.some((c) => c.id === cardId))
   const to = board.lists.find((l) => l.id === target.listId)
   if (!from || !to) return board
   const card = from.cards.find((c) => c.id === cardId)!
-  const moved = { ...card, listId: to.id, isDone: doneAfterMove(card.isDone, from, to) }
+  const moved = {
+    ...card,
+    listId: to.id,
+    isDone: doneAfterMove(card.isDone, from, to),
+    lastActivityAt: now
+  }
   return {
     ...board,
     lists: board.lists.map((list) => {

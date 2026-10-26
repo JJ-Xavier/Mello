@@ -296,7 +296,9 @@ describe('face do card (CAR-04)', () => {
       hasNote: false,
       attachmentCount: 2,
       checkDone: 2,
-      checkTotal: 3
+      checkTotal: 3,
+      lastActivityAt: expect.any(Number),
+      isTemplate: false
     })
     expect(face.labels.map((l) => l.color)).toEqual([labels[0]!.color, labels[3]!.color])
   })
@@ -309,6 +311,8 @@ describe('face do card (CAR-04)', () => {
       listId: listId('A fazer'),
       listTitle: 'A fazer',
       isDoneList: false,
+      listFreezesAging: false,
+      isTemplate: false,
       title: 'Compras',
       isDone: false,
       priority: null,
@@ -325,6 +329,15 @@ describe('face do card (CAR-04)', () => {
       activity: []
     })
     expect(() => cards.get(t.db, randomUUID())).toThrow(/não encontrado/)
+  })
+
+  it('ENV-08: o card leva a última alteração, se é modelo e se a lista não envelhece', () => {
+    const { compras } = threeCards()
+    cards.move(t.db, compras, listId('Concluído'), 0, LATER)
+    t.db.update(card).set({ isTemplate: true }).where(eq(card.id, compras)).run()
+    expect(cards.get(t.db, compras)).toMatchObject({ listFreezesAging: true, isTemplate: true })
+    const done = boards.get(t.db, boardId).lists.find((l) => l.title === 'Concluído')!
+    expect(done.cards[0]).toMatchObject({ lastActivityAt: LATER, isTemplate: true })
   })
 
   it('ATV-01: a atividade vem do registro mais recente para o mais antigo', () => {

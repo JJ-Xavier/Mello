@@ -185,7 +185,9 @@ function summaries(db: DbOrTx, where: SQL | undefined): CardSummary[] {
       coverValue: card.coverValue,
       coverExt: file.ext,
       coverWidth: file.width,
-      coverHeight: file.height
+      coverHeight: file.height,
+      lastActivityAt: card.lastActivityAt,
+      isTemplate: card.isTemplate
     })
     .from(card)
     .innerJoin(list, eq(card.listId, list.id))
@@ -300,6 +302,8 @@ export function get(db: DbOrTx, cardId: string): CardDetail {
       listId: card.listId,
       listTitle: list.title,
       isDoneList: list.isDoneList,
+      listFreezesAging: list.freezesAging,
+      isTemplate: card.isTemplate,
       title: card.title,
       isDone: card.isDone,
       priority: card.priority,

@@ -1,6 +1,7 @@
 Pipeline — Mello
 
-Status: atualizado na etapa 2 (21/10/2026). Os comandos da seção 4 existem e foram conferidos.
+Status: atualizado na etapa 6 (26/10/2026, relógio de teste). Os comandos da seção 4 existem e
+foram conferidos.
 
 
 1. QUEM FAZ O QUÊ
@@ -75,6 +76,13 @@ valor, apague a variável ou use outro terminal. O script de capturas já a remo
 
 Pastas de dados: o "npm run dev" usa %APPDATA%\Mello-dev; o app instalado usa %APPDATA%\Mello.
 Assim, o desenvolvimento nunca mexe nos dados reais.
+
+Relógio de teste (desde a etapa 6, só no modo de desenvolvimento): com o app aberto,
+Ctrl+Alt+→ adianta 1 dia e Ctrl+Alt+Shift+→ adianta 1 hora; Ctrl+Alt+← e Ctrl+Alt+Shift+←
+voltam; Ctrl+Alt+0 volta ao relógio real. Enquanto estiver adiantado, um selo amarelo no canto
+mostra quanto. Tudo o que o app grava nesse tempo usa o relógio adiantado. Reabrir o app volta
+ao relógio real. Em alguns computadores com placa de vídeo Intel, Ctrl+Alt+seta gira a tela
+(atalho do driver); nesse caso, desligue o atalho do driver ou peça outro atalho.
 
 
 4. COMANDOS

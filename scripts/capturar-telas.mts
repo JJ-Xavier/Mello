@@ -12,7 +12,7 @@ import os from 'node:os'
 import path from 'node:path'
 import playwright, { type ElectronApplication, type Page } from 'playwright-core'
 
-const STAGE = 7
+const STAGE = 6
 const THEMES = ['escuro', 'claro']
 
 const root = path.resolve(import.meta.dirname, '..')
@@ -238,7 +238,16 @@ async function calendarPopovers(page: Page, theme: string, screen: string) {
   await closePopovers(page)
 }
 
-async function seed(app: ElectronApplication, page: Page): Promise<{ casa: Board }> {
+// Os cards do quadro "Casa" que a fase do envelhecimento mexe.
+interface Seeded {
+  casa: Board
+  cards: Record<
+    'tinta' | 'torneira' | 'condominio' | 'armario' | 'pintar' | 'horta' | 'viagem' | 'revisao',
+    string
+  >
+}
+
+async function seed(app: ElectronApplication, page: Page): Promise<Seeded> {
   const create = (title: string) =>
     call<Board>(page, `window.mello.boards.create({ title: '${title}' })`)
   const casa = await create('Casa')
@@ -272,12 +281,12 @@ async function seed(app: ElectronApplication, page: Page): Promise<{ casa: Board
   const tinta = await card(list('A fazer'), 'Comprar tinta para o quarto')
   const torneira = await card(list('A fazer'), 'Consertar a torneira da cozinha')
   const condominio = await card(list('A fazer'), 'Pagar o condomínio')
-  await card(list('A fazer'), 'Organizar o armário')
+  const armario = await card(list('A fazer'), 'Organizar o armário')
   // Criado em "A fazer" e movido: a atividade mostra os dois registros, como na tela 4.
   const pintar = await card(list('A fazer'), 'Pintar o quarto')
   await mello(page, 'cards.move', { cardId: pintar, listId: list('Em andamento'), index: 0 })
   const lampadas = await card(list('A fazer'), 'Trocar as lâmpadas')
-  await card(ideias.id, 'Horta na varanda')
+  const horta = await card(ideias.id, 'Horta na varanda')
   const viagem = await card(ideias.id, 'Viagem de férias')
   const revisao = await card(list('Concluído'), 'Revisão semanal')
   // Movido para Concluído: ganha o ✓ sozinho (FIN-02).
@@ -406,7 +415,36 @@ async function seed(app: ElectronApplication, page: Page): Promise<{ casa: Board
     { text: 'Ler o capítulo 3', date: -3 },
     { text: 'Fazer os exercícios', date: 0 }
   ])
-  return { casa }
+  return {
+    casa,
+    cards: { tinta, torneira, condominio, armario, pintar, horta, viagem, revisao }
+  }
+}
+
+// Etapa 6: o relógio de teste adianta 14 dias pelo atalho (Ctrl+Alt+→), e cada card é mexido num
+// dia diferente (criar e excluir um checklist conta como alteração, ENV-05). No fim, os 5 níveis
+// aparecem como no protótipo: tinta 5, condomínio 4, torneira 3, armário e viagem 2, pintar 1 e a
+// horta nova. Os cards da lista "Concluído" não envelhecem.
+async function ageCards(page: Page, cards: Seeded['cards']) {
+  const touches: Record<number, string[]> = {
+    2: [cards.condominio],
+    4: [cards.torneira],
+    7: [cards.armario, cards.viagem],
+    10: [cards.pintar],
+    13: [cards.horta]
+  }
+  for (let dayNumber = 1; dayNumber <= 14; dayNumber++) {
+    await page.keyboard.press('Control+Alt+ArrowRight')
+    const text = dayNumber === 1 ? 'Relógio +1 dia' : `Relógio +${dayNumber} dias`
+    await page.getByText(text, { exact: true }).waitFor()
+    for (const cardId of touches[dayNumber] ?? []) {
+      const checklist = await mello<{ id: string }>(page, 'checklists.create', {
+        cardId,
+        title: 'Rascunho'
+      })
+      await mello(page, 'checklists.delete', { checklistId: checklist.id })
+    }
+  }
 }
 
 // Com a janela coberta por outra, ou o monitor desligado pelo Windows durante o roteiro, o
@@ -454,7 +492,7 @@ try {
   await shot(page, '10-inicio-vazio-criar-quadro', 'escuro')
   await closePopovers(page)
 
-  const { casa } = await seed(app, page)
+  const { casa, cards } = await seed(app, page)
   await page.evaluate('location.reload()')
   await page.waitForSelector('header')
 
@@ -673,6 +711,44 @@ try {
 
     await go(page, '#/settings')
     await shot(page, '07-configuracoes', theme)
+  }
+
+  // Etapa 6: envelhecimento (telas 2 e 8, e o indicador da tela 4). O selo do relógio de teste
+  // aparece numa captura própria e fica escondido nas outras, para comparar com o protótipo.
+  await setTheme('escuro')
+  await go(page, `#/boards/${casa.id}`)
+  await page.getByRole('heading', { name: 'Casa' }).waitFor()
+  await ageCards(page, cards)
+  // Os cards foram mexidos pelo window.mello, sem passar pela tela: recarregar busca o quadro de
+  // novo (o relógio adiantado fica no main e volta junto).
+  await page.evaluate('location.reload()')
+  await page.getByText('Relógio +14 dias', { exact: true }).waitFor()
+  await shot(page, '06-relogio-de-teste', 'escuro')
+  await page.addStyleTag({ content: '[data-dev-clock] { display: none }' })
+  for (const theme of THEMES) {
+    await setTheme(theme)
+    await page
+      .getByRole('link', { name: /Comprar tinta para o quarto.*parado há 14 dias/ })
+      .waitFor()
+    await shot(page, theme === 'claro' ? '08-envelhecimento' : '02-envelhecimento', theme)
+    await dragShot(
+      page,
+      /Pagar o condomínio/,
+      { list: 'Em andamento', dy: 170 },
+      '03-arrasto-envelhecido',
+      theme
+    )
+    for (const [title, name] of [
+      ['Consertar a torneira da cozinha', '04-envelhecimento-modal'],
+      ['Revisão semanal', '04-envelhecimento-congelado']
+    ]) {
+      await page.getByRole('link', { name: new RegExp(title!) }).click()
+      await page.getByRole('dialog', { name: title }).waitFor()
+      await page.waitForTimeout(300)
+      await shot(page, name!, theme)
+      await page.keyboard.press('Escape')
+      await page.waitForTimeout(250)
+    }
   }
 } finally {
   await app.close()

@@ -17,6 +17,19 @@
     0 0 0 1px var(--line);
 }
 
+/* Card envelhecido (ENV-09): o fundo "gasto" do fog() vem no style e toma o lugar da sombra, como
+   no protótipo. O contorno do mouse continua. São dezenas de gradientes por card: contain: paint
+   isola o desenho de cada um, e o arraste com 200 cards gastos fica tão leve quanto com cards
+   novos (medido na etapa 6). */
+.worn {
+  box-shadow: none;
+  contain: paint;
+}
+
+.worn:hover {
+  box-shadow: 0 0 0 1px var(--line);
+}
+
 /* Lugar de onde o card saiu, enquanto ele é arrastado. */
 .ghost {
   opacity: 0.35;

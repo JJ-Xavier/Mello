@@ -18,6 +18,7 @@ import { BoardThumb } from '../../components/BoardThumb'
 import { Icon } from '../../components/Icon'
 import { Popover, PopoverHeader } from '../../components/Popover'
 import ui from '../../components/ui.module.css'
+import { clockNow } from '../../lib/clock'
 import { cx } from '../../lib/cx'
 import { formatMonth, formatMonthShort, MONTH_NAMES, weekdayNames } from '../../lib/format'
 import { useBoard, useBoards, useCalendar, useSettings } from '../../lib/queries'
@@ -36,7 +37,7 @@ interface MonthView {
 // Dia sem itens. Uma lista só, para o dia não medir de novo a cada renderização (CAL-13).
 const NO_ITEMS: DayItem[] = []
 
-function currentMonth(now = Date.now()): MonthView {
+function currentMonth(now = clockNow()): MonthView {
   const date = new Date(now)
   return { year: date.getFullYear(), month: date.getMonth() + 1 }
 }

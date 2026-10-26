@@ -35,12 +35,13 @@ import type { BoardDetail } from '../../../../shared/ipc/boards'
 import type { CardSummary } from '../../../../shared/ipc/cards'
 import { isFilterActive, type BoardFilter } from '../../../../shared/rules/filter'
 import { LIST_TITLE_MAX } from '../../../../shared/limits'
+import { agingOf } from '../../../../shared/rules/aging'
 import { doneAfterMove } from '../../../../shared/rules/finished'
 import { announcements, screenReaderInstructions, useDragSensors } from '../../components/dnd'
 import { Icon } from '../../components/Icon'
 import ui from '../../components/ui.module.css'
 import { api, unwrap } from '../../lib/api'
-import { useAction } from '../../lib/queries'
+import { useAction, useSettings } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
 import { useNow } from '../../lib/useNow'
 import styles from './BoardPage.module.css'
@@ -157,6 +158,8 @@ export function ListsArea({
   const queryClient = useQueryClient()
   const run = useAction()
   const now = useNow()
+  // ENV-03: até as configurações chegarem, vale o padrão (ligado).
+  const agingOn = useSettings().data?.['aging.enabled'] ?? true
   const [dragging, setDraggingState] = useState<Dragging | null>(null)
   const [message, setMessage] = useState('')
 
@@ -339,7 +342,7 @@ export function ListsArea({
     const saved = { ...target, index: fullIndex(all, shown, current.card.id, target.index) }
     const key = queryKeys.board(board.id)
     const latest = queryClient.getQueryData<BoardDetail>(key) ?? fullBoard
-    queryClient.setQueryData<BoardDetail>(key, applyMove(latest, current.card.id, saved))
+    queryClient.setQueryData<BoardDetail>(key, applyMove(latest, current.card.id, saved, now))
     void run(
       () => unwrap(api().cards.move({ cardId: current.card.id, ...saved })),
       [key, queryKeys.card(current.card.id)]
@@ -413,6 +416,7 @@ export function ListsArea({
               board={board}
               drag={cardDrag}
               now={now}
+              agingOn={agingOn}
               filtering={filtering}
               registerSection={registerSection}
             />
@@ -425,13 +429,20 @@ export function ListsArea({
       </div>
       <DragOverlay>
         {activeList && (
-          <ListOverlay list={activeList} board={board} now={now} filtering={filtering} />
+          <ListOverlay
+            list={activeList}
+            board={board}
+            now={now}
+            agingOn={agingOn}
+            filtering={filtering}
+          />
         )}
         {cardDrag && origin && target && (
           <CardOverlay
             card={{ ...cardDrag.card, isDone: doneAfterMove(cardDrag.card.isDone, origin, target) }}
             list={target}
             now={now}
+            aging={agingOf(cardDrag.card, origin, agingOn, now)}
           />
         )}
       </DragOverlay>

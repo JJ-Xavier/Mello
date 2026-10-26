@@ -427,9 +427,44 @@
 .lastMove {
   display: flex;
   align-items: center;
+  gap: 12px;
   height: 36px;
   font-size: 14px;
   color: var(--strong);
+}
+
+/* ENV-08: as barrinhas e o texto do envelhecimento (Card.dc.html). */
+.aging {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 14px;
+  background: var(--btn);
+  font-size: 12px;
+  color: var(--txt);
+}
+
+.agingBars {
+  display: flex;
+  gap: 3px;
+}
+
+.agingBar {
+  width: 10px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--modal-line);
+}
+
+/* No tema claro, --modal-line é a própria cor do fundo do selo. */
+:global(.tema-claro) .agingBar {
+  background: var(--a5);
+}
+
+.agingBar.agingBarOn {
+  background: var(--muted);
 }
 
 /* Aviso de card arquivado (cores do aviso do protótipo, Estados.dc.html). */

@@ -122,6 +122,9 @@ export interface CardSummary {
   attachmentCount: number
   checkDone: number
   checkTotal: number
+  // Base do envelhecimento (ENV-01); a tela calcula o nível.
+  lastActivityAt: number
+  isTemplate: boolean
 }
 
 // O card aberto no modal: os dados (etapa 4), a nota, a atividade (do mais recente para o mais
@@ -132,6 +135,9 @@ export interface CardDetail {
   listId: string
   listTitle: string
   isDoneList: boolean
+  // A lista tem "Não envelhece" (ENV-03), para o indicador do modal (ENV-08).
+  listFreezesAging: boolean
+  isTemplate: boolean
   title: string
   isDone: boolean
   priority: number | null

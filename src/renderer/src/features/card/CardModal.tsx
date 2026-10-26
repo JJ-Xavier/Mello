@@ -34,6 +34,7 @@ import { useAction, useBoard, useCard, useLabels } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
 import { useNow } from '../../lib/useNow'
 import { Activity } from './Activity'
+import { AgingStatus } from './AgingStatus'
 import { Attachments } from './Attachments'
 import { CardMenu } from './CardMenu'
 import styles from './CardModal.module.css'
@@ -257,7 +258,10 @@ function Fields({ card, now }: { card: CardDetail; now: number }) {
       )}
       <div>
         <p className={styles.lab}>Última movimentação</p>
-        <div className={styles.lastMove}>{formatDateTime(card.lastActivityAt)}</div>
+        <div className={styles.lastMove}>
+          {formatDateTime(card.lastActivityAt)}
+          <AgingStatus card={card} now={now} />
+        </div>
       </div>
     </div>
   )

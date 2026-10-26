@@ -1,6 +1,6 @@
 Arquitetura — Mello
 
-Status: atualizado na etapa 7 (24/10/2026), com o que já existe no código. As partes que ainda vão
+Status: atualizado na etapa 6 (26/10/2026), com o que já existe no código. As partes que ainda vão
 ser construídas estão marcadas com a etapa em que entram. A etapa 7 (calendário) veio antes da 6
 (envelhecimento), por decisão de 24/10/2026.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
@@ -72,6 +72,7 @@ Mello/
 ├── src/
 │   ├── main/
 │   │   ├── index.ts         ciclo de vida, janela, instância única, inicialização
+│   │   ├── clock.ts         relógio do main, com o adiantamento do relógio de teste (etapa 6)
 │   │   ├── paths.ts         pastas de dados (banco, arquivos, backups, logs)
 │   │   ├── protocol.ts      protocolo mello-arquivo://
 │   │   ├── system.ts        janela "Abrir", programa padrão e Explorer (o SystemPort real)
@@ -115,7 +116,9 @@ Mello/
 │   │   ├── ipc/files.ts     anexos, arquivos escolhidos e soltos, capa enviada na hora
 │   │   ├── ipc/calendar.ts  o mês do calendário e o "Adicionar"
 │   │   ├── ipc/settings.ts  chaves das configurações, schemas e valores padrão
-│   │   └── rules/           background.ts (fundos do protótipo), tone.ts (tom, FUN-09),
+│   │   ├── ipc/dev.ts       relógio de teste do modo de desenvolvimento
+│   │   └── rules/           aging.ts (nível do envelhecimento, ENV), background.ts (fundos
+│   │                        do protótipo), tone.ts (tom, FUN-09),
 │   │                        finished.ts (FIN), dates.ts (datas, DAT), priority.ts (PRI),
 │   │                        color.ts (paleta e texto legível), checklist.ts (CHK),
 │   │                        filter.ts (FLT), richText.ts (texto rico, NOT-04),
@@ -124,17 +127,19 @@ Mello/
 │   └── renderer/
 │       ├── index.html       com a política de segurança (CSP)
 │       └── src/
-│           ├── app/         rotas, layouts, cabeçalho, menu "Criar", barra flutuante
+│           ├── app/         rotas, layouts, cabeçalho, menu "Criar", barra flutuante,
+│           │                relógio de teste (DevClock, só no modo de desenvolvimento)
 │           ├── features/    home/ (Início, criar quadro, fechados), board/ (barra, listas,
-│           │                cards, arrastar, filtro, menus, arquivados), card/ (modal,
+│           │                cards, arrastar, filtro, menus, arquivados, useFog do
+│           │                envelhecimento), card/ (modal, indicador do envelhecimento,
 │           │                seletores, checklists, descrição, nota, atividade, anexos,
 │           │                capa, menu do card, criar card), calendar/ (página, dia,
 │           │                itens), settings/
 │           ├── components/  Popover, Confirm, Notify, EditableTitle, dnd, DoneMark,
 │           │                PriorityIcon, RichEditor (TipTap), Cover (capa), Icon, Logo…
 │           ├── lib/         api.ts (unwrap), queries.ts (consultas e ações), queryKeys.ts,
-│           │                format.ts (datas e tamanhos), useNow.ts (relógio da tela), useDebounced.ts,
-│           │                cx.ts
+│           │                format.ts (datas e tamanhos), clock.ts e useNow.ts (relógio da
+│           │                tela), fog.ts (visual do envelhecimento), useDebounced.ts, cx.ts
 │           ├── styles/      themes.css (paletas literais), fonts.css, base.css
 │           └── test/        preparação dos testes da tela (setup.ts, realApi.ts)
 ├── electron.vite.config.ts  vitest.config.mts  drizzle.config.ts  eslint.config.mjs
@@ -191,7 +196,8 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   sort, archiveCards, restore; cards:get, create, update, move, copy, setLabels, archive,
   restore, delete, matching, setCover, uploadCover; labels:list, create, update, delete;
   checklists:create, update, move, delete; items:create, update, toggle, move, delete;
-  files:pick, dropped; attachments:add, open, delete; calendar:month, addCard; settings:get.
+  files:pick, dropped; attachments:add, open, delete; calendar:month, addCard; settings:get;
+  dev:clock, setClock.
 - Calendário (etapa 7): calendar:month recebe o ano, o mês e o quadro (ou null, todos os
   quadros) e devolve os cards com data de entrega no mês e as tarefas (itens de checklist com
   data e "Mostrar no calendário"), já sem o que a CAL-06 tira; o card vem com finished (FIN-01).
@@ -200,6 +206,9 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   marcada pelo items:toggle de sempre.
 - Configurações (etapa 7): settings:get devolve todas as chaves conhecidas, com o padrão no lugar
   do que não foi gravado ou está inválido (shared/ipc/settings.ts). Gravar entra na etapa 10.
+- Relógio de teste (etapa 6): o main tem um relógio só (clock.ts), que as rotas usam para tudo o
+  que gravam com "agora". dev:clock informa o adiantamento e dev:setClock o muda; no app instalado
+  (app.dev falso), dev:setClock é recusado. A tela soma o mesmo adiantamento (lib/clock.ts).
 - Editar um card é um canal só (cards:update), com um campo por vez (título, ✓, prioridade, data
   com lembrete, descrição, nota). Se nada mudou, o main não grava nada e não zera o envelhecimento.
 - Texto rico (descrição e nota): a tela edita com o TipTap e manda o documento dele
@@ -300,7 +309,18 @@ Estado:
   Zustand continua fora: até aqui nenhum estado precisou ser compartilhado entre telas.
 - Estado na URL: o quadro e a tela abertos, e o card aberto (?card=<id>). Fechar o modal tira o
   parâmetro sem criar um passo a mais no histórico.
-- Relógio da tela (lib/useNow.ts): o "agora" das datas em atraso, atualizado a cada minuto.
+- Relógio da tela (lib/clock.ts e lib/useNow.ts): o "agora" das datas em atraso e do
+  envelhecimento, atualizado a cada minuto e na hora em que o relógio de teste muda. No modo de
+  desenvolvimento, app/DevClock.tsx ouve os atalhos (Ctrl+Alt+→ e companhia), pede o novo
+  adiantamento ao main e mostra o selo no canto.
+- Envelhecimento (etapa 6): a face do card traz a última alteração (lastActivityAt); a tela
+  calcula o nível com shared/rules/aging.ts, a lista e a configuração aging.enabled. O card
+  envelhecido ganha o fundo do fog() (lib/fog.ts; abaixo de 100 px de altura, as manchas encolhem
+  na proporção) no tamanho medido pelo useFog
+  (features/board/useFog.ts, com ResizeObserver) e a classe worn, que troca a sombra pelo fundo
+  e tem contain: paint (sem ela, 200 cards gastos travavam o arraste). As cores vêm das variáveis
+  --fog1 a --fog5 do tema e de --aging-tone, que a página do quadro define pelo bgTone (FUN-09).
+  O modal mostra o indicador (features/card/AgingStatus.tsx).
 
 Menus, confirmações e arrastar:
 - Popovers (components/Popover.tsx): atributo popover nativo do navegador, aberto pelo botão com
@@ -448,13 +468,14 @@ assinatura de código e verificação do remetente de cada mensagem de IPC.
 - Campos de auditoria (created_at, updated_at, *_at numéricos) são instantes: epoch em
   milissegundos (UTC).
 - O "agora" sempre chega por parâmetro às regras e aos módulos, para os testes controlarem o
-  relógio.
+  relógio. No main, ele vem do relógio único (clock.ts); na tela, de lib/clock.ts. Os dois somam
+  o adiantamento do relógio de teste (etapa 6).
 
 
 12. PRÓXIMAS PARTES
 
-- Agendador (repetições, lembretes, recálculo do envelhecimento, backup de hora em hora) e bandeja
-  do Windows: etapas 6, 8 e 10.
+- Agendador (repetições, lembretes, backup de hora em hora) e bandeja do Windows: etapas 8 e 10.
+  O envelhecimento não precisa dele: a tela recalcula o nível sozinha (etapa 6).
 - Evento "data:changed" do main para a tela, quando o agendador alterar dados: etapa 8.
 
 
@@ -469,6 +490,9 @@ HISTÓRICO
              compartilhado entre o preload e os testes; módulos de quadros, listas, posições e
              etiquetas; popovers e confirmação nativos; arrastar com dnd-kit; navegador único,
              sem polyfills.
+26/10/2026 — etapa 6 (depois da 7): envelhecimento calculado na tela, fog() no tamanho real
+             do card com contain: paint, relógio único no main (clock.ts) e na tela
+             (lib/clock.ts) e o relógio de teste (dev:clock, dev:setClock, DevClock).
 24/10/2026 — etapa 7: calendário (calendar:month e calendar:addCard), leitura das
              configurações (settings:get), modal do card também no Início, ['calendar']
              invalidado por toda ação, "+N mais" medido na tela.

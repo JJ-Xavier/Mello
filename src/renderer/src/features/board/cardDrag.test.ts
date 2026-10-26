@@ -28,7 +28,9 @@ function card(id: string, listId = 'a', isDone = false): CardSummary {
     hasNote: false,
     attachmentCount: 0,
     checkDone: 0,
-    checkTotal: 0
+    checkTotal: 0,
+    lastActivityAt: 0,
+    isTemplate: false
   }
 }
 
@@ -176,7 +178,7 @@ describe('o quadro depois de soltar', () => {
   const titles = (b: BoardDetail) => b.lists.map((l) => l.cards.map((c) => c.id))
 
   it('na mesma lista, só muda a ordem', () => {
-    expect(titles(applyMove(board, 'c1', { listId: 'a', index: 1 }))).toEqual([
+    expect(titles(applyMove(board, 'c1', { listId: 'a', index: 1 }, 5))).toEqual([
       ['c2', 'c1'],
       ['d1'],
       ['e1']
@@ -184,12 +186,20 @@ describe('o quadro depois de soltar', () => {
   })
 
   it('para outra lista, com o contador e o ✓ (FIN-02 e FIN-03)', () => {
-    const moved = applyMove(board, 'c1', { listId: 'ok', index: 1 })
+    const moved = applyMove(board, 'c1', { listId: 'ok', index: 1 }, 5)
     expect(titles(moved)).toEqual([['c2'], ['d1'], ['e1', 'c1']])
     expect(moved.lists.map((l) => l.cardCount)).toEqual([1, 1, 2])
     expect(moved.lists[2]!.cards[1]).toMatchObject({ listId: 'ok', isDone: true })
-    const back = applyMove(moved, 'c1', { listId: 'b', index: 0 })
+    const back = applyMove(moved, 'c1', { listId: 'b', index: 0 }, 5)
     expect(back.lists[1]!.cards[0]).toMatchObject({ id: 'c1', isDone: false })
+  })
+
+  it('ENV-05: o card movido fica novo na hora; os outros não mudam', () => {
+    const moved = applyMove(board, 'c1', { listId: 'b', index: 0 }, 5)
+    expect(moved.lists[1]!.cards.map((c) => [c.id, c.lastActivityAt])).toEqual([
+      ['c1', 5],
+      ['d1', 0]
+    ])
   })
 })
 

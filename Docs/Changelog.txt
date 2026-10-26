@@ -4,6 +4,72 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.7.1 — Etapa 6: envelhecimento (26/10/2026)
+
+A etapa 6 veio depois da 7 (decisão de 24/10/2026) e sai como 0.7.1 (decisão de 25/10/2026): a
+regra "0.N.0 na etapa N" continua valendo para as próximas (a etapa 8 é a 0.8.0).
+
+Adicionado
+- Nível de envelhecimento de 0 a 5 pelos dias parado (ENV-01, ENV-02). A tela calcula o nível com
+  o "agora" dela, então ele muda sozinho com o tempo: ao abrir o quadro e a cada minuto (ENV-10).
+- Congelamento no nível 0, sem perder os dias (ENV-03, ENV-04): envelhecimento desligado nas
+  Configurações, lista com "Não envelhece", card finalizado e card-modelo. O ✓ fora de lista de
+  conclusão não congela (FIN-04).
+- Visual do protótipo (ENV-09): a função fog() de Quadro.dc.html, com o algoritmo e as
+  constantes dela, no tamanho real de cada card (medido ao aparecer e quando muda de tamanho). O
+  cinza de cada nível vem do tema (--fog1 a --fog5, os valores do protótipo) e o tom de baixo vem
+  do fundo do quadro (--aging-tone, FUN-09). A semente é o id do card. Num card com menos de
+  100 px de altura, as manchas encolhem na proporção da altura (decisão de 26/10/2026), para o
+  card de uma linha mostrar o desgaste.
+- O leitor de tela ouve "parado há N dias" no card envelhecido.
+- Indicador no modal, ao lado de "Última movimentação" (ENV-08): 5 barrinhas e "Parado há X dias
+  · nível N de 5"; congelado, "Não envelhece" e o motivo.
+- Relógio de teste no modo de desenvolvimento (decisão de 24/10/2026): Ctrl+Alt+→ adianta 1 dia,
+  Ctrl+Alt+Shift+→ adianta 1 hora, Ctrl+Alt+← e Ctrl+Alt+Shift+← voltam e Ctrl+Alt+0 volta ao
+  relógio real. Um selo amarelo no canto mostra quanto está adiantado. O main e a tela somam o
+  mesmo adiantamento; o app instalado recusa mudar o relógio.
+
+Mudou
+- Canais novos: dev:clock e dev:setClock (relógio de teste).
+- O main tem um relógio só (src/main/clock.ts), que as rotas usam no lugar do Date.now. A tela
+  também (lib/clock.ts): o useNow, o calendário e o seletor de data usam ele.
+- Configuração lida: aging.enabled (padrão ligado).
+- A face do card traz lastActivityAt e isTemplate; o card do modal traz listFreezesAging e
+  isTemplate.
+- Soltar um card arrastado já o mostra novo, antes da resposta do main (ENV-05).
+- Variáveis novas de tema: --fog1 a --fog5 (escuro e claro, do protótipo) e --aging-tone.
+- app:info ganhou um hook (useAppInfo), usado pelas Configurações e pelo relógio de teste.
+- Script de capturas: etapa 6, com uma fase final que adianta o relógio pelo atalho e deixa os 5
+  níveis como no protótipo.
+- Versão 0.7.1.
+
+Corrigido
+- (Durante a etapa) com 200 cards no nível 5, o arraste travava, com até 2 s por quadro: cada
+  card gasto tem dezenas de gradientes. Com contain: paint no card gasto, o arraste ficou como com
+  cards novos (17 ms por quadro no p95).
+- (Durante a etapa) teclas do relógio de teste apertadas em sequência rápida contavam como uma.
+
+Decisões tomadas na etapa (24 a 26/10/2026)
+- Relógio de teste por atalho, com o selo, só no modo de desenvolvimento (24/10).
+- A etapa 6 sai como 0.7.1 (25/10).
+- O nível é calculado na tela, com o mesmo relógio da data em atraso: a cada minuto, mais do que o
+  "de hora em hora" da ENV-10.
+- Textos do indicador: "Parado há menos de 1 dia" no primeiro dia. Os motivos do congelado são
+  "lista congelada", "finalizado", "modelo" e "desligado nas Configurações"; com mais de um, vale
+  o primeiro da ENV-03.
+- O card que segue o mouse mantém o envelhecimento de antes de soltar.
+- Manchas proporcionais nos cards com menos de 100 px de altura (26/10): com as medidas do
+  protótipo, pensadas para cards de 100 px, o card de uma linha quase não mostrava o desgaste.
+  De 100 px para cima, o desenho é exatamente o do protótipo.
+- O relógio de teste não fica atrás do relógio real e não fica salvo: reabrir o app volta ao
+  real. Ctrl+Alt+0 não vale dentro de campos de texto, onde AltGr+0 escreve "}".
+
+Documentação
+- Atualizados: Regras.txt (ENV-08 e ENV-10, com os testes), Arquitetura.txt, Modelo-de-Dados.txt
+  (aging.enabled), Testes.txt, Pipeline.txt (relógio de teste), PLANO.md, To-do-list.txt,
+  README.md.
+
+
 0.7.0 — Etapa 7: calendário (24/10/2026)
 
 A etapa 7 veio antes da 6 (envelhecimento), por decisão de 24/10/2026. A 6 entra depois, com a

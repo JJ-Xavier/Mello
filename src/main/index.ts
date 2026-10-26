@@ -4,6 +4,7 @@ import path from 'node:path'
 import { app, BrowserWindow, dialog, Menu, nativeTheme, screen, session, shell } from 'electron'
 import log from 'electron-log/main'
 import { safeHref } from '../shared/rules/richText'
+import { createClock } from './clock'
 import { openDatabase, type OpenedDatabase } from './db/open'
 import { registerIpc } from './ipc'
 import { dataPaths, ensureDataFolders } from './paths'
@@ -102,6 +103,7 @@ async function start(): Promise<void> {
   registerIpc({
     dataDir: paths.root,
     db: database.db,
+    clock: createClock(),
     files: { dir: paths.files, system: electronSystem(openedCopies) }
   })
 

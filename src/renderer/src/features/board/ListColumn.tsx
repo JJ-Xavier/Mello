@@ -1,14 +1,23 @@
 // Uma lista do quadro. O cabeçalho é a alça do arraste da lista (mouse ou espaço no teclado);
 // clicar no título renomeia. Cada card também se arrasta (pelo card inteiro) e abre o modal com
-// um clique ou Enter.
+// um clique ou Enter. Cards parados ficam com o visual do envelhecimento (ENV-09).
 import { useDraggable } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useCallback, useId, useLayoutEffect, useRef, useState, type HTMLAttributes } from 'react'
+import {
+  useCallback,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type HTMLAttributes,
+  type RefObject
+} from 'react'
 import { Link } from 'react-router'
 import type { BoardDetail, ListDetail } from '../../../../shared/ipc/boards'
 import type { CardSummary } from '../../../../shared/ipc/cards'
 import { LIST_TITLE_MAX } from '../../../../shared/limits'
+import { agingOf, type Aging } from '../../../../shared/rules/aging'
 import { isFinished } from '../../../../shared/rules/finished'
 import { EditableTitle } from '../../components/EditableTitle'
 import { Icon } from '../../components/Icon'
@@ -23,42 +32,90 @@ import { CardFace } from './CardFace'
 import { listItems, type CardDrag } from './cardDrag'
 import styles from './ListColumn.module.css'
 import { ListMenu } from './ListMenu'
+import { useFog } from './useFog'
 
 interface CardProps {
   card: CardSummary
   list: ListDetail
   ghost: boolean
   now: number
+  aging: Aging
 }
 
-function BoardCard({ card, list, ghost, now }: CardProps) {
+// O card envelhecido troca a sombra pelo fundo "gasto" (ENV-09).
+function useWorn(node: RefObject<HTMLElement | null>, card: CardSummary, aging: Aging) {
+  const background = useFog(node, aging.level, card.id)
+  return {
+    worn: background !== null && cardStyles.worn,
+    style: background ? { background } : undefined
+  }
+}
+
+// Para o leitor de tela, há quantos dias o card envelhecido está parado.
+const idleDays = (aging: Aging) => (aging.level > 0 ? aging.days : null)
+
+function BoardCard({ card, list, ghost, now, aging }: CardProps) {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: card.id,
     data: { type: 'card' },
     attributes: { roleDescription: 'card arrastável' }
   })
+  const node = useRef<HTMLAnchorElement | null>(null)
+  const ref = useCallback(
+    (element: HTMLAnchorElement | null) => {
+      setNodeRef(element)
+      node.current = element
+    },
+    [setNodeRef]
+  )
+  const { worn, style } = useWorn(node, card, aging)
   return (
     <Link
-      ref={setNodeRef}
+      ref={ref}
       to={{ search: `?card=${card.id}` }}
       data-card-id={card.id}
-      className={cx(cardStyles.card, ghost && cardStyles.ghost)}
+      className={cx(cardStyles.card, worn, ghost && cardStyles.ghost)}
+      style={style}
       {...attributes}
       {...listeners}
       role={undefined}
     >
-      <CardFace card={card} finished={isFinished(card.isDone, list)} now={now} />
+      <CardFace
+        card={card}
+        finished={isFinished(card.isDone, list)}
+        now={now}
+        idleDays={idleDays(aging)}
+      />
     </Link>
   )
 }
 
-// Cópia do card que segue o mouse. Mostra o ✓ como vai ficar ao soltar (FIN-02, FIN-03).
-export function CardOverlay({ card, list, now }: Omit<CardProps, 'ghost'>) {
+// Card que só se mostra: o que segue o mouse e os da lista arrastada.
+function StaticCard({
+  card,
+  list,
+  now,
+  aging,
+  className
+}: Omit<CardProps, 'ghost'> & { className?: string }) {
+  const node = useRef<HTMLDivElement | null>(null)
+  const { worn, style } = useWorn(node, card, aging)
   return (
-    <div className={cx(cardStyles.card, cardStyles.overlay)}>
-      <CardFace card={card} finished={isFinished(card.isDone, list)} now={now} />
+    <div ref={node} className={cx(cardStyles.card, worn, className)} style={style}>
+      <CardFace
+        card={card}
+        finished={isFinished(card.isDone, list)}
+        now={now}
+        idleDays={idleDays(aging)}
+      />
     </div>
   )
+}
+
+// Cópia do card que segue o mouse. Mostra o ✓ como vai ficar ao soltar (FIN-02, FIN-03) e o
+// envelhecimento de antes de soltar.
+export function CardOverlay(props: Omit<CardProps, 'ghost'>) {
+  return <StaticCard {...props} className={cardStyles.overlay} />
 }
 
 interface ColumnBodyProps {
@@ -66,6 +123,8 @@ interface ColumnBodyProps {
   board: BoardDetail
   drag: CardDrag | null
   now: number
+  // Envelhecimento ligado nas Configurações (ENV-03).
+  agingOn: boolean
   // Filtro do quadro ativo: a lista mostra só os cards visíveis e o contador "visíveis/total".
   filtering: boolean
   handleProps?: HTMLAttributes<HTMLDivElement>
@@ -77,6 +136,7 @@ function ColumnBody({
   board,
   drag,
   now,
+  agingOn,
   filtering,
   handleProps,
   interactive
@@ -158,15 +218,16 @@ function ColumnBody({
                 list={list}
                 ghost={item.ghost}
                 now={now}
+                aging={agingOf(item.card, list, agingOn, now)}
               />
             ) : (
-              <div key={item.card.id} className={cardStyles.card}>
-                <CardFace
-                  card={item.card}
-                  finished={isFinished(item.card.isDone, list)}
-                  now={now}
-                />
-              </div>
+              <StaticCard
+                key={item.card.id}
+                card={item.card}
+                list={list}
+                now={now}
+                aging={agingOf(item.card, list, agingOn, now)}
+              />
             )
           )}
         </div>
@@ -199,6 +260,7 @@ interface ListColumnProps {
   board: BoardDetail
   drag: CardDrag | null
   now: number
+  agingOn: boolean
   filtering: boolean
   // O ListsArea mede as listas para saber onde o card arrastado vai cair.
   registerSection: (listId: string, element: HTMLElement | null) => void
@@ -209,6 +271,7 @@ export function ListColumn({
   board,
   drag,
   now,
+  agingOn,
   filtering,
   registerSection
 }: ListColumnProps) {
@@ -240,6 +303,7 @@ export function ListColumn({
         board={board}
         drag={drag}
         now={now}
+        agingOn={agingOn}
         filtering={filtering}
         interactive
         handleProps={{ ...attributes, ...listeners, 'aria-label': `Lista ${list.title}` }}
@@ -253,11 +317,13 @@ export function ListOverlay({
   list,
   board,
   now,
+  agingOn,
   filtering
 }: {
   list: ListDetail
   board: BoardDetail
   now: number
+  agingOn: boolean
   filtering: boolean
 }) {
   return (
@@ -267,6 +333,7 @@ export function ListOverlay({
         board={board}
         drag={null}
         now={now}
+        agingOn={agingOn}
         filtering={filtering}
         interactive={false}
       />

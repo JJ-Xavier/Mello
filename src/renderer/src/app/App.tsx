@@ -7,6 +7,7 @@ import { BoardPage } from '../features/board/BoardPage'
 import { CalendarPage } from '../features/calendar/CalendarPage'
 import { HomePage } from '../features/home/HomePage'
 import { SettingsPage } from '../features/settings/SettingsPage'
+import { DevClock } from './DevClock'
 import { BoardLayout, HomeLayout, SettingsLayout } from './Layouts'
 
 // Os dados vêm do banco local, então não "envelhecem" sozinhos: o cache só é recarregado quando
@@ -43,6 +44,7 @@ export function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </HashRouter>
+          <DevClock />
         </ConfirmProvider>
       </NotifyProvider>
     </QueryClientProvider>

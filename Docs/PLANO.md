@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026 e etapa 7 em 24/10/2026**; a etapa 7 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro). A etapa 6 começa quando for liberada.
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026 e etapa 6 em 26/10/2026**; a etapa 6 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -47,6 +47,10 @@
 | Card novo em lista de conclusão | Nasce sem o ✓; o automático é só para quem chega arrastado ou movido (`FIN-02`) | Etapa 3, 22/10 |
 | Campos do modal | Etiquetas, prioridade e data só aparecem quando preenchidas; o "Adicionar" inclui (`CAR-09`) | Etapa 4, 23/10 |
 | Arquivar pelo modal | O modal continua aberto, com o aviso e Restaurar (`CAR-10`) | Etapa 4, 23/10 |
+| Ordem das etapas 6 e 7 | Uma de cada vez: a 7 (calendário) antes da 6 (envelhecimento) | 24/10 |
+| Relógio de teste | Só no modo de desenvolvimento: Ctrl+Alt+→ e ← (1 dia), com Shift (1 hora), Ctrl+Alt+0 (relógio real) e um selo no canto; o main e a tela adiantam juntos | Etapa 6, 24/10 |
+| Versão da etapa 6 | 0.7.1, porque veio depois da 7; as próximas seguem 0.N.0 | Etapa 6, 25/10 |
+| Envelhecimento em card baixo | Abaixo de 100 px de altura, as manchas do `fog()` encolhem na proporção da altura; de 100 px para cima, o desenho é o do protótipo (`ENV-09`) | Etapa 6, 26/10 |
 
 ### 1.2 Propostas (aprovadas em 21/10/2026)
 
@@ -188,7 +192,7 @@ Tela (React)  →  window.mello (preload)  →  ipc/ (Zod)  →  modules/  →  
 | Busca | `search:query` |
 | Modelos | `templates:setCard`, `templates:listCards`, `templates:createCard`, `templates:setBoard`, `templates:createBoard` |
 | Configurações | `settings:get`, `settings:set` |
-| App | `app:info` (versão, pasta de dados, se é desenvolvimento; criado na etapa 1) |
+| App | `app:info` (versão, pasta de dados, se é desenvolvimento; criado na etapa 1); `dev:clock` e `dev:setClock` (relógio de teste do modo de desenvolvimento, etapa 6) |
 | Dados | `data:backupNow`, `data:listBackups`, `data:restore`, `data:export`, `data:openFolder`, `data:chooseBackupFolder`, `data:deleteAll` |
 | Eventos (main → tela) | `data:changed`, `app:openCard` (clique na notificação), `theme:changed`, `reminders:missed` |
 
@@ -344,6 +348,8 @@ nivelDoCard(card, lista, config, agora):
 
 Casos de teste obrigatórios: os limites 2→3, 5→6, 8→9, 11→12, 13→14 dias (um milissegundo antes e no ponto exato); cada motivo de congelamento; card com ✓ fora da lista de conclusão envelhece (FIN-04); 100 dias → nível 5.
 
+Na etapa 6, a regra ficou em `agingOf` e é calculada na tela, com o "agora" dela (a mesma conta serve ao quadro e ao indicador do modal).
+
 ### 6.2 Eventos que zeram (ENV-05 e ENV-06)
 
 Cada função de `modules/cards.ts`, `checklists.ts`, `attachments.ts`, `covers.ts` e `recurrence.ts` que altera um card chama `touch(cardId, agora)` dentro da mesma transação. O teste percorre **uma tabela de eventos**: para cada evento de ENV-05, executa e confere que `last_activity_at` = agora; para cada evento de ENV-06, executa e confere que não mudou. Se um evento novo for criado e não entrar na tabela, o teste de cobertura da tabela falha.
@@ -441,8 +447,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** a nota sobrevive a reiniciar o app; anexar o mesmo arquivo duas vezes guarda uma cópia só; a capa aparece na face e no modal.
 - **Testes:** NOT-01..07 (inclusive HTML proibido sendo descartado: `<script>`, `onerror`, `javascript:`), ATV-01..03, ANX-01..05, CAP-01..03; tabela de eventos ampliada.
 
-### Etapa 6 — Envelhecimento
+### Etapa 6 — Envelhecimento ✅ concluída em 26/10/2026 (depois da etapa 7)
 
+- **Resultado:** tudo da entrega abaixo foi feito; 423 testes no total (36 novos), lint e tipos limpos; capturas conferidas com as telas 2, 4 e 8 nos dois temas; no app real, 200 cards no nível 5 arrastam tão leve quanto 200 cards novos (17 ms por quadro no p95). O nível é calculado na tela, a cada minuto. O relógio do modo de desenvolvimento adianta por atalho (Ctrl+Alt+→), com um selo no canto, e serve também à etapa 8 (canais `dev:clock` e `dev:setClock`). Decisões da etapa: relógio de teste por atalho (24/10); versão 0.7.1 (25/10); manchas proporcionais nos cards com menos de 100 px de altura (26/10); textos do indicador e o card arrastado com o envelhecimento de antes de soltar. Detalhes no `Changelog.txt`.
 - **Entrega:** cálculo do nível (seção 6.1); `fog()` do protótipo adaptado ao tamanho real do card, com o tom vindo do fundo (FUN-09; até a etapa 9 só existem cor e gradiente); congelamento por lista, por finalização, por modelo e pela configuração; indicador no modal ("Parado há X dias · nível N de 5", com as barrinhas); recálculo ao abrir o quadro e de hora em hora.
 - **Telas:** 2 (os 5 níveis), 4 (indicador).
 - **Aceite:** com o relógio adiantado no modo de desenvolvimento, os cards passam pelos 5 níveis e o visual bate com o protótipo; qualquer alteração volta o card ao nível 0.

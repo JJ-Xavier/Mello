@@ -1,13 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
 import { StageNotice } from '../../components/StageNotice'
-import { api, unwrap } from '../../lib/api'
-import { queryKeys } from '../../lib/queryKeys'
+import { useAppInfo } from '../../lib/queries'
 
 export function SettingsPage() {
-  const info = useQuery({
-    queryKey: queryKeys.appInfo,
-    queryFn: () => unwrap(api().app.info())
-  })
+  const info = useAppInfo()
   return (
     <StageNotice title="Configurações" stage={10}>
       {info.data && (

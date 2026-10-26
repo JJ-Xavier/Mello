@@ -3,19 +3,21 @@
 // passam por structuredClone, como passariam pelo IPC.
 // Arquivos: uma pasta temporária e um Windows falso (createTestFiles); um File "solto" no modal só
 // tem caminho se o teste o registrar com dropPath, como o webUtils do preload faria.
+import { createClock } from '../../../main/clock'
 import { createTestDb } from '../../../main/db/test-db'
 import { createRoutes } from '../../../main/ipc/routes'
 import { createTestFiles } from '../../../main/modules/test-files'
 import { createApi } from '../../../shared/ipc/api'
 
-export function installRealApi(options: { now?: () => number } = {}) {
+// dev: o modo de desenvolvimento (relógio de teste); por padrão ligado, como no npm run dev.
+export function installRealApi(options: { now?: () => number; dev?: boolean } = {}) {
   const { db } = createTestDb()
   const files = createTestFiles()
   const paths = new WeakMap<File, string>()
   const routes = createRoutes({
     db,
-    app: { version: '0.7.0', dataDir: 'C:\\dados', dev: true },
-    now: options.now ?? Date.now,
+    app: { version: '0.7.1', dataDir: 'C:\\dados', dev: options.dev ?? true },
+    clock: createClock(options.now),
     files: files.store
   })
   window.mello = createApi(

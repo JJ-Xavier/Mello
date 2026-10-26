@@ -14,6 +14,7 @@ import {
 import { Icon } from '../../components/Icon'
 import { PopoverHeader } from '../../components/Popover'
 import ui from '../../components/ui.module.css'
+import { clockNow } from '../../lib/clock'
 import { cx } from '../../lib/cx'
 import { formatMonth } from '../../lib/format'
 import styles from './CardModal.module.css'
@@ -38,7 +39,7 @@ export function MonthGrid({
   initial: string | null
 }) {
   const [view, setView] = useState(() => {
-    const [year, month] = (initial ?? dayOf(Date.now())).split('-').map(Number) as [number, number]
+    const [year, month] = (initial ?? dayOf(clockNow())).split('-').map(Number) as [number, number]
     return { year, month }
   })
   const shift = (delta: number) => {

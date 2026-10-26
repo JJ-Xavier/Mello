@@ -129,8 +129,9 @@ setting — configurações
   tray.keep, app.autoStart, backup.folder, backup.lastAt.
   Lidas desde a etapa 7 (src/main/modules/settings.ts): calendar.showTasks (true/false, padrão
   true), calendar.strikeDone (true/false, padrão true) e calendar.weekStart ("sunday" ou
-  "monday", padrão "sunday"). Chave ausente ou valor inválido vale o padrão
-  (src/shared/ipc/settings.ts). A tela que grava entra na etapa 10.
+  "monday", padrão "sunday"). Desde a etapa 6: aging.enabled (true/false, padrão true). Chave
+  ausente ou valor inválido vale o padrão (src/shared/ipc/settings.ts). A tela que grava entra
+  na etapa 10.
 
 _migrations — controle das migrações (criada pelo app, fora do schema do Drizzle)
   tag TEXT PK (nome da migração) | applied_at INTEGER NOT NULL

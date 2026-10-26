@@ -28,6 +28,14 @@
   --a3: #3a3e44;
   --a4: #43464c;
   --a5: #4c4f55;
+  /* envelhecimento (ENV-09): o cinza do card em cada nível, do fog() do protótipo. O tom de baixo,
+     --aging-tone, vem do fundo do quadro (FUN-09); o bege do protótipo vale fora do quadro. */
+  --fog1: #2c3035;
+  --fog2: #35383d;
+  --fog3: #3d3f44;
+  --fog4: #45464b;
+  --fog5: #4c4d52;
+  --aging-tone: #d8bd9b;
   --slot: rgba(255, 255, 255, 0.06);
   --nav-active: rgba(87, 157, 255, 0.16);
   /* só no escuro: borda do campo de busca e divisória do menu lateral do Início */
@@ -79,6 +87,12 @@
   --a3: #e2e4e9;
   --a4: #d8dbe0;
   --a5: #cdd1d7;
+  --fog1: #f1f2f4;
+  --fog2: #e7e9ec;
+  --fog3: #dde0e4;
+  --fog4: #d3d7dc;
+  --fog5: #c9cdd3;
+  --aging-tone: #d8bd9b;
   --slot: rgba(9, 30, 66, 0.08);
   --nav-active: rgba(87, 157, 255, 0.16);
   --field-line: var(--line);

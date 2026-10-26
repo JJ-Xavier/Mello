@@ -11,6 +11,7 @@ import { attachment, card, checklist, checklistItem, label } from '../db/schema'
 import * as boards from '../modules/boards'
 import { storeFile } from '../modules/files'
 import { createTestFiles, PNG_1X1 } from '../modules/test-files'
+import { createClock } from '../clock'
 import { createRoutes, type Routes } from './routes'
 
 const BEFORE = 1000
@@ -43,7 +44,7 @@ beforeEach(async () => {
   routes = createRoutes({
     db,
     app: { version: '0', dataDir: '', dev: true },
-    now: () => NOW,
+    clock: createClock(() => NOW),
     files: files.store
   })
   const boardId = boards.create(db, 'Casa', BEFORE).id
@@ -360,7 +361,9 @@ const NOT_APPLICABLE = [
   CHANNELS.cardsDelete,
   CHANNELS.filesPick,
   CHANNELS.filesDropped,
-  CHANNELS.settingsGet
+  CHANNELS.settingsGet,
+  CHANNELS.devClock,
+  CHANNELS.devSetClock
 ]
 const OWN_TEST = [
   CHANNELS.cardsRestore,

@@ -4,7 +4,8 @@ Status: aprovado em 21/10/2026 (inclusive as regras que eram propostas). Atualiz
 (QUA-10 e esclarecimentos em LIS-05, LIS-06 e ENV-06), na etapa 3 (FIN-02: card criado numa
 lista de conclusão) e na etapa 4 (CAR-09 e CAR-10, limites de tamanho e esclarecimentos em CAR-07,
 ENV-05, ENV-06, ETQ-04, FLT-03 e NOT-05). A etapa 7 (calendário) veio antes da 6, por decisão de
-24/10/2026, e esclareceu as regras CAL.
+24/10/2026, e esclareceu as regras CAL. A etapa 6 (envelhecimento), feita depois, detalhou a
+ENV-08 e a ENV-10 (26/10/2026).
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -123,6 +124,9 @@ FIN-07  Um item de checklist está finalizado quando está marcado.
 5. ENVELHECIMENTO (ENV)
 Testes da tabela de eventos (ENV-05 e ENV-06, etapa 4): src/main/ipc/events.test.ts. Ele passa
 por todos os canais do IPC; um canal novo sem classificação faz o teste falhar.
+Testes do nível (ENV-01 a ENV-04, etapa 6): src/shared/rules/aging.test.ts. Do visual e do
+indicador (ENV-08, ENV-09): src/renderer/src/lib/fog.test.ts e
+src/renderer/src/features/board/Aging.test.tsx.
 
 ENV-01  dias_parado = parte inteira de (agora − última alteração do card) / 24 horas.
 ENV-02  Nível pelo tempo parado:
@@ -174,12 +178,22 @@ ENV-07  Card criado por repetição, cópia ou modelo nasce com nível 0.
 ENV-08  O modal mostra "Última movimentação: <data e hora>" e, ao lado, 5 barrinhas (as N
         primeiras acesas) com "Parado há X dias · nível N de 5". Card congelado mostra
         "Não envelhece" e o motivo (lista congelada, finalizado, modelo ou desligado).
+        (etapa 6) No primeiro dia: "Parado há menos de 1 dia". Os motivos aparecem como "lista
+        congelada", "finalizado", "modelo" e "desligado nas Configurações"; com mais de um, vale
+        o primeiro da ENV-03. No quadro, o leitor de tela ouve "parado há N dias" no card
+        envelhecido.
 ENV-09  Visual: a função fog(level, seed, claro) do protótipo, com o algoritmo e as constantes
         dela, recebe o tamanho real do card (o protótipo fixava 252 × 100 px). A semente é o id do
         card, então o desenho de um card não muda a cada abertura. O tom que aparece por baixo
         (bege #d8bd9b no protótipo) vem do fundo do quadro (FUN-09).
+        (etapa 6, decidido em 26/10/2026) Num card com menos de 100 px de altura, as manchas e a
+        distância da borda encolhem na proporção da altura (no mínimo 30%), para o card de uma
+        linha mostrar o desgaste. De 100 px para cima, o desenho é o do protótipo.
 ENV-10  O nível é recalculado sem precisar de alteração: ao abrir o quadro e a cada hora com o
         app aberto.
+        (etapa 6) A tela calcula o nível com o mesmo relógio da data em atraso, que avança a
+        cada minuto. No modo de desenvolvimento, o relógio de teste adianta o main e a tela
+        juntos (Ctrl+Alt+→, ver Pipeline.txt).
 
 
 6. PRIORIDADE (PRI)

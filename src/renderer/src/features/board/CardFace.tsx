@@ -17,6 +17,8 @@ interface CardFaceProps {
   // FIN-01: na lista de conclusão e com o ✓. Decide a cor da data (DAT-03).
   finished: boolean
   now: number
+  // Card envelhecido (ENV-09): o leitor de tela ouve há quantos dias ele está parado.
+  idleDays?: number | null
 }
 
 function DueChip({ dueAt, finished, now }: { dueAt: string; finished: boolean; now: number }) {
@@ -31,7 +33,7 @@ function DueChip({ dueAt, finished, now }: { dueAt: string; finished: boolean; n
   )
 }
 
-export function CardFace({ card, finished, now }: CardFaceProps) {
+export function CardFace({ card, finished, now, idleDays = null }: CardFaceProps) {
   const priority = priorityLevel(card.priority)
   const hasBadges =
     priority !== null ||
@@ -59,7 +61,12 @@ export function CardFace({ card, finished, now }: CardFaceProps) {
         )}
         <div className={styles.title}>
           {card.isDone && <DoneMark done />}
-          <span>{card.title}</span>
+          <span>
+            {card.title}
+            {idleDays !== null && (
+              <span className="visually-hidden">, parado há {idleDays} dias</span>
+            )}
+          </span>
         </div>
         {hasBadges && (
           <div className={styles.badges}>
