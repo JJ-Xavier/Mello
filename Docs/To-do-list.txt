@@ -1,8 +1,8 @@
 To-do list — Mello
 
 Atualizado em: 26/10/2026
-Situação: etapa 6 concluída em 26/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
-          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 8.
+Situação: etapa 8 concluída em 26/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
+          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 9.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -98,12 +98,14 @@ ETAPA 7 — CALENDÁRIO (concluída em 24/10/2026, antes da 6)
 [x] Configurações do calendário lidas do banco (settings:get; a tela que grava é da etapa 10)
 [x] Testes (387 no total), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 8 — AGENDADOR: REPETIÇÃO E LEMBRETES
-[ ] Diálogo Repetir (REP-01..06, REP-17)
-[ ] Agendador: criar, pular e avisar, app fechado (REP-07..12, REP-16)
-[ ] ↻ na face, fantasmas no calendário (REP-13..15)
-[ ] Lembretes e bandeja (LEM)
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 8 — AGENDADOR: REPETIÇÃO E LEMBRETES (concluída em 26/10/2026)
+[x] Diálogo Repetir (REP-01..06, REP-17) e o campo "Repetição" no modal
+[x] Agendador: criar, pular e avisar, app fechado (REP-07..12, REP-16)
+[x] Aviso de repetição pulada no card, com "Criar agora mesmo assim" e "Dispensar" (REP-09)
+[x] ↻ na face, fantasmas no calendário, remover repetição (REP-13..15)
+[x] Lembretes com notificação do Windows e os perdidos ao abrir (LEM)
+[x] Bandeja do Windows e o aviso da primeira vez (P4, LEM-07)
+[x] Testes, conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 9 — FUNDO DO QUADRO
 [ ] Editor: imagem, cor, gradiente, prévia ao vivo (FUN-01..03, FUN-07)
@@ -148,7 +150,11 @@ PENDÊNCIAS E OBSERVAÇÕES
   (calendar.showTasks, calendar.strikeDone, calendar.weekStart). A seção Envelhecimento grava
   aging.enabled (lida desde a etapa 6) e mostra a prévia dos 6 níveis com o fog() de
   src/renderer/src/lib/fog.ts.
-- Etapa 8: a repetição e os lembretes usam o relógio único do main (src/main/clock.ts), para o
-  relógio de teste valer também para eles.
+- Etapa 10: a seção "Lembretes e bandeja" das Configurações grava tray.keep (lida desde a etapa
+  8) e liga o "Mudar nas Configurações" do aviso da bandeja, hoje apagado. "Iniciar com o
+  Windows" (app.autoStart) também entra lá.
+- Etapa 12: as notificações do Windows foram conferidas com o Notification do Electron trocado
+  por uma anotação (script de capturas); conferir uma notificação de verdade no app instalado,
+  inclusive o clique abrindo o card.
 - Relógio de teste: se Ctrl+Alt+seta girar a tela (atalho de alguns drivers Intel), trocar o
   atalho.

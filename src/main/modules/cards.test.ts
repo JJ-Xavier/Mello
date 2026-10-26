@@ -326,7 +326,9 @@ describe('face do card (CAR-04)', () => {
       archivedAt: null,
       checklists: [],
       attachments: [],
-      activity: []
+      activity: [],
+      recurrence: null,
+      skipNotice: null
     })
     expect(() => cards.get(t.db, randomUUID())).toThrow(/não encontrado/)
   })

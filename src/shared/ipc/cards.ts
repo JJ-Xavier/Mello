@@ -6,6 +6,7 @@ import { LABEL_COLORS } from '../rules/color'
 import { isDue } from '../rules/dates'
 import type { Checklist } from './checklists'
 import type { Attachment } from './files'
+import type { CardRecurrence, SkipNotice } from './recurrence'
 
 const id = z.uuid()
 export const cardTitle = z.string().trim().min(1).max(CARD_TITLE_MAX)
@@ -113,8 +114,11 @@ export interface CardSummary {
   isDone: boolean
   priority: number | null
   dueAt: string | null
-  // Faz parte de uma repetição (FLT-03; a repetição entra na etapa 8).
+  // Faz parte de uma repetição ativa, que não terminou (FLT-03, REP-13). Pausada também conta.
   recurring: boolean
+  // A próxima ocorrência da repetição ("AAAA-MM-DDTHH:mm"), para o ↻ da face (REP-13). null: sem
+  // repetição, ou pausada (REP-16).
+  nextRepeat: string | null
   cover: CardCover | null
   labels: CardLabel[]
   hasDescription: boolean
@@ -152,4 +156,7 @@ export interface CardDetail {
   checklists: Checklist[]
   attachments: Attachment[]
   activity: ActivityEntry[]
+  // A repetição da série do card (etapa 8) e o aviso de repetição pulada (REP-08).
+  recurrence: CardRecurrence | null
+  skipNotice: SkipNotice | null
 }

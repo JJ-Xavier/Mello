@@ -1,6 +1,6 @@
 Arquitetura — Mello
 
-Status: atualizado na etapa 6 (26/10/2026), com o que já existe no código. As partes que ainda vão
+Status: atualizado na etapa 8 (26/10/2026), com o que já existe no código. As partes que ainda vão
 ser construídas estão marcadas com a etapa em que entram. A etapa 7 (calendário) veio antes da 6
 (envelhecimento), por decisão de 24/10/2026.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
@@ -34,7 +34,7 @@ Princípios
 
     Tela (React)  →  window.mello (preload)  →  ipc/ (Zod)  →  modules/  →  SQLite
                                                    ↑
-                              agendador (main) ────┘  → avisa a tela: "data:changed" (etapa 8)
+                              agendador (main) ────┘  → avisa a tela: "data:changed"
 
 Camada     Onde roda               Faz                                      Pode acessar
 ---------  ----------------------  ---------------------------------------  -------------------
@@ -61,18 +61,22 @@ Dentro do main, a direção é uma só: ipc/ → modules/ → db/.
 
 3. PASTAS DO PROJETO
 
-Estado na etapa 7. A estrutura completa prevista está no PLANO.md, seção 3.
+Estado na etapa 8. A estrutura completa prevista está no PLANO.md, seção 3.
 
 Mello/
 ├── Assets/                  identidade visual e imagens de referência
 ├── Docs/                    documentação
+├── resources/               ícones da bandeja e das notificações (PNG do logo do protótipo)
 ├── scripts/
 │   ├── instalar-electron.mjs   baixa o Electron no npm install (ver Pipeline.txt, seção 3)
-│   └── capturar-telas.mts      capturas das telas para a conferência visual
+│   ├── capturar-telas.mts      capturas das telas para a conferência visual
+│   └── gerar-icones.mts        gera os PNGs de resources/ a partir do logo
 ├── src/
 │   ├── main/
 │   │   ├── index.ts         ciclo de vida, janela, instância única, inicialização
 │   │   ├── clock.ts         relógio do main, com o adiantamento do relógio de teste (etapa 6)
+│   │   ├── scheduler.ts     agendador: repetições e lembretes, ao abrir e a cada minuto
+│   │   ├── tray.ts          bandeja do Windows e notificações dos lembretes
 │   │   ├── paths.ts         pastas de dados (banco, arquivos, backups, logs)
 │   │   ├── protocol.ts      protocolo mello-arquivo://
 │   │   ├── system.ts        janela "Abrir", programa padrão e Explorer (o SystemPort real)
@@ -96,14 +100,19 @@ Mello/
 │   │   │   ├── labels.ts    etiquetas: padrão, editor e recriação no outro quadro (LIS-05)
 │   │   │   ├── position.ts  posições de ordem manual (fractional indexing)
 │   │   │   ├── calendar.ts  calendário: cards e tarefas do mês, "Adicionar" num dia (CAL)
-│   │   │   ├── settings.ts  configurações gravadas, com os valores padrão (etapa 7: só lê)
+│   │   │   ├── settings.ts  configurações gravadas, com os valores padrão (a tela grava na
+│   │   │   │                etapa 10; o main grava o aviso da bandeja)
+│   │   │   ├── recurrence.ts repetição: regra, agendador da seção 6.4 do PLANO.md, aviso de
+│   │   │   │                pulada e as fantasmas do calendário (REP)
+│   │   │   ├── reminders.ts lembretes que venceram, uma vez cada (LEM)
 │   │   │   └── backup.ts    backup pela API do SQLite (etapa 1: antes de migrar)
 │   │   └── ipc/
 │   │       ├── events.test.ts tabela de eventos do envelhecimento (ENV-05, ENV-06)
 │   │       ├── handler.ts   utilitário: Zod + Result (sem Electron, testável)
 │   │       ├── routes.ts    tabela de canais (sem Electron; os testes da tela a usam)
 │   │       └── index.ts     registra as rotas no ipcMain
-│   ├── preload/index.ts     window.mello = createApi(ipcRenderer.invoke, webUtils)
+│   ├── preload/index.ts     window.mello = createApi(ipcRenderer.invoke, webUtils,
+│   │                        ipcRenderer.on)
 │   ├── shared/
 │   │   ├── result.ts        Result, ok, fail, AppError
 │   │   ├── text.ts          removeAccents
@@ -117,24 +126,30 @@ Mello/
 │   │   ├── ipc/calendar.ts  o mês do calendário e o "Adicionar"
 │   │   ├── ipc/settings.ts  chaves das configurações, schemas e valores padrão
 │   │   ├── ipc/dev.ts       relógio de teste do modo de desenvolvimento
+│   │   ├── ipc/recurrence.ts regra de repetição, aviso de pulada e lembretes perdidos
 │   │   └── rules/           aging.ts (nível do envelhecimento, ENV), background.ts (fundos
 │   │                        do protótipo), tone.ts (tom, FUN-09),
 │   │                        finished.ts (FIN), dates.ts (datas, DAT), priority.ts (PRI),
 │   │                        color.ts (paleta e texto legível), checklist.ts (CHK),
 │   │                        filter.ts (FLT), richText.ts (texto rico, NOT-04),
 │   │                        activity.ts (textos da atividade, ATV), calendar.ts (grade do
-│   │                        mês, ordem do dia, "+N mais" e lista do "Adicionar", CAL)
+│   │                        mês, ordem do dia, "+N mais" e lista do "Adicionar", CAL),
+│   │                        recurrence.ts (ocorrências, término e resumo, REP),
+│   │                        reminders.ts (quando o lembrete dispara e o texto, LEM)
 │   └── renderer/
 │       ├── index.html       com a política de segurança (CSP)
 │       └── src/
 │           ├── app/         rotas, layouts, cabeçalho, menu "Criar", barra flutuante,
-│           │                relógio de teste (DevClock, só no modo de desenvolvimento)
+│           │                relógio de teste (DevClock, só no modo de desenvolvimento),
+│           │                avisos do main (AppEvents: recarregar, abrir o card, bandeja e
+│           │                lembretes perdidos)
 │           ├── features/    home/ (Início, criar quadro, fechados), board/ (barra, listas,
 │           │                cards, arrastar, filtro, menus, arquivados, useFog do
 │           │                envelhecimento), card/ (modal, indicador do envelhecimento,
 │           │                seletores, checklists, descrição, nota, atividade, anexos,
 │           │                capa, menu do card, criar card), calendar/ (página, dia,
-│           │                itens), settings/
+│           │                itens), recurrence/ (diálogo Repetir e aviso de pulada),
+│           │                settings/
 │           ├── components/  Popover, Confirm, Notify, EditableTitle, dnd, DoneMark,
 │           │                PriorityIcon, RichEditor (TipTap), Cover (capa), Icon, Logo…
 │           ├── lib/         api.ts (unwrap), queries.ts (consultas e ações), queryKeys.ts,
@@ -153,22 +168,29 @@ Os testes ficam ao lado do código (backup.test.ts junto de backup.ts).
 
 Antes de o app ficar pronto:
 1. Define a pasta de dados (seção 9) e registra o esquema mello-arquivo como privilegiado.
-2. Pede o bloqueio de instância única: abrir o Mello de novo só traz a janela atual para a frente.
+2. Pede o bloqueio de instância única: abrir o Mello de novo só traz a janela atual para a frente,
+   mesmo escondida na bandeja.
 
 Quando o app fica pronto:
 3. Remove o menu da janela e liga o tema escuro do Windows (a escolha de tema entra na etapa 10).
 4. Cria as pastas de dados e o arquivo de log.
 5. Abre o banco (src/main/db/open.ts): se houver migração pendente num banco que já tem dados, faz
    um backup antes (DAD-01) e então migra.
-6. Recusa todas as permissões do navegador, registra o protocolo de arquivos, apaga as cópias de
-   anexos abertos na sessão anterior (seção 8) e registra os canais de IPC.
-7. Cria a janela (1440 × 900, ou menor se a tela for menor; mínimo 1024 × 640).
+6. Recusa todas as permissões do navegador, registra o protocolo de arquivos e apaga as cópias de
+   anexos abertos na sessão anterior (seção 8).
+7. Liga o agendador (seção 12), que roda a primeira vez agora, antes da janela, e registra os
+   canais de IPC.
+8. Cria o ícone da bandeja e a janela (1440 × 900, ou menor se a tela for menor; mínimo
+   1024 × 640).
 
 Se algo falhar na abertura (por exemplo, um banco criado por uma versão mais nova do Mello), o erro
 vai para o log, aparece um aviso "Não foi possível abrir o Mello" e o app fecha sem mexer no banco.
 
-Ao fechar a última janela o app encerra e fecha o banco. A bandeja do Windows, que mantém o app
-vivo para lembretes e repetições, entra na etapa 8 (P4).
+Fechar a janela (etapa 8, P4 e LEM-07): com "Manter o Mello na bandeja" ligado (tray.keep, o
+padrão), a janela só se esconde e o agendador continua. Na primeira vez, o main manda o aviso
+tray:notice e a tela mostra "O Mello continua na bandeja"; o "Entendi" (app:hideToTray) grava
+tray.noticeShown e esconde a janela. Com a opção desligada, fechar encerra. "Sair", no menu da
+bandeja, encerra de verdade: para o agendador, tira o ícone e fecha o banco.
 
 
 5. BANCO DE DADOS
@@ -197,7 +219,9 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   restore, delete, matching, setCover, uploadCover; labels:list, create, update, delete;
   checklists:create, update, move, delete; items:create, update, toggle, move, delete;
   files:pick, dropped; attachments:add, open, delete; calendar:month, addCard; settings:get;
-  dev:clock, setClock.
+  dev:clock, setClock; recurrence:save, remove, createAnyway, dismiss; reminders:missed;
+  app:hideToTray. O recurrence:preview do plano não existe: a prévia "Próximas:" usa na tela as
+  mesmas contas do agendador (shared/rules/recurrence.ts).
 - Calendário (etapa 7): calendar:month recebe o ano, o mês e o quadro (ou null, todos os
   quadros) e devolve os cards com data de entrega no mês e as tarefas (itens de checklist com
   data e "Mostrar no calendário"), já sem o que a CAL-06 tira; o card vem com finished (FIN-01).
@@ -209,6 +233,21 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
 - Relógio de teste (etapa 6): o main tem um relógio só (clock.ts), que as rotas usam para tudo o
   que gravam com "agora". dev:clock informa o adiantamento e dev:setClock o muda; no app instalado
   (app.dev falso), dev:setClock é recusado. A tela soma o mesmo adiantamento (lib/clock.ts).
+  Mudar o relógio roda o agendador na hora (etapa 8): as repetições e os lembretes que venceram
+  no intervalo saem logo.
+- Repetição (etapa 8): recurrence:save cria ou altera a regra da série do card (a lista de
+  destino precisa ser ativa e do mesmo quadro); recurrence:remove apaga a regra (os cards ficam).
+  O card do modal (cards:get) traz a regra (recurrence, com a próxima ocorrência e se está
+  pausada) e o aviso de pulada (skipNotice); a face (boards:get) traz recurring e nextRepeat, e
+  o mês do calendário traz as fantasmas (repeats). A próxima ocorrência é a seguinte à última
+  processada: como o agendador roda a cada minuto, é a próxima a partir de agora, sem levar o
+  "agora" a toda consulta do quadro.
+- Avisos do main para a tela (etapa 8): eventos sem resposta, por webContents.send e
+  ipcRenderer.on (o preload só repassa os nomes de EVENTS, em shared/ipc/api.ts): data:changed
+  (o agendador mudou dados; a tela recarrega todo o cache), app:openCard (a notificação de um
+  lembrete foi clicada; a tela abre o card) e tray:notice (o aviso da bandeja). Os lembretes
+  perdidos vêm por canal (reminders:missed), pedidos pela tela ao abrir, para não depender da
+  tela já estar ouvindo.
 - Editar um card é um canal só (cards:update), com um campo por vez (título, ✓, prioridade, data
   com lembrete, descrição, nota). Se nada mudou, o main não grava nada e não zera o envelhecimento.
 - Texto rico (descrição e nota): a tela edita com o TipTap e manda o documento dele
@@ -235,7 +274,7 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   cards arquivados ou quadros fechados no meio não atrapalham. O card leva também a lista de
   destino; o main aplica o ✓ automático (FIN-02, FIN-03) e não grava nada se for o mesmo lugar
   (CAR-03).
-- Todo canal é requisição e resposta (invoke/handle).
+- Todo canal é requisição e resposta (invoke/handle); os avisos do main são os eventos acima.
 - A resposta é sempre um Result:
       { ok: true, data }  ou  { ok: false, error: { code, message, details? } }
   Códigos: INVALID_INPUT (o Zod recusou a entrada), NOT_FOUND, CONFLICT, INTERNAL.
@@ -447,7 +486,7 @@ O Mello não carrega nada da internet. A segurança é o básico do Electron, li
 - A janela não navega para fora do app, não abre janelas novas, e links http, https e mailto
   vão para o programa padrão do Windows (NOT-05; a mesma regra safeHref do texto rico).
 - Todas as permissões do navegador (câmera, microfone, notificações web…) são recusadas. Os
-  lembretes usam a notificação nativa do main (etapa 8).
+  lembretes usam a notificação nativa do main (tray.ts, etapa 8).
 - Sem menu na janela. No desenvolvimento, F12 abre as ferramentas de desenvolvedor.
 - O HTML da descrição e da nota é escrito pelo main a partir do documento do editor, só com as
   marcas da NOT-04 (seção 6). O modo leitura mostra o HTML pelo TipTap, nunca por innerHTML.
@@ -472,11 +511,35 @@ assinatura de código e verificação do remetente de cada mensagem de IPC.
   o adiantamento do relógio de teste (etapa 6).
 
 
-12. PRÓXIMAS PARTES
+12. AGENDADOR, BANDEJA E NOTIFICAÇÕES (etapa 8)
 
-- Agendador (repetições, lembretes, backup de hora em hora) e bandeja do Windows: etapas 8 e 10.
-  O envelhecimento não precisa dele: a tela recalcula o nível sozinha (etapa 6).
-- Evento "data:changed" do main para a tela, quando o agendador alterar dados: etapa 8.
+- O agendador (src/main/scheduler.ts) roda ao abrir o app, antes de a janela aparecer, e depois a
+  cada minuto, também com a janela escondida na bandeja (REP-11). Cada rodada:
+  1. processa as repetições que venceram (modules/recurrence.ts, a seção 6.4 do PLANO.md): só a
+     ocorrência mais recente vira card ou pulada; as anteriores ficam como "não criada: app
+     fechado" (REP-10). Cada repetição numa transação; a restrição UNIQUE de
+     recurrence_occurrence impede processar a mesma ocorrência duas vezes;
+  2. pega os lembretes que venceram e ainda não dispararam (modules/reminders.ts), marca cada
+     um como disparado e mostra a notificação. Na rodada da abertura, eles foram perdidos com o
+     app fechado: em vez de uma notificação para cada, ficam guardados para o aviso agrupado
+     (LEM-06), que a tela pede uma vez (reminders:missed).
+  Quando uma repetição muda alguma coisa, o main avisa a tela (data:changed). Um erro numa rodada
+  vai para o log e não para o agendador.
+- O agendador não conhece o Electron: a notificação chega por Notifier (o real fica em tray.ts),
+  e os testes usam um falso e o relógio falso.
+- Notificação (tray.ts): a do Windows, com o título, o texto e o ícone do logo. Clicar mostra a
+  janela e manda app:openCard. As notificações abertas ficam guardadas até fechar, para o clique
+  continuar valendo. O app tem AppUserModelId (com.jjxavier.mello), que o Windows exige para as
+  notificações.
+- Bandeja (tray.ts): ícone do logo do protótipo (resources/tray-16.png e tray-32.png, gerados por
+  scripts/gerar-icones.mts e importados com ?asset pelo electron-vite), dica "Mello" e o menu
+  "Abrir o Mello" e "Sair". Clicar no ícone abre a janela.
+
+
+13. PRÓXIMAS PARTES
+
+- O backup de hora em hora entra no agendador na etapa 10. O envelhecimento não precisa dele: a
+  tela recalcula o nível sozinha (etapa 6).
 
 
 HISTÓRICO
@@ -504,3 +567,6 @@ HISTÓRICO
 22/10/2026 — etapa 3: cards (criar, mover, face no quadro), arrastar cards com destino calculado
              pela tela (cardDrag.ts), modal do card pelo endereço (?card=), regras puras de
              finalizado e de atraso.
+26/10/2026 — etapa 8: agendador (scheduler.ts) com repetições e lembretes, bandeja e
+             notificações (tray.ts), avisos do main para a tela (data:changed, app:openCard,
+             tray:notice), canais recurrence:* e reminders:missed, ícones em resources/.

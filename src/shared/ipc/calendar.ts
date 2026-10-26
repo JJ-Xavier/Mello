@@ -48,7 +48,24 @@ export interface CalendarTask {
   isDone: boolean
 }
 
+// REP-14: ocorrência de repetição que não virou card, tracejada no calendário. "next": a próxima
+// repetição; "skipped": pulada porque a anterior estava em aberto; "missed": não criada com o app
+// fechado. O título, as etiquetas e a prioridade vêm do card mais recente da série (cardId), que
+// é o que abre ao clicar.
+export interface CalendarRepeat {
+  id: string
+  kind: 'next' | 'skipped' | 'missed'
+  occurrence: string
+  cardId: string
+  boardId: string
+  boardTitle: string
+  title: string
+  priority: number | null
+  labels: CardLabel[]
+}
+
 export interface CalendarMonth {
   cards: CalendarCard[]
   tasks: CalendarTask[]
+  repeats: CalendarRepeat[]
 }

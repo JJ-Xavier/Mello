@@ -3,7 +3,9 @@
 // com o protótipo e também confere a ponta a ponta: banco criado e IPC respondendo.
 // Os dados são fictícios (P16) e criados pelo próprio window.mello. Os anexos são arquivos
 // fictícios gerados na hora (as fotos são gradientes desenhados no canvas); a janela "Abrir" do
-// Windows é trocada por uma que devolve esses arquivos.
+// Windows é trocada por uma que devolve esses arquivos. As notificações do Windows (lembretes)
+// ficam anotadas em vez de aparecer na tela, e a lista sai no fim. Os lembretes perdidos e o aviso
+// da bandeja precisam de uma segunda abertura do app, com os mesmos dados.
 //
 // Uso: npm run capturas   (compila antes; roda com o Node 24, que entende TypeScript)
 import fs from 'node:fs'
@@ -12,7 +14,7 @@ import os from 'node:os'
 import path from 'node:path'
 import playwright, { type ElectronApplication, type Page } from 'playwright-core'
 
-const STAGE = 6
+const STAGE = 8
 const THEMES = ['escuro', 'claro']
 
 const root = path.resolve(import.meta.dirname, '..')
@@ -247,6 +249,28 @@ interface Seeded {
   >
 }
 
+// Uma regra de repetição semanal, num dia da semana a N dias de hoje, às 08:00 (etapa 8).
+function weeklyRule(targetListId: string, inDays: number) {
+  const date = new Date()
+  date.setDate(date.getDate() + inDays)
+  return {
+    freq: 'weekly',
+    weekdays: 1 << date.getDay(),
+    monthDay: null,
+    intervalDays: null,
+    time: '08:00',
+    targetListId,
+    copyLabelsPriority: true,
+    copyDescription: true,
+    copyChecklist: true,
+    copyDueDate: true,
+    ifPreviousOpen: 'skip',
+    endsKind: 'never',
+    endsOn: null,
+    endsAfter: null
+  }
+}
+
 async function seed(app: ElectronApplication, page: Page): Promise<Seeded> {
   const create = (title: string) =>
     call<Board>(page, `window.mello.boards.create({ title: '${title}' })`)
@@ -415,6 +439,18 @@ async function seed(app: ElectronApplication, page: Page): Promise<Seeded> {
     { text: 'Ler o capítulo 3', date: -3 },
     { text: 'Fazer os exercícios', date: 0 }
   ])
+
+  // Etapa 8 (telas 6b, 9 e 5): "Compras da semana" se repete toda semana, no dia de depois de
+  // amanhã, às 08:00. Na fase do relógio adiantado, ela fica em aberto e as repetições são puladas.
+  const compras = await card(list('A fazer'), 'Compras da semana')
+  await setLabels(compras, [laranja, roxo])
+  await update(compras, { priority: 4, due: { dueAt: `${day(2)}T08:00`, reminder: 'at_time' } })
+  await addChecklist(page, compras, 'Lista', [
+    { text: 'Pão' },
+    { text: 'Leite' },
+    { text: 'Frutas' }
+  ])
+  await mello(page, 'recurrence.save', { cardId: compras, rule: weeklyRule(list('A fazer'), 2) })
   return {
     casa,
     cards: { tinta, torneira, condominio, armario, pintar, horta, viagem, revisao }
@@ -450,28 +486,45 @@ async function ageCards(page: Page, cards: Seeded['cards']) {
 // Com a janela coberta por outra, ou o monitor desligado pelo Windows durante o roteiro, o
 // Chromium para de desenhar e a captura não termina. Estas opções (só do script) mantêm a janela
 // desenhando: sem o corte de janela escondida e sem esperar o sinal de atualização do monitor.
-const app = await playwright._electron.launch({
-  executablePath: electronPath,
-  args: [
-    root,
-    '--disable-features=CalculateNativeWinOcclusion',
-    '--disable-backgrounding-occluded-windows',
-    '--disable-renderer-backgrounding',
-    '--disable-gpu-vsync',
-    '--disable-frame-rate-limit'
-  ],
-  cwd: root,
-  env
-})
-
-try {
+// A notificação do Windows vira uma anotação no main (melloNotifications), lida no fim.
+async function launch(): Promise<{ app: ElectronApplication; page: Page }> {
+  const app = await playwright._electron.launch({
+    executablePath: electronPath,
+    args: [
+      root,
+      '--disable-features=CalculateNativeWinOcclusion',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-gpu-vsync',
+      '--disable-frame-rate-limit'
+    ],
+    cwd: root,
+    env
+  })
   const page = await app.firstWindow()
-  await app.evaluate(({ BrowserWindow }) => {
+  await app.evaluate(({ BrowserWindow, Notification }) => {
     BrowserWindow.getAllWindows()[0]?.setContentSize(1440, 900)
+    const shown: string[] = []
+    Object.assign(globalThis, { melloNotifications: shown })
+    Notification.prototype.show = function show(this: Electron.Notification) {
+      shown.push(`${this.title} — ${this.body}`)
+    }
   })
   await page.waitForSelector('header')
   await page.evaluate('document.fonts.ready.then(() => true)')
+  return { app, page }
+}
 
+// Encerra como o "Sair" da bandeja: fechar a janela só a esconderia (P4).
+async function quit(app: ElectronApplication) {
+  const closed = app.waitForEvent('close').catch(() => {})
+  await app.evaluate(({ app: electron }) => electron.quit()).catch(() => {})
+  await closed
+}
+
+let { app, page } = await launch()
+
+try {
   const info = await call<unknown>(page, 'window.mello.app.info()')
   if (!fs.existsSync(path.join(dataDir, 'mello.db'))) throw new Error('O banco não foi criado.')
   console.log(`Banco criado e IPC respondendo (${JSON.stringify(info)}).`)
@@ -594,6 +647,18 @@ try {
     await modal.getByRole('button', { name: /Atividade/ }).click()
     await page.waitForTimeout(200)
     await shot(page, '04-atividade', theme)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(250)
+
+    // Tela 6b: o diálogo "Repetir card" de uma série semanal.
+    await page.getByRole('link', { name: /Compras da semana/ }).click()
+    const weekly = page.getByRole('dialog', { name: 'Compras da semana' })
+    await weekly.waitFor()
+    await weekly.getByRole('button', { name: 'Repetir' }).click()
+    await page.getByRole('dialog', { name: 'Repetir card' }).waitFor()
+    await page.waitForTimeout(250)
+    await shot(page, '06b-repetir', theme)
+    await closePopovers(page)
     await page.keyboard.press('Escape')
     await page.waitForTimeout(250)
 
@@ -749,9 +814,74 @@ try {
       await page.keyboard.press('Escape')
       await page.waitForTimeout(250)
     }
+
+    // Etapa 8 (telas 9 e 5): com o relógio 14 dias à frente, "Compras da semana" ficou em aberto
+    // e as repetições foram puladas: o aviso no card e as tracejadas no calendário.
+    await page.getByRole('link', { name: /Compras da semana/ }).first().click()
+    const skipped = page.getByRole('dialog', { name: 'Compras da semana' })
+    await skipped.getByText(/pulada\./).waitFor()
+    await page.waitForTimeout(300)
+    await shot(page, '09-repeticao-pulada', theme)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(250)
+    await go(page, `#/boards/${casa.id}/calendar`)
+    await page.getByRole('link', { name: /Pulada: a anterior está em aberto/ }).first().waitFor()
+    await page.mouse.move(2, 600)
+    await page.waitForTimeout(300)
+    await shot(page, '05-calendario-repeticoes', theme)
+    await go(page, `#/boards/${casa.id}`)
   }
+
+  // Etapa 8 (LEM-03): os lembretes que venceram enquanto o relógio andou viraram notificações.
+  const shown = await app.evaluate(
+    () => (globalThis as unknown as { melloNotifications: string[] }).melloNotifications
+  )
+  console.log(`Notificações de lembretes com o relógio adiantado: ${shown.length}`)
+  for (const text of shown) console.log(`  ${text}`)
+  if (shown.length === 0) throw new Error('Nenhum lembrete virou notificação.')
+
+  // Etapa 8 (tela 16): os lembretes perdidos com o app fechado e o aviso da bandeja, numa segunda
+  // abertura. O relógio volta ao real e dois lembretes de ontem ficam pendentes.
+  await mello(page, 'dev.setClock', { offset: 0 })
+  const firstList = (
+    await mello<{ lists: { id: string }[] }>(page, 'boards.get', { boardId: casa.id })
+  ).lists[0]!.id
+  for (const [title, dueAt] of [
+    ['Pagar a internet', `${day(-1)}T18:00`],
+    ['Renovar o seguro do carro', day(-1)]
+  ]) {
+    const created = await mello<{ id: string }>(page, 'cards.create', { listId: firstList, title })
+    await mello(page, 'cards.update', { cardId: created.id, due: { dueAt, reminder: 'at_time' } })
+  }
+  await quit(app)
+  ;({ app, page } = await launch())
+  const missedNotice = page.getByRole('dialog', { name: /Você perdeu/ })
+  await missedNotice.waitFor({ timeout: 15_000 })
+  for (const theme of THEMES) {
+    await setTheme(theme)
+    await page.waitForTimeout(200)
+    await shot(page, '16-lembretes-perdidos', theme)
+  }
+  await missedNotice.getByRole('button', { name: 'Dispensar' }).click()
+
+  // Fechar a janela pela primeira vez: o aviso da bandeja; "Entendi" esconde a janela.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.close())
+  const trayNotice = page.getByRole('dialog', { name: 'O Mello continua na bandeja' })
+  await trayNotice.waitFor()
+  for (const theme of THEMES) {
+    await setTheme(theme)
+    await page.waitForTimeout(200)
+    await shot(page, '16-aviso-da-bandeja', theme)
+  }
+  await trayNotice.getByRole('button', { name: 'Entendi' }).click()
+  await page.waitForTimeout(500)
+  const visible = await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0]?.isVisible()
+  )
+  if (visible) throw new Error('Depois do "Entendi", a janela devia estar escondida na bandeja.')
+  console.log('Fechar a janela deixou o Mello na bandeja (janela escondida, app rodando).')
 } finally {
-  await app.close()
+  await quit(app)
   fs.rmSync(dataDir, { recursive: true, force: true })
   fs.rmSync(userDir, { recursive: true, force: true })
 }

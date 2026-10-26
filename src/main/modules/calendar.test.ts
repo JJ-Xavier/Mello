@@ -126,8 +126,8 @@ describe('calendário: o que fica de fora (CAL-06)', () => {
     expect(october().tasks.map((i) => i.text)).toEqual(['visível'])
 
     boards.close(t.db, casa, NOW)
-    expect(october(null)).toEqual({ cards: [], tasks: [] })
-    expect(october(casa)).toEqual({ cards: [], tasks: [] })
+    expect(october(null)).toEqual({ cards: [], tasks: [], repeats: [] })
+    expect(october(casa)).toEqual({ cards: [], tasks: [], repeats: [] })
   })
 })
 

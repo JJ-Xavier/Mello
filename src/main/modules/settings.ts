@@ -1,5 +1,6 @@
 // Configurações (tabela setting: chave → valor JSON). Uma chave que não foi gravada, ou que tem
-// um valor inválido, vale o padrão (shared/ipc/settings.ts). Gravar entra na etapa 10, com a tela.
+// um valor inválido, vale o padrão (shared/ipc/settings.ts). A tela grava a partir da etapa 10;
+// até lá, só o próprio main grava (o aviso da bandeja, etapa 8).
 import {
   SETTING_DEFAULTS,
   SETTING_SCHEMAS,
@@ -25,4 +26,12 @@ export function get(db: DbOrTx): Settings {
     if (parsed.success) settings[row.key] = parsed.data
   }
   return settings as Settings
+}
+
+export function set<K extends SettingKey>(db: DbOrTx, key: K, value: Settings[K]): void {
+  const json = JSON.stringify(SETTING_SCHEMAS[key].parse(value))
+  db.insert(setting)
+    .values({ key, value: json })
+    .onConflictDoUpdate({ target: setting.key, set: { value: json } })
+    .run()
 }

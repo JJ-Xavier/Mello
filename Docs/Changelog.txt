@@ -4,6 +4,72 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.8.0 — Etapa 8: agendador, repetição e lembretes (26/10/2026)
+
+Adicionado
+- Diálogo "Repetir card" (tela 6b): frequência (diária, semanal com os dias, mensal no dia X, a
+  cada N dias), horário, lista de destino, o que copiar, o que fazer com o anterior em aberto,
+  término (nunca, numa data, depois de N vezes), "Próximas:" com as 3 próximas datas, Salvar e
+  "Remover repetição" (REP-01 a REP-06, REP-15, REP-17). O botão "Repetir" fica destacado com
+  o diálogo aberto, e o modal ganha o campo "Repetição" com o resumo ("Toda segunda, 08:00").
+- Agendador no main (seção 6.4 do PLANO.md): roda ao abrir o app e a cada minuto, também na
+  bandeja; cria o card no topo da lista de destino, copiando conforme a regra, com nível 0 e a
+  atividade "Criado pela repetição de <dia>" (REP-04, REP-11, REP-12); com o anterior em
+  aberto, pula e avisa (REP-08); com o app fechado, processa só a mais recente e registra as
+  outras como "não criada: app fechado" (REP-10); quadro fechado ou lista de destino arquivada
+  ou excluída pausam (REP-16).
+- Aviso de repetição pulada dentro do card, com "Criar agora mesmo assim" e "Dispensar"
+  (REP-08, REP-09).
+- ↻ e o próximo dia na face do card (REP-13); "Só cards recorrentes" passa a valer (FLT-03).
+- Repetições tracejadas no calendário: as próximas, as puladas e as não criadas (REP-14).
+- Lembretes: notificação do Windows "Mello · <card>", "Entrega hoje, 18:00 · Casa"; clicar
+  abre o card (LEM-03). Os perdidos com o app fechado viram o aviso "Você perdeu N lembretes",
+  com "Abrir" em cada um (LEM-06).
+- Bandeja do Windows (P4, LEM-07): fechar a janela esconde o Mello, que continua com os
+  lembretes e as repetições; na primeira vez, o aviso "O Mello continua na bandeja". Menu da
+  bandeja com "Abrir o Mello" e "Sair".
+- Textos completos da atividade da repetição: criado, pulada e não criadas (com as datas).
+
+Mudou
+- Canais novos: recurrence:save, remove, createAnyway e dismiss; reminders:missed;
+  app:hideToTray. Avisos do main para a tela (eventos): data:changed, app:openCard e
+  tray:notice; o preload repassa só esses nomes.
+- O main tem o agendador (scheduler.ts) e a bandeja com as notificações (tray.ts). O relógio de
+  teste roda o agendador ao mudar.
+- A face do card traz nextRepeat; recurring passa a ser "repetição ativa". O card do modal traz
+  a regra (recurrence) e o aviso (skipNotice); o mês do calendário traz as fantasmas (repeats).
+- Configurações lidas: tray.keep e tray.noticeShown (o main grava o aviso).
+- Ícones da bandeja e das notificações em resources/, gerados do logo do protótipo
+  (scripts/gerar-icones.mts).
+- Variáveis novas de tema: --warn-bg, --warn-txt, --accent-hi e --cal-note.
+- Script de capturas: etapa 8, com uma série semanal, o diálogo, o aviso de pulada e as
+  fantasmas depois de adiantar o relógio, as notificações anotadas e uma segunda abertura para
+  os lembretes perdidos e o aviso da bandeja.
+- Versão 0.8.0.
+
+Corrigido
+- (Durante a etapa) o aviso de pulada terminava em ".." quando o mês abreviado já tem ponto
+  ("2 de nov.").
+
+Decisões tomadas na etapa (26/10/2026)
+- Ícone da bandeja e das notificações gerado do logo do protótipo (o ícone do instalador continua
+  para a etapa 12, P14).
+- "Mudar nas Configurações", no aviso da bandeja, fica apagado até a etapa 10.
+- Só o aviso de pulada mais recente fica no card; as perdidas de uma rodada viram um registro só
+  na atividade.
+- Salvar ou alterar a regra vale a partir daquele momento (nada do passado é processado), e
+  alterar mantém a contagem.
+- A prévia "Próximas:" é calculada na tela, com as mesmas contas do agendador (sem o canal
+  recurrence:preview do plano).
+- Uma série sem nenhum card sai sozinha.
+
+Documentação
+- Atualizados: Regras.txt (REP e LEM, com os testes), Arquitetura.txt (agendador, bandeja,
+  eventos), Modelo-de-Dados.txt (uso da repetição, atividade, chaves da bandeja), Testes.txt,
+  Pipeline.txt (ícones, capturas, relógio de teste), LGPD.txt (notificações), PLANO.md,
+  To-do-list.txt, README.md.
+
+
 0.7.1 — Etapa 6: envelhecimento (26/10/2026)
 
 A etapa 6 veio depois da 7 (decisão de 24/10/2026) e sai como 0.7.1 (decisão de 25/10/2026): a

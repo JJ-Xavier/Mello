@@ -2,7 +2,8 @@ Modelo de dados — Mello
 
 Status: criado na etapa 1 (21/10/2026); a etapa 3 (22/10/2026) registrou o conteúdo de
 activity.data, a etapa 4 (23/10/2026) a origem de description_html, a etapa 5 (24/10/2026)
-os anexos e a capa e a etapa 7 (24/10/2026) as configurações do calendário, sem migração nova.
+os anexos e a capa, a etapa 7 (24/10/2026) as configurações do calendário e a etapa 8
+(26/10/2026) o uso da repetição e dos lembretes, sem migração nova.
 Fonte no código: src/main/db/schema.ts.
 Qualquer migração nova atualiza este documento (seções 3 e 4).
 
@@ -53,6 +54,8 @@ card — cards
     etiquetas; image: o file.id da imagem; etapa 5)
   is_template INTEGER NOT NULL DEFAULT 0 (MOD-01)
   recurrence_id → recurrence ON DELETE SET NULL | occurrence_date TEXT NULL
+    (recurrence_id: a série do card, inclusive o card em que a repetição foi configurada;
+    occurrence_date: a ocorrência que criou o card, "AAAA-MM-DDTHH:mm"; etapa 8)
   last_activity_at INTEGER NOT NULL (base do envelhecimento, ENV-01)
   archived_at INTEGER NULL | created_at, updated_at
 
@@ -85,6 +88,9 @@ activity — histórico do card
     done, undone ... {}                             (etapa 3: ✓ automático ao mover)
     archived, restored {}                           (etapa 2)
     copied ......... { from: título do card de origem } (etapa 2)
+    from_recurrence  { date: a ocorrência, "AAAA-MM-DDTHH:mm" } (etapa 8)
+    recurrence_skipped { date } — no anterior em aberto (etapa 8)
+    recurrence_missed { from, to, count } — as perdidas de uma rodada, no anterior (etapa 8)
 
 file — arquivos guardados em <pasta de dados>\arquivos\<id>.<ext>
   id TEXT PK (SHA-256) | ext TEXT NOT NULL | mime TEXT NOT NULL | size INTEGER NOT NULL
@@ -114,6 +120,12 @@ recurrence — repetição de um card
   ends_kind TEXT NOT NULL DEFAULT 'never' (never | on_date | after_count)
   ends_on TEXT NULL | ends_after INTEGER NULL | due_count INTEGER NOT NULL DEFAULT 0 (REP-06)
   last_processed TEXT NULL | created_at, updated_at
+  Uso (etapa 8): anchor_date é o dia em que a regra foi salva (a cada salvamento);
+  last_processed é a última ocorrência processada ("AAAA-MM-DDTHH:mm"), e ao salvar vira o
+  momento do salvamento, para nada do passado ser processado. due_count soma as ocorrências que
+  venceram (criadas, puladas ou perdidas). Os campos que não valem para a frequência ficam
+  NULL (ou weekdays 0). A lista de destino arquivada também pausa (sem mudar o campo). Uma
+  repetição sem nenhum card na série é apagada pelo agendador.
 
 recurrence_occurrence — cada vez que uma repetição venceu
   id TEXT PK | recurrence_id → recurrence ON DELETE CASCADE | occurrence_date TEXT NOT NULL
@@ -122,14 +134,19 @@ recurrence_occurrence — cada vez que uma repetição venceu
   notice_card_id → card ON DELETE SET NULL (card que mostra o aviso)
   dismissed_at INTEGER NULL | created_at
   UNIQUE (recurrence_id, occurrence_date) — rodar o agendador duas vezes não duplica nada
+  Uso (etapa 8): occurrence_date é "AAAA-MM-DDTHH:mm". Na pulada, notice_card_id é o anterior
+  que mostra o aviso; só a mais recente sem dismissed_at aparece. "Criar agora mesmo assim"
+  muda o status para created_anyway, com o card_id e o dismissed_at.
 
 setting — configurações
   key TEXT PK | value TEXT NOT NULL (JSON)
   Chaves: theme, aging.enabled, calendar.showTasks, calendar.strikeDone, calendar.weekStart,
-  tray.keep, app.autoStart, backup.folder, backup.lastAt.
+  tray.keep, tray.noticeShown, app.autoStart, backup.folder, backup.lastAt.
   Lidas desde a etapa 7 (src/main/modules/settings.ts): calendar.showTasks (true/false, padrão
   true), calendar.strikeDone (true/false, padrão true) e calendar.weekStart ("sunday" ou
-  "monday", padrão "sunday"). Desde a etapa 6: aging.enabled (true/false, padrão true). Chave
+  "monday", padrão "sunday"). Desde a etapa 6: aging.enabled (true/false, padrão true). Desde a
+  etapa 8: tray.keep (true/false, padrão true) e tray.noticeShown (o aviso da bandeja já
+  apareceu; padrão false, gravado pelo próprio main no "Entendi"). Chave
   ausente ou valor inválido vale o padrão (src/shared/ipc/settings.ts). A tela que grava entra
   na etapa 10.
 

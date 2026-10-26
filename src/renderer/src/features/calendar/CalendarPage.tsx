@@ -52,10 +52,15 @@ function itemsByDay(
   if (!data) return byDay
   const cardsOf = new Map<string, CalendarMonth['cards']>()
   const tasksOf = new Map<string, CalendarMonth['tasks']>()
+  const repeatsOf = new Map<string, CalendarMonth['repeats']>()
   if (showCards) {
     for (const card of data.cards) {
       const day = card.dueAt.slice(0, 10)
       cardsOf.set(day, [...(cardsOf.get(day) ?? []), card])
+    }
+    for (const repeat of data.repeats) {
+      const day = repeat.occurrence.slice(0, 10)
+      repeatsOf.set(day, [...(repeatsOf.get(day) ?? []), repeat])
     }
   }
   if (showTasks) {
@@ -63,12 +68,18 @@ function itemsByDay(
       tasksOf.set(task.dueDate, [...(tasksOf.get(task.dueDate) ?? []), task])
     }
   }
-  for (const day of new Set([...cardsOf.keys(), ...tasksOf.keys()])) {
+  for (const day of new Set([...cardsOf.keys(), ...repeatsOf.keys(), ...tasksOf.keys()])) {
     byDay.set(day, [
       ...sortDayCards(cardsOf.get(day) ?? []).map((card) => ({
         kind: 'card' as const,
         id: `card-${card.id}`,
         card
+      })),
+      // REP-14: as repetições que não viraram card vêm depois dos cards de verdade.
+      ...(repeatsOf.get(day) ?? []).map((repeat) => ({
+        kind: 'repeat' as const,
+        id: repeat.id,
+        repeat
       })),
       ...sortDayTasks(tasksOf.get(day) ?? []).map((task) => ({
         kind: 'task' as const,

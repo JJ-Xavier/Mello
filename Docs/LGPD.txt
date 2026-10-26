@@ -1,8 +1,8 @@
 Referente as boas praticas da LGPD e aplicacões em desenvolvimentos de softwere
 
-Status: aprovado em 21/10/2026; revisado na etapa 1 (pasta do modo de desenvolvimento) e na
-etapa 5 (anexos, 24/10/2026). Será revisado também nas etapas 10 (backup, exportação e apagar
-tudo) e 12 (versão final).
+Status: aprovado em 21/10/2026; revisado na etapa 1 (pasta do modo de desenvolvimento), na
+etapa 5 (anexos, 24/10/2026) e na etapa 8 (notificações dos lembretes, 26/10/2026). Será revisado
+também nas etapas 10 (backup, exportação e apagar tudo) e 12 (versão final).
 
 
 1. RESUMO
@@ -52,6 +52,10 @@ Tudo fica na pasta de dados do usuário do Windows:
                                     com o nome original). São apagadas na próxima vez que o app
                                     abre; uma que ainda esteja aberta em outro programa fica para
                                     a vez seguinte.
+
+Notificações dos lembretes (etapa 8): o lembrete aparece como notificação do Windows, com o título
+do card, a data e o nome do quadro. Quem mostra é o próprio Windows, que guarda a notificação na
+central de notificações dele, no mesmo computador, até você limpar. Nada sai do computador.
 
 No modo de desenvolvimento (npm run dev) a pasta é %APPDATA%\Mello-dev, com a mesma estrutura.
 Ela só existe no computador de quem desenvolve o app e é separada de propósito, para que os testes

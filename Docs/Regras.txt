@@ -5,7 +5,8 @@ Status: aprovado em 21/10/2026 (inclusive as regras que eram propostas). Atualiz
 lista de conclusão) e na etapa 4 (CAR-09 e CAR-10, limites de tamanho e esclarecimentos em CAR-07,
 ENV-05, ENV-06, ETQ-04, FLT-03 e NOT-05). A etapa 7 (calendário) veio antes da 6, por decisão de
 24/10/2026, e esclareceu as regras CAL. A etapa 6 (envelhecimento), feita depois, detalhou a
-ENV-08 e a ENV-10 (26/10/2026).
+ENV-08 e a ENV-10 (26/10/2026). A etapa 8 (repetição e lembretes) esclareceu as regras REP e
+LEM (26/10/2026).
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -285,20 +286,36 @@ DAT-04  "Ordenar por data de entrega": do prazo mais cedo para o mais tarde, com
 
 
 11. LEMBRETES (LEM)
+Testes (etapa 8): src/shared/rules/reminders.test.ts (quando dispara e o texto),
+src/main/modules/reminders.test.ts, src/main/scheduler.test.ts (relógio falso) e
+src/renderer/src/app/AppEvents.test.tsx (notificação, lembretes perdidos e bandeja).
 
 LEM-01  Opções do seletor de data: Nenhum, No horário e 1 dia antes (as do protótipo). Só existe
         lembrete quando há data de entrega.
 LEM-02  Data sem hora: o lembrete considera 09:00 daquele dia. (aprovada 21/10)
 LEM-03  O lembrete dispara uma vez, como notificação do Windows: título "Mello · <título do card>",
         texto "Entrega <data e hora> · <quadro>". Clicar na notificação abre o app no card.
+        A data é "hoje", "amanhã", "ontem" ou o dia ("26 de out."), com a hora quando houver:
+        "Entrega hoje, 18:00 · Casa", como no protótipo. O agendador confere os lembretes a cada
+        minuto, então a notificação sai até 1 minuto depois do horário. (etapa 8)
 LEM-04  Mudar a data ou a opção de lembrete rearma o lembrete.
 LEM-05  Não dispara para card finalizado, arquivado, modelo, de lista arquivada ou de quadro
-        fechado.
+        fechado. O lembrete de um card finalizado continua pendente: se o card voltar a ficar
+        em aberto, ele ainda vale (com o limite de 7 dias da LEM-06). (etapa 8)
 LEM-06  Lembretes que venceram com o app fechado: ao abrir, os dos últimos 7 dias viram um único
         aviso agrupado ("Você perdeu 2 lembretes"), com a lista. Os mais antigos são descartados.
+        Cada lembrete da lista tem "Abrir", que abre o card por cima do aviso, e o aviso fecha
+        em "Dispensar". A entrega que já passou aparece em vermelho. Com o app aberto, um lembrete
+        que venceu há mais de 7 dias (por exemplo, uma data antiga escolhida agora) também é
+        descartado sem notificação. (etapa 8)
 LEM-07  Com "Manter o Mello na bandeja" ligado (o padrão), fechar a janela esconde o app na
         bandeja do Windows, e ele continua disparando lembretes e repetições. "Sair", no menu da
         bandeja, encerra o app. Com a opção desligada, fechar a janela encerra o app. (aprovada 21/10)
+        Na primeira vez que a janela fecha, o aviso "O Mello continua na bandeja" (tela 16)
+        explica, e "Entendi" esconde a janela; o aviso não volta. Fechar de novo com o aviso
+        aberto também esconde. O menu da bandeja tem "Abrir o Mello" e "Sair", e clicar no ícone
+        abre a janela; abrir o Mello de novo pelo atalho também. A opção fica nas Configurações
+        na etapa 10; até lá, "Mudar nas Configurações" aparece apagado. (etapa 8)
 
 
 12. NOTA E DESCRIÇÃO (NOT)
@@ -381,13 +398,21 @@ CAP-03  Remover o anexo usado como capa remove a capa.
 
 
 15. REPETIÇÃO (REP)
+Testes (etapa 8): src/shared/rules/recurrence.test.ts (frequências, término, resumo e textos),
+src/main/modules/recurrence.test.ts (o agendador da seção 6.4 do PLANO.md),
+src/main/ipc/events.test.ts (ENV-05 e ENV-06) e src/renderer/src/features/recurrence/
+Recurrence.test.tsx (diálogo, aviso, face e calendário).
 
 REP-01  Frequências:
           - Diária;
           - Semanal: um ou mais dias da semana (pelo menos um é obrigatório);
           - Mensal: dia X, de 1 a 31. Se o mês não tem o dia X, usa o último dia do mês;
           - A cada N dias: N de 1 a 365, contando a partir do dia em que a repetição foi salva.
-REP-02  O horário (HH:mm) é o momento em que o card novo é criado.
+        Salvar (ou alterar) a regra vale a partir daquele momento: nada do passado é processado.
+        Alterar mantém a contagem do "depois de N vezes" e recomeça o "a cada N dias" no dia
+        em que foi salva. O diálogo começa semanal, no dia da semana de hoje, às 08:00. (etapa 8)
+REP-02  O horário (HH:mm) é o momento em que o card novo é criado. O agendador roda a cada
+        minuto, então o card aparece até 1 minuto depois. (etapa 8)
 REP-03  "Criar na lista": uma lista do mesmo quadro (padrão: a lista atual do card). O card novo
         nasce no topo dessa lista.
 REP-04  O que é copiado para o card novo:
@@ -398,42 +423,53 @@ REP-04  O que é copiado para o card novo:
           - se marcado: data de entrega = dia da repetição + horário da regra, com o mesmo
             lembrete do card de origem.
         Nunca são copiados: nota, anexos, capa e atividade.
-REP-05  O card de origem da cópia é o card mais recente da série.
+REP-05  O card de origem da cópia é o card mais recente da série (o último criado, inclusive
+        arquivado). Se nenhum card sobrou na série (todos excluídos), a repetição sai. (etapa 8)
 REP-06  Quando termina:
           - Nunca;
           - Em <data>: valem as ocorrências até essa data, inclusive;
           - Depois de N vezes: contam as ocorrências que venceram, criadas ou puladas.
 REP-07  O "anterior" é o card mais recente da série que não foi arquivado nem excluído. Se não
-        houver anterior, o card novo é criado.
+        houver anterior, o card novo é criado. Um card de lista arquivada conta como arquivado.
+        (etapa 8)
 REP-08  Se o anterior NÃO está finalizado (FIN-01):
           - "Pular e avisar no card" (padrão): o card novo não é criado; a ocorrência fica
             registrada como pulada; o anterior mostra o aviso "Repetição de <dia> pulada. Este card
             ainda não foi concluído, então o Mello não criou outro. A próxima será <dia>.", com os
             botões "Criar agora mesmo assim" e "Dispensar";
           - "Criar mesmo assim": o card novo é criado normalmente.
+        Só o aviso mais recente fica no card: uma nova pulada substitui a anterior. A pulada
+        entra na atividade do anterior. Sem próxima ocorrência, o fim do aviso diz "A repetição
+        terminou.". (etapa 8)
 REP-09  "Criar agora mesmo assim" cria na hora o card daquela ocorrência e some com o aviso.
         "Dispensar" só some com o aviso; a ocorrência continua contando como pulada.
 REP-10  Se o app ficou fechado e várias ocorrências venceram, só a mais recente é processada
         (REP-08 vale para ela). As anteriores ficam registradas como "não criada: app fechado" e
-        contam para REP-06. Decisão 21/10.
+        contam para REP-06. Decisão 21/10. Na atividade do anterior, elas ficam num registro só
+        ("9 repetições não criadas, de … a …: app fechado"). (etapa 8)
 REP-11  O agendador roda ao abrir o app e a cada minuto enquanto o app estiver aberto ou na
         bandeja.
 REP-12  O card novo nasce com nível 0, sem ✓, com a atividade "Criado pela repetição de <data>".
 REP-13  Na face do card: ↻ e o próximo dia. Mostra o dia da semana ("seg.") quando a próxima
         ocorrência é nos próximos 6 dias; senão, a data ("26 out."). Aparece em todos os cards
-        da série enquanto a repetição estiver ativa.
+        da série enquanto a repetição estiver ativa. Pausada (REP-16), aparece só o ↻; quando
+        termina (REP-06), some. "Só cards recorrentes" (FLT-03) segue a mesma regra. (etapa 8)
 REP-14  No calendário:
           - ocorrências futuras do mês aparecem tracejadas, com "Próxima repetição";
           - ocorrências puladas aparecem tracejadas, com o aviso "Pulada: a anterior está em
             aberto";
           - ocorrências perdidas por app fechado aparecem tracejadas, com "Não criada: app
             fechado".
+        Elas têm o título, as etiquetas e a prioridade (se a regra copia) do card mais recente da
+        série, aparecem depois dos cards de verdade do dia, só com o filtro "Cards" ligado, e
+        clicar abre esse card. Pausada, não mostra as próximas. (etapa 8)
 REP-15  "Remover repetição": os cards já criados ficam; somem o ↻ e as ocorrências futuras.
 REP-16  Quadro fechado, ou lista de destino arquivada ou excluída: a repetição fica pausada e não
-        processa nada. Ao voltar, vale REP-10 para o período parado.
+        processa nada. Ao voltar, vale REP-10 para o período parado. No modal, a repetição
+        pausada mostra o selo "Pausada". (etapa 8)
 REP-17  Resumo da regra: "Todo dia, 08:00", "Toda segunda, 08:00", "Toda segunda, quarta,
         08:00", "Todo dia 5, 08:00", "A cada 3 dias, 08:00". "Próximas:" mostra as 3 próximas
-        datas.
+        datas. O campo "Repetição" do modal mostra o resumo e abre o diálogo. (etapa 8)
 
 
 16. CALENDÁRIO (CAL)

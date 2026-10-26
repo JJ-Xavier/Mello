@@ -59,12 +59,19 @@
   --modal-btn: #3b444c;
   --modal-aside: #1d2125;
   /* só no escuro: calendário (Calendario.dc.html e NovoCalendarioTodos.dc.html). --cal é o fundo
-     do calendário e dos dias de fora do mês; --cal-done, o texto riscado e a linha de baixo. */
+     do calendário e dos dias de fora do mês; --cal-done, o texto riscado e a linha de baixo;
+     --cal-note, o aviso da repetição tracejada. */
   --cal: #161a1d;
   --cal-day: #1d2125;
   --cal-item: #2c333a;
   --cal-out: #738496;
   --cal-done: #8c9bab;
+  --cal-note: #f5cd47;
+  /* só no escuro: repetição (Repeticao.dc.html): o aviso de repetição pulada e o botão
+     "Repetir" com o diálogo aberto */
+  --warn-bg: #533f04;
+  --warn-txt: #f8e6a0;
+  --accent-hi: #85b8ff;
 }
 
 .tema-claro {
@@ -117,6 +124,10 @@
   --cal-item: #e9ebee;
   --cal-out: #8590a2;
   --cal-done: #626f86;
+  --cal-note: #946f00;
+  --warn-bg: #f8e6a0;
+  --warn-txt: #533f04;
+  --accent-hi: var(--accent);
 }
 
 /* As telas do quadro usam --btn #e4e6ea no tema claro (Quadro.dc.html e QuadroClaro.dc.html). */

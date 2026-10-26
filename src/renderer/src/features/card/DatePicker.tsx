@@ -1,5 +1,5 @@
 // Seletor de data de entrega (Estados.dc.html): o mês, a data e a hora (opcional, DAT-01) e o
-// lembrete (LEM-01). O lembrete é guardado agora e passa a disparar na etapa 8.
+// lembrete (LEM-01), que o agendador dispara (LEM-03).
 import { useState, type FormEvent } from 'react'
 import type { Reminder } from '../../../../shared/ipc/cards'
 import {

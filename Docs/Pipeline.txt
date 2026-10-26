@@ -1,7 +1,7 @@
 Pipeline — Mello
 
-Status: atualizado na etapa 6 (26/10/2026, relógio de teste). Os comandos da seção 4 existem e
-foram conferidos.
+Status: atualizado na etapa 8 (26/10/2026, ícones da bandeja e capturas com a segunda abertura).
+Os comandos da seção 4 existem e foram conferidos.
 
 
 1. QUEM FAZ O QUÊ
@@ -83,6 +83,9 @@ voltam; Ctrl+Alt+0 volta ao relógio real. Enquanto estiver adiantado, um selo a
 mostra quanto. Tudo o que o app grava nesse tempo usa o relógio adiantado. Reabrir o app volta
 ao relógio real. Em alguns computadores com placa de vídeo Intel, Ctrl+Alt+seta gira a tela
 (atalho do driver); nesse caso, desligue o atalho do driver ou peça outro atalho.
+Desde a etapa 8, mudar o relógio roda o agendador na hora: adiantar até depois do horário de uma
+repetição cria (ou pula) o card, e adiantar até depois de um lembrete mostra a notificação do
+Windows.
 
 
 4. COMANDOS
@@ -101,8 +104,13 @@ npm run format ......... formata o código (Prettier)
 npm run typecheck ...... confere os tipos do TypeScript (main/preload, tela e testes da tela)
 npm run capturas ....... compila, abre o app com uma pasta de dados temporária, confere banco e
                          IPC e salva capturas de cada tela em capturas/etapa-N/ (pasta ignorada
-                         pelo Git)
+                         pelo Git). Abre o app duas vezes (a segunda para os lembretes perdidos e
+                         o aviso da bandeja) e lista as notificações em vez de mostrá-las
 npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit)
+node scripts/gerar-icones.mts
+                         gera os PNGs do logo em resources/ (bandeja e notificações). Precisa do
+                         app compilado (npm run build). Só é preciso se o logo mudar; os PNGs
+                         ficam no Git
 npm run build:win ...... confere os tipos, compila e gera o instalador do Windows em dist/
                          (conferido na etapa 12)
 

@@ -7,9 +7,17 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CHANNELS } from '../../shared/ipc/api'
 import type { PickedFile } from '../../shared/ipc/files'
 import { createTestDb, insertCard } from '../db/test-db'
-import { attachment, card, checklist, checklistItem, label } from '../db/schema'
+import {
+  attachment,
+  card,
+  checklist,
+  checklistItem,
+  label,
+  recurrenceOccurrence
+} from '../db/schema'
 import * as boards from '../modules/boards'
 import { storeFile } from '../modules/files'
+import * as recurrence from '../modules/recurrence'
 import { createTestFiles, PNG_1X1 } from '../modules/test-files'
 import { createClock } from '../clock'
 import { createRoutes, type Routes } from './routes'
@@ -102,6 +110,24 @@ const lastActivity = (id: string) =>
   db.select().from(card).where(eq(card.id, id)).get()?.lastActivityAt
 
 type Scenario = { name: string; channel: string; input: (f: Fixture) => unknown }
+
+// Uma repetição diária do card "Alvo" (REP).
+const dailyRule = (f: Fixture) => ({
+  freq: 'daily',
+  weekdays: 0,
+  monthDay: null,
+  intervalDays: null,
+  time: '08:00',
+  targetListId: f.lists['A fazer'],
+  copyLabelsPriority: true,
+  copyDescription: true,
+  copyChecklist: true,
+  copyDueDate: false,
+  ifPreviousOpen: 'skip',
+  endsKind: 'never',
+  endsOn: null,
+  endsAfter: null
+})
 
 // ENV-05: zeram o envelhecimento do card "Alvo".
 const TOUCHES: Scenario[] = [
@@ -217,6 +243,11 @@ const TOUCHES: Scenario[] = [
     name: 'capa: uma imagem anexada',
     channel: CHANNELS.cardsSetCover,
     input: (f) => ({ cardId: f.cardId, cover: { kind: 'image', fileId: f.fileId } })
+  },
+  {
+    name: 'configurar a repetição',
+    channel: CHANNELS.recurrenceSave,
+    input: (f) => ({ cardId: f.cardId, rule: dailyRule(f) })
   }
 ]
 
@@ -363,14 +394,19 @@ const NOT_APPLICABLE = [
   CHANNELS.filesDropped,
   CHANNELS.settingsGet,
   CHANNELS.devClock,
-  CHANNELS.devSetClock
+  CHANNELS.devSetClock,
+  CHANNELS.remindersMissed,
+  CHANNELS.appHideToTray
 ]
 const OWN_TEST = [
   CHANNELS.cardsRestore,
   CHANNELS.checklistsMove,
   CHANNELS.itemsMove,
   CHANNELS.attachmentsAdd,
-  CHANNELS.cardsUploadCover
+  CHANNELS.cardsUploadCover,
+  CHANNELS.recurrenceRemove,
+  CHANNELS.recurrenceCreateAnyway,
+  CHANNELS.recurrenceDismiss
 ]
 
 describe('ENV-05: zeram o envelhecimento', () => {
@@ -414,9 +450,34 @@ describe('ENV-05: zeram o envelhecimento', () => {
   })
 })
 
+describe('ENV-05: repetição', () => {
+  it('remover a repetição', async () => {
+    await call(CHANNELS.recurrenceSave, { cardId: f.cardId, rule: dailyRule(f) })
+    db.update(card).set({ lastActivityAt: BEFORE }).where(eq(card.id, f.cardId)).run()
+    await call(CHANNELS.recurrenceRemove, { cardId: f.cardId })
+    expect(lastActivity(f.cardId)).toBe(NOW)
+  })
+})
+
 describe('ENV-06: não zeram o envelhecimento', () => {
   it.each(KEEPS)('$name', async ({ channel, input }) => {
     await call(channel, input(f))
+    expect(lastActivity(f.cardId)).toBe(BEFORE)
+  })
+
+  it('"Dispensar" e "Criar agora mesmo assim" não mexem no card do aviso (REP-09)', async () => {
+    await call(CHANNELS.recurrenceSave, { cardId: f.cardId, rule: dailyRule(f) })
+    db.update(card).set({ lastActivityAt: BEFORE }).where(eq(card.id, f.cardId)).run()
+    // Dois dias depois, o "Alvo" ainda está em aberto: a repetição é pulada e avisa nele.
+    recurrence.processDue(db, NOW + 2 * 86_400_000)
+    const notice = db
+      .select()
+      .from(recurrenceOccurrence)
+      .where(eq(recurrenceOccurrence.status, 'skipped'))
+      .get()!
+    expect(notice).toMatchObject({ status: 'skipped', noticeCardId: f.cardId })
+    await call(CHANNELS.recurrenceDismiss, { occurrenceId: notice.id })
+    await call(CHANNELS.recurrenceCreateAnyway, { occurrenceId: notice.id })
     expect(lastActivity(f.cardId)).toBe(BEFORE)
   })
 })

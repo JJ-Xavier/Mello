@@ -22,6 +22,7 @@ function card(id: string, listId = 'a', isDone = false): CardSummary {
     priority: null,
     dueAt: null,
     recurring: false,
+    nextRepeat: null,
     cover: null,
     labels: [],
     hasDescription: false,

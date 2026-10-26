@@ -32,6 +32,7 @@ import { attachmentsOf, coverOf } from './attachments'
 import { checklistsOf } from './checklists'
 import { mapLabelsToBoard } from './labels'
 import { keyAfter, keyAt, rebalance, visibleIndex } from './position'
+import { forCard, seriesState } from './recurrence'
 
 // Copia um card (CAR-07): título, descrição, nota, ✓, etiquetas, prioridade, data, lembrete, capa,
 // checklists com o estado dos itens e anexos. Não copia a atividade nem a repetição. A cópia
@@ -234,6 +235,10 @@ function summaries(db: DbOrTx, where: SQL | undefined): CardSummary[] {
   }
   const checksOf = new Map(checks.map((c) => [c.cardId, c]))
   const filesOf = new Map(files.map((f) => [f.cardId, f.total]))
+  const series = seriesState(
+    db,
+    rows.flatMap((r) => (r.recurrenceId === null ? [] : [r.recurrenceId]))
+  )
   return rows.map(
     ({
       descriptionText,
@@ -247,7 +252,8 @@ function summaries(db: DbOrTx, where: SQL | undefined): CardSummary[] {
       ...row
     }) => ({
       ...row,
-      recurring: recurrenceId !== null,
+      recurring: recurrenceId !== null && series.get(recurrenceId)?.recurring === true,
+      nextRepeat: recurrenceId === null ? null : (series.get(recurrenceId)?.next ?? null),
       cover: coverOf(coverKind, coverValue, {
         ext: coverExt,
         width: coverWidth,
@@ -317,7 +323,8 @@ export function get(db: DbOrTx, cardId: string): CardDetail {
       coverWidth: file.width,
       coverHeight: file.height,
       lastActivityAt: card.lastActivityAt,
-      archivedAt: card.archivedAt
+      archivedAt: card.archivedAt,
+      recurrenceId: card.recurrenceId
     })
     .from(card)
     .innerJoin(list, eq(card.listId, list.id))
@@ -325,7 +332,8 @@ export function get(db: DbOrTx, cardId: string): CardDetail {
     .where(eq(card.id, cardId))
     .get()
   if (!found) throw new AppError('NOT_FOUND', 'Card não encontrado.')
-  const { coverKind, coverValue, coverExt, coverWidth, coverHeight, ...detail } = found
+  const { coverKind, coverValue, coverExt, coverWidth, coverHeight, recurrenceId, ...detail } =
+    found
   const labelIds = db
     .select({ id: label.id })
     .from(cardLabel)
@@ -344,8 +352,16 @@ export function get(db: DbOrTx, cardId: string): CardDetail {
     labelIds,
     checklists: checklistsOf(db, cardId),
     attachments: attachmentsOf(db, cardId),
-    activity: activityOf(db, cardId)
+    activity: activityOf(db, cardId),
+    ...forCard(db, cardId, recurrenceId)
   }
+}
+
+// A face de um card (o card criado pelo "Criar agora mesmo assim", REP-09).
+export function summaryOf(db: DbOrTx, cardId: string): CardSummary {
+  const [found] = summaries(db, eq(card.id, cardId))
+  if (!found) throw new AppError('NOT_FOUND', 'Card não encontrado.')
+  return found
 }
 
 // Texto rico (descrição, nota): só o que a NOT-04 permite, com o HTML gerado aqui. Passar do

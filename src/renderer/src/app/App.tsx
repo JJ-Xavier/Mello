@@ -7,6 +7,7 @@ import { BoardPage } from '../features/board/BoardPage'
 import { CalendarPage } from '../features/calendar/CalendarPage'
 import { HomePage } from '../features/home/HomePage'
 import { SettingsPage } from '../features/settings/SettingsPage'
+import { AppEvents } from './AppEvents'
 import { DevClock } from './DevClock'
 import { BoardLayout, HomeLayout, SettingsLayout } from './Layouts'
 
@@ -43,6 +44,7 @@ export function App() {
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            <AppEvents />
           </HashRouter>
           <DevClock />
         </ConfirmProvider>

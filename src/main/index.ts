@@ -1,15 +1,30 @@
-// Processo principal: ciclo de vida do app, banco, protocolo de arquivos, IPC e a janela.
+// Processo principal: ciclo de vida do app, banco, protocolo de arquivos, IPC, agendador, bandeja
+// e a janela.
 import fs from 'node:fs'
 import path from 'node:path'
-import { app, BrowserWindow, dialog, Menu, nativeTheme, screen, session, shell } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  Menu,
+  nativeTheme,
+  screen,
+  session,
+  shell,
+  type Tray
+} from 'electron'
 import log from 'electron-log/main'
+import { EVENTS, type EventPayloads, type MelloEvent } from '../shared/ipc/api'
 import { safeHref } from '../shared/rules/richText'
 import { createClock } from './clock'
 import { openDatabase, type OpenedDatabase } from './db/open'
 import { registerIpc } from './ipc'
+import * as settings from './modules/settings'
 import { dataPaths, ensureDataFolders } from './paths'
 import { registerFileProtocol, registerFileSchemeAsPrivileged } from './protocol'
+import { createScheduler, type Scheduler } from './scheduler'
 import { electronSystem } from './system'
+import { createTray, electronNotifier } from './tray'
 
 const APP_ID = 'com.jjxavier.mello'
 const isDev = !app.isPackaged
@@ -25,6 +40,41 @@ registerFileSchemeAsPrivileged()
 
 let mainWindow: BrowserWindow | null = null
 let database: OpenedDatabase | null = null
+let scheduler: Scheduler | null = null
+let tray: Tray | null = null
+// "Sair" na bandeja (ou o Windows encerrando): a janela fecha de verdade.
+let quitting = false
+// O aviso "O Mello continua na bandeja" está na tela, esperando o "Entendi".
+let trayNoticeOpen = false
+
+function send<E extends MelloEvent>(event: E, payload?: EventPayloads[E]): void {
+  mainWindow?.webContents.send(event, payload)
+}
+
+function showWindow(): void {
+  if (!mainWindow) return
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+}
+
+// LEM-07 e P4: com "Manter o Mello na bandeja" (o padrão), fechar a janela só a esconde, e o
+// agendador continua. Na primeira vez, a tela mostra o aviso e esconde no "Entendi"; fechar de
+// novo com o aviso aberto esconde direto. Com a opção desligada, fechar encerra o app.
+function keepInTray(window: BrowserWindow, event: Electron.Event): void {
+  if (quitting || !database) return
+  const current = settings.get(database.db)
+  if (!current['tray.keep']) return
+  event.preventDefault()
+  if (current['tray.noticeShown'] || trayNoticeOpen) {
+    settings.set(database.db, 'tray.noticeShown', true)
+    trayNoticeOpen = false
+    window.hide()
+    return
+  }
+  trayNoticeOpen = true
+  send(EVENTS.trayNotice)
+}
 
 function createWindow(): BrowserWindow {
   const { workAreaSize } = screen.getPrimaryDisplay()
@@ -100,15 +150,46 @@ async function start(): Promise<void> {
   await fs.promises
     .rm(openedCopies, { recursive: true, force: true, maxRetries: 0 })
     .catch((error: unknown) => log.warn('Cópias de anexos não apagadas', error))
+
+  // Agendador (REP-11, LEM): a primeira rodada é agora, antes de a tela abrir, e guarda os
+  // lembretes perdidos com o app fechado para o aviso agrupado (LEM-06).
+  const clock = createClock()
+  scheduler = createScheduler({
+    db: database.db,
+    clock,
+    notifier: electronNotifier((cardId, boardId) => {
+      showWindow()
+      send(EVENTS.openCard, { cardId, boardId })
+    }),
+    onChange: () => send(EVENTS.dataChanged),
+    onError: (error) => log.error('[agendador]', error)
+  })
+  scheduler.start()
+
   registerIpc({
     dataDir: paths.root,
     db: database.db,
-    clock: createClock(),
-    files: { dir: paths.files, system: electronSystem(openedCopies) }
+    clock,
+    files: { dir: paths.files, system: electronSystem(openedCopies) },
+    scheduler,
+    hideToTray: () => {
+      trayNoticeOpen = false
+      mainWindow?.hide()
+    }
   })
 
-  mainWindow = createWindow()
-  mainWindow.on('closed', () => {
+  tray = createTray({
+    open: showWindow,
+    quit: () => {
+      quitting = true
+      app.quit()
+    }
+  })
+
+  const window = createWindow()
+  mainWindow = window
+  window.on('close', (event) => keepInTray(window, event))
+  window.on('closed', () => {
     mainWindow = null
   })
 }
@@ -116,11 +197,8 @@ async function start(): Promise<void> {
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
-    if (!mainWindow) return
-    if (mainWindow.isMinimized()) mainWindow.restore()
-    mainWindow.focus()
-  })
+  // Abrir o Mello de novo traz a janela, mesmo escondida na bandeja.
+  app.on('second-instance', showWindow)
 
   app
     .whenReady()
@@ -134,6 +212,14 @@ if (!app.requestSingleInstanceLock()) {
       app.quit()
     })
 
+  // Com a bandeja, a janela só esconde; ela fecha de verdade com a opção desligada ou no "Sair".
   app.on('window-all-closed', () => app.quit())
-  app.on('will-quit', () => database?.sqlite.close())
+  app.on('before-quit', () => {
+    quitting = true
+  })
+  app.on('will-quit', () => {
+    scheduler?.stop()
+    tray?.destroy()
+    database?.sqlite.close()
+  })
 }

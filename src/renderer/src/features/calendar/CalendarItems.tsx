@@ -1,9 +1,10 @@
 // Os itens de um dia do calendário (Calendario.dc.html e NovoCalendarioTodos.dc.html). Card:
 // etiquetas, ✓, relógio de atraso (CAL-08), título, ↻, prioridade e, em todos os quadros, o nome
 // do quadro (CAL-14); clicar abre o modal por cima (CAL-11). Tarefa: caixa de marcar, texto e o
-// card de origem (CAL-14); clicar marca ou desmarca (CAL-11).
+// card de origem (CAL-14); clicar marca ou desmarca (CAL-11). Repetição que não virou card
+// (REP-14): tracejada, com o aviso embaixo; clicar abre o card mais recente da série.
 import { Link } from 'react-router'
-import type { CalendarCard, CalendarTask } from '../../../../shared/ipc/calendar'
+import type { CalendarCard, CalendarRepeat, CalendarTask } from '../../../../shared/ipc/calendar'
 import { isOverdue } from '../../../../shared/rules/dates'
 import { priorityLevel } from '../../../../shared/rules/priority'
 import { DoneMark } from '../../components/DoneMark'
@@ -18,6 +19,7 @@ import styles from './Calendar.module.css'
 export type DayItem =
   | { kind: 'card'; id: string; card: CalendarCard }
   | { kind: 'task'; id: string; task: CalendarTask }
+  | { kind: 'repeat'; id: string; repeat: CalendarRepeat }
 
 export interface ItemOptions {
   now: number
@@ -137,10 +139,47 @@ function TaskItem({ task, now, strike, allBoards }: { task: CalendarTask } & Ite
   )
 }
 
-export function CalendarItem({ item, ...options }: { item: DayItem } & ItemOptions) {
-  return item.kind === 'card' ? (
-    <CardItem card={item.card} {...options} />
-  ) : (
-    <TaskItem task={item.task} {...options} />
+const REPEAT_NOTES: Record<CalendarRepeat['kind'], string> = {
+  next: 'Próxima repetição',
+  skipped: 'Pulada: a anterior está em aberto',
+  missed: 'Não criada: app fechado'
+}
+
+function RepeatItem({ repeat, allBoards }: { repeat: CalendarRepeat } & ItemOptions) {
+  const priority = priorityLevel(repeat.priority)
+  const note = REPEAT_NOTES[repeat.kind]
+  return (
+    <Link
+      to={{ search: `?card=${repeat.cardId}` }}
+      className={cx(styles.card, styles.ghost, allBoards && styles.cardAll)}
+      aria-label={[repeat.title, allBoards && repeat.boardTitle, note].filter(Boolean).join(', ')}
+    >
+      {repeat.labels.length > 0 && (
+        <span className={styles.labels}>
+          {repeat.labels.map((l) => (
+            <span key={l.id} className={styles.label} style={{ background: l.color }} />
+          ))}
+        </span>
+      )}
+      <span className={styles.cardRow}>
+        <span className={styles.text}>{repeat.title}</span>
+        <span className={styles.repeat}>
+          <Icon name="repeat" size={13} />
+        </span>
+        {priority && (
+          <span className={styles.priority} title={`Prioridade ${priority.name.toLowerCase()}`}>
+            <PriorityIcon value={priority.value} size={15} />
+          </span>
+        )}
+      </span>
+      {allBoards && <span className={styles.sub}>{repeat.boardTitle}</span>}
+      <span className={styles.ghostNote}>{note}</span>
+    </Link>
   )
+}
+
+export function CalendarItem({ item, ...options }: { item: DayItem } & ItemOptions) {
+  if (item.kind === 'card') return <CardItem card={item.card} {...options} />
+  if (item.kind === 'repeat') return <RepeatItem repeat={item.repeat} {...options} />
+  return <TaskItem task={item.task} {...options} />
 }

@@ -321,6 +321,10 @@ function ChecklistSection({
           inputClassName={styles.sectionTitleInput}
           buttonProps={{ ...attributes, ...listeners }}
         />
+        {/* REP-04: a repetição copia o checklist desmarcado (Repeticao.dc.html). */}
+        {card.recurrence?.copyChecklist && (
+          <span className={styles.repeatHint}>Volta desmarcado a cada repetição</span>
+        )}
         {(done > 0 || checklist.hideChecked) && (
           <button
             type="button"

@@ -18,14 +18,23 @@ const store = (key: string, value: string) =>
     .run()
 
 describe('configurações', () => {
-  it('sem nada gravado, valem os padrões (envelhecimento, tarefas e riscado ligados, semana no domingo)', () => {
+  it('sem nada gravado, valem os padrões (envelhecimento, tarefas e riscado ligados, semana no domingo, bandeja ligada)', () => {
     expect(settings.get(t.db)).toEqual({
       'aging.enabled': true,
       'calendar.showTasks': true,
       'calendar.strikeDone': true,
-      'calendar.weekStart': 'sunday'
+      'calendar.weekStart': 'sunday',
+      'tray.keep': true,
+      'tray.noticeShown': false
     })
     expect(settings.get(t.db)).toEqual(SETTING_DEFAULTS)
+  })
+
+  it('o main grava uma chave (o aviso da bandeja); valor fora do schema é recusado', () => {
+    settings.set(t.db, 'tray.noticeShown', true)
+    settings.set(t.db, 'tray.noticeShown', true)
+    expect(settings.get(t.db)['tray.noticeShown']).toBe(true)
+    expect(() => settings.set(t.db, 'calendar.weekStart', 'terça' as 'monday')).toThrow()
   })
 
   it('o valor gravado vale', () => {

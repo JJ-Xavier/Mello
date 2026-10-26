@@ -1,9 +1,10 @@
 // O que o card mostra no quadro (CAR-04): capa, etiquetas, ✓, título, data de entrega, os ícones
-// de descrição, checklist, nota e anexos e a prioridade. Repetição e "Modelo" entram nas etapas 8
-// e 11.
+// de descrição, checklist, nota e anexos, a repetição (REP-13) e a prioridade. "Modelo" entra na
+// etapa 11.
 import type { CardSummary } from '../../../../shared/ipc/cards'
 import { dueDate, isOverdue } from '../../../../shared/rules/dates'
 import { priorityLevel } from '../../../../shared/rules/priority'
+import { nextRepeatText } from '../../../../shared/rules/recurrence'
 import { Cover } from '../../components/Cover'
 import { DoneMark } from '../../components/DoneMark'
 import { Icon } from '../../components/Icon'
@@ -33,6 +34,23 @@ function DueChip({ dueAt, finished, now }: { dueAt: string; finished: boolean; n
   )
 }
 
+// REP-13: ↻ e o próximo dia ("seg." nos próximos 6 dias, "26 out." depois). Pausada (REP-16), só
+// o ↻.
+function RepeatBadge({ next, now }: { next: string | null; now: number }) {
+  const text = next ? nextRepeatText(next, now) : null
+  return (
+    <span
+      className={styles.badge}
+      role="img"
+      aria-label={text ? `Card recorrente, próxima ${text}` : 'Card recorrente, repetição pausada'}
+      title={text ? 'Card recorrente' : 'Repetição pausada'}
+    >
+      <Icon name="repeat" />
+      {text}
+    </span>
+  )
+}
+
 export function CardFace({ card, finished, now, idleDays = null }: CardFaceProps) {
   const priority = priorityLevel(card.priority)
   const hasBadges =
@@ -41,7 +59,8 @@ export function CardFace({ card, finished, now, idleDays = null }: CardFaceProps
     card.hasDescription ||
     card.checkTotal > 0 ||
     card.hasNote ||
-    card.attachmentCount > 0
+    card.attachmentCount > 0 ||
+    card.recurring
 
   return (
     <>
@@ -108,6 +127,7 @@ export function CardFace({ card, finished, now, idleDays = null }: CardFaceProps
                 {card.attachmentCount}
               </span>
             )}
+            {card.recurring && <RepeatBadge next={card.nextRepeat} now={now} />}
             {priority && (
               <span
                 className={styles.priority}

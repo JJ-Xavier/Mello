@@ -29,6 +29,29 @@ describe('ATV-02: o texto de cada registro', () => {
 
   it('registro com os dados faltando não quebra', () => {
     expect(activityText(entry('created'))).toBe('Criado em ')
+    expect(activityText(entry('from_recurrence'))).toBe('Criado pela repetição')
+    expect(activityText(entry('recurrence_missed', { count: 3 }))).toBe(
+      '3 repetições não criadas: app fechado'
+    )
+  })
+
+  it('repetição: criado (REP-12), pulada (REP-08) e não criadas com o app fechado (REP-10)', () => {
+    expect(activityText(entry('from_recurrence', { date: '2026-10-26T08:00' }))).toBe(
+      'Criado pela repetição de seg., 26 de out.'
+    )
+    expect(activityText(entry('recurrence_skipped', { date: '2026-10-26T08:00' }))).toBe(
+      'Repetição de seg., 26 de out. pulada: este card ainda não foi concluído'
+    )
+    expect(
+      activityText(
+        entry('recurrence_missed', { from: '2026-10-22T08:00', to: '2026-10-22T08:00', count: 1 })
+      )
+    ).toBe('Repetição de qui., 22 de out. não criada: app fechado')
+    expect(
+      activityText(
+        entry('recurrence_missed', { from: '2026-10-22T08:00', to: '2026-10-30T08:00', count: 9 })
+      )
+    ).toBe('9 repetições não criadas, de qui., 22 de out. a sex., 30 de out.: app fechado')
   })
 
   it('ATV-01: "1 registro", "2 registros"', () => {

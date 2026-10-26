@@ -53,6 +53,12 @@ import type {
 } from './files'
 import type { DevClock, SetClockInput } from './dev'
 import type { CreateLabelInput, Label, LabelIdInput, UpdateLabelInput } from './labels'
+import type {
+  MissedReminder,
+  OccurrenceIdInput,
+  OpenCardEvent,
+  SaveRecurrenceInput
+} from './recurrence'
 import type { Settings } from './settings'
 
 export const CHANNELS = {
@@ -110,8 +116,31 @@ export const CHANNELS = {
   calendarAddCard: 'calendar:addCard',
   settingsGet: 'settings:get',
   devClock: 'dev:clock',
-  devSetClock: 'dev:setClock'
+  devSetClock: 'dev:setClock',
+  recurrenceSave: 'recurrence:save',
+  recurrenceRemove: 'recurrence:remove',
+  recurrenceCreateAnyway: 'recurrence:createAnyway',
+  recurrenceDismiss: 'recurrence:dismiss',
+  remindersMissed: 'reminders:missed',
+  appHideToTray: 'app:hideToTray'
 } as const
+
+// Avisos do main para a tela (sem resposta): o agendador mudou dados (o cache é recarregado), a
+// notificação de um lembrete foi clicada (abre o card) e a janela foi fechada pela primeira vez
+// com o Mello na bandeja (P4).
+export const EVENTS = {
+  dataChanged: 'data:changed',
+  openCard: 'app:openCard',
+  trayNotice: 'tray:notice'
+} as const
+
+export interface EventPayloads {
+  [EVENTS.dataChanged]: undefined
+  [EVENTS.openCard]: OpenCardEvent
+  [EVENTS.trayNotice]: undefined
+}
+
+export type MelloEvent = keyof EventPayloads
 
 export interface AppInfo {
   version: string
@@ -122,6 +151,8 @@ export interface AppInfo {
 export interface MelloApi {
   app: {
     info(): Promise<Result<AppInfo>>
+    // "Entendi" no aviso da bandeja: esconde a janela e não avisa mais (P4).
+    hideToTray(): Promise<Result<null>>
   }
   boards: {
     list(): Promise<Result<BoardSummary[]>>
@@ -202,24 +233,46 @@ export interface MelloApi {
     clock(): Promise<Result<DevClock>>
     setClock(input: SetClockInput): Promise<Result<DevClock>>
   }
+  recurrence: {
+    // Cria ou altera a repetição da série do card.
+    save(input: SaveRecurrenceInput): Promise<Result<null>>
+    remove(input: CardIdInput): Promise<Result<null>>
+    // O aviso de repetição pulada (REP-09).
+    createAnyway(input: OccurrenceIdInput): Promise<Result<CardSummary>>
+    dismiss(input: OccurrenceIdInput): Promise<Result<null>>
+  }
+  reminders: {
+    // Os lembretes perdidos com o app fechado (LEM-06). Cada lista vem uma vez só.
+    missed(): Promise<Result<MissedReminder[]>>
+  }
+  events: {
+    // Devolve a função que para de ouvir.
+    on<E extends MelloEvent>(event: E, listener: (payload: EventPayloads[E]) => void): () => void
+  }
 }
+
+type Subscribe = (channel: string, listener: (payload: unknown) => void) => () => void
 
 // Monta window.mello a partir de uma função que entrega (canal, entrada) ao main. O preload passa
 // o ipcRenderer.invoke; os testes da tela passam as rotas do main direto.
 // pathOf dá o caminho de um arquivo solto no modal (no preload, webUtils.getPathForFile). Ele só
 // existe para arquivos de verdade vindos do Windows: um File criado pela tela não tem caminho, e o
 // caminho nunca volta para a tela.
+// subscribe ouve um aviso do main (no preload, ipcRenderer.on); só os nomes de EVENTS passam.
 export function createApi(
   invoke: (channel: string, input?: unknown) => Promise<unknown>,
-  pathOf: (file: File) => string = () => ''
+  pathOf: (file: File) => string = () => '',
+  subscribe: Subscribe = () => () => {}
 ): MelloApi {
   const call =
     <T>(channel: string) =>
     (input?: unknown) =>
       invoke(channel, input) as Promise<Result<T>>
+  const known = new Set<string>(Object.values(EVENTS))
   return {
     app: {
-      info: call(CHANNELS.appInfo)
+      info: call(CHANNELS.appInfo),
+      hideToTray: call(CHANNELS.appHideToTray)
     },
     boards: {
       list: call(CHANNELS.boardsList),
@@ -299,6 +352,21 @@ export function createApi(
     dev: {
       clock: call(CHANNELS.devClock),
       setClock: call(CHANNELS.devSetClock)
+    },
+    recurrence: {
+      save: call(CHANNELS.recurrenceSave),
+      remove: call(CHANNELS.recurrenceRemove),
+      createAnyway: call(CHANNELS.recurrenceCreateAnyway),
+      dismiss: call(CHANNELS.recurrenceDismiss)
+    },
+    reminders: {
+      missed: call(CHANNELS.remindersMissed)
+    },
+    events: {
+      on: (event, listener) => {
+        if (!known.has(event)) return () => {}
+        return subscribe(event, (payload) => listener(payload as never))
+      }
     }
   }
 }

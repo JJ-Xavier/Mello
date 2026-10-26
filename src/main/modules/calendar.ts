@@ -1,5 +1,5 @@
-// Calendário (CAL): os cards e as tarefas de um mês, de um quadro ou de todos (CAL-02), e o
-// "Adicionar" de um dia (CAL-12).
+// Calendário (CAL): os cards, as tarefas e as repetições fantasma (REP-14) de um mês, de um quadro
+// ou de todos (CAL-02), e o "Adicionar" de um dia (CAL-12).
 import { and, asc, eq, gte, inArray, isNull, lt, type SQL } from 'drizzle-orm'
 import type {
   CalendarAddCardInput,
@@ -14,6 +14,7 @@ import type { Db, DbOrTx } from '../db/client'
 import { board, card, cardLabel, checklist, checklistItem, label, list } from '../db/schema'
 import { activeLists } from './boards'
 import { create } from './cards'
+import { calendarRepeats, seriesState } from './recurrence'
 
 // CAL-06: ficam de fora os cards arquivados, os modelos, os de lista arquivada e os de quadro
 // fechado (QUA-05). Quadros-modelo (etapa 11) também.
@@ -97,15 +98,20 @@ export function month(db: DbOrTx, input: CalendarMonthInput): CalendarMonth {
     .orderBy(asc(checklistItem.dueDate), asc(checklist.position), asc(checklistItem.position))
     .all()
 
+  const series = seriesState(
+    db,
+    rows.flatMap((r) => (r.recurrenceId === null ? [] : [r.recurrenceId]))
+  )
   return {
     cards: rows.map(({ isDoneList, recurrenceId, dueAt, ...row }) => ({
       ...row,
       dueAt: dueAt!,
       finished: isFinished(row.isDone, { isDoneList }),
-      recurring: recurrenceId !== null,
+      recurring: recurrenceId !== null && series.get(recurrenceId)?.recurring === true,
       labels: labelsOf.get(row.id) ?? []
     })),
-    tasks: tasks.map(({ dueDate, ...task }) => ({ ...task, dueDate: dueDate! }))
+    tasks: tasks.map(({ dueDate, ...task }) => ({ ...task, dueDate: dueDate! })),
+    repeats: calendarRepeats(db, { from, to, boardId: input.boardId })
   }
 }
 

@@ -381,6 +381,20 @@
   gap: 3px;
 }
 
+/* REP-14: repetição que não virou card, tracejada (Calendario.dc.html). */
+.ghost {
+  border: 1px dashed var(--cal-out);
+  background: transparent;
+  color: var(--txt);
+  opacity: 0.85;
+}
+
+.ghostNote {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--cal-note);
+}
+
 .labels {
   display: flex;
   flex-wrap: wrap;

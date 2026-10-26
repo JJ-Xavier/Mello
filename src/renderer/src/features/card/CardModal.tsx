@@ -1,8 +1,9 @@
 // Modal do card (Card.dc.html, 1160 × 804 px; com capa, NovoCardCapaAnexos.dc.html, 836 px). Abre
 // por cima da tela atual quando o endereço tem ?card=<id>, então o mesmo modal serve ao quadro e
 // ao calendário (CAL-11).
-// Coluna da esquerda: lista, ✓, título, Adicionar, Checklist, Anexo, etiquetas, prioridade, data de
-// entrega, última movimentação, anexos, descrição e checklists. Campos vazios não aparecem: o
+// Coluna da esquerda: lista, ✓, título, o aviso de repetição pulada (REP-08), Adicionar,
+// Checklist, Anexo, Repetir (Repeticao.dc.html), etiquetas, prioridade, data de entrega,
+// repetição, última movimentação, anexos, descrição e checklists. Campos vazios não aparecem: o
 // "Adicionar" inclui (decidido em 23/10/2026). Coluna da direita: nota e atividade. A capa é a
 // faixa do topo. Arquivos soltos em qualquer parte do modal são anexados.
 import {
@@ -20,6 +21,7 @@ import { CHECKLIST_TITLE_MAX } from '../../../../shared/limits'
 import { isOverdue } from '../../../../shared/rules/dates'
 import { isFinished } from '../../../../shared/rules/finished'
 import { priorityLevel } from '../../../../shared/rules/priority'
+import { recurrenceSummary } from '../../../../shared/rules/recurrence'
 import { Cover } from '../../components/Cover'
 import { DoneMark } from '../../components/DoneMark'
 import { EditableTitle } from '../../components/EditableTitle'
@@ -33,6 +35,8 @@ import { formatDateTime, formatDue } from '../../lib/format'
 import { useAction, useBoard, useCard, useLabels } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
 import { useNow } from '../../lib/useNow'
+import { RepeatDialog } from '../recurrence/RepeatDialog'
+import { SkipNotice } from '../recurrence/SkipNotice'
 import { Activity } from './Activity'
 import { AgingStatus } from './AgingStatus'
 import { Attachments } from './Attachments'
@@ -191,6 +195,7 @@ function Fields({ card, now }: { card: CardDetail; now: number }) {
   const labelsId = useId()
   const priorityId = useId()
   const dueId = useId()
+  const repeatId = useId()
   const { data: labels = [] } = useLabels(card.boardId)
   const chosen = labels.filter((l) => card.labelIds.includes(l.id))
   const priority = priorityLevel(card.priority)
@@ -256,6 +261,30 @@ function Fields({ card, now }: { card: CardDetail; now: number }) {
           </Popover>
         </div>
       )}
+      {card.recurrence && (
+        <div>
+          <p className={styles.lab}>Repetição</p>
+          <button
+            type="button"
+            className={cx(styles.outline, styles.strong)}
+            popoverTarget={repeatId}
+          >
+            <Icon name="repeat" />
+            {recurrenceSummary(card.recurrence)}
+            {card.recurrence.paused && (
+              <span className={styles.pausedTag} title="A lista de destino não está ativa">
+                Pausada
+              </span>
+            )}
+            {!card.recurrence.paused && card.recurrence.next === null && (
+              <span className={styles.pausedTag}>Terminou</span>
+            )}
+          </button>
+          <Popover id={repeatId} label="Repetir card" width={400}>
+            {(close) => <RepeatDialog card={card} close={close} />}
+          </Popover>
+        </div>
+      )}
       <div>
         <p className={styles.lab}>Última movimentação</p>
         <div className={styles.lastMove}>
@@ -306,10 +335,13 @@ function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => v
   const menuId = useId()
   const addId = useId()
   const checklistId = useId()
+  const repeatId = useId()
   const now = useNow()
   const act = useCardAction(card)
   const attach = useAttach(card)
   const [dropping, setDropping] = useState(false)
+  // O diálogo "Repetir card" aberto: o botão fica destacado (Repeticao.dc.html).
+  const [repeating, setRepeating] = useState(false)
   const finished = isFinished(card.isDone, card)
 
   // Soltar arquivos do Explorer em qualquer parte do modal anexa (ANX-01). Na fase de captura,
@@ -404,6 +436,11 @@ function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => v
               inputClassName={styles.titleInput}
             />
           </div>
+          {card.skipNotice && (
+            <div className={styles.indented}>
+              <SkipNotice card={card} notice={card.skipNotice} />
+            </div>
+          )}
           <div className={styles.actions}>
             <button type="button" className={styles.outline} popoverTarget={addId}>
               <Icon name="plus" />
@@ -428,10 +465,18 @@ function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => v
               <Icon name="attachment" />
               Anexo
             </button>
-            <button type="button" className={styles.outline} disabled title="Chega na etapa 8">
+            <button
+              type="button"
+              className={cx(styles.outline, repeating && styles.outlineOpen)}
+              aria-expanded={repeating}
+              popoverTarget={repeatId}
+            >
               <Icon name="repeat" />
               Repetir
             </button>
+            <Popover id={repeatId} label="Repetir card" width={400} onToggle={setRepeating}>
+              {(close) => <RepeatDialog card={card} close={close} />}
+            </Popover>
           </div>
           <Fields card={card} now={now} />
           <Attachments card={card} attach={attach} />

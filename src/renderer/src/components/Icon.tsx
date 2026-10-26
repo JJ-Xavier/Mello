@@ -115,6 +115,26 @@ const paths = {
   move: <path d="M5 12h14M13 6l6 6-6 6" />,
   // Filtro "Tarefas do checklist" do calendário (Calendario.dc.html)
   square: <rect x="3" y="3" width="18" height="18" rx="3" />,
+  // Aviso de repetição pulada (Repeticao.dc.html), lembretes perdidos e bandeja
+  // (NovosEstados.dc.html)
+  warning: (
+    <>
+      <path d="M12 9v4M12 17h.01" />
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
+    </>
+  ),
+  tray: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 15h18M15 18h2" />
+    </>
+  ),
   copy: (
     <>
       <rect x="8" y="8" width="13" height="13" rx="2" />

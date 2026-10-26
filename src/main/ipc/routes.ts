@@ -46,9 +46,11 @@ import {
 } from '../../shared/ipc/files'
 import { setClockInput } from '../../shared/ipc/dev'
 import { createLabelInput, labelIdInput, updateLabelInput } from '../../shared/ipc/labels'
+import { occurrenceIdInput, saveRecurrenceInput } from '../../shared/ipc/recurrence'
 import { AppError } from '../../shared/result'
 import type { Clock } from '../clock'
 import type { Db } from '../db/client'
+import type { Scheduler } from '../scheduler'
 import * as attachments from '../modules/attachments'
 import * as boards from '../modules/boards'
 import * as calendar from '../modules/calendar'
@@ -57,6 +59,7 @@ import * as checklists from '../modules/checklists'
 import { createPicks, type FileStore } from '../modules/files'
 import * as labels from '../modules/labels'
 import * as lists from '../modules/lists'
+import * as recurrence from '../modules/recurrence'
 import * as settings from '../modules/settings'
 import { createHandler, type Handler } from './handler'
 
@@ -67,12 +70,25 @@ export interface RouteContext {
   clock: Clock
   // Pasta dos arquivos guardados e o que o main usa do Windows (janela de abrir, programa padrão).
   files: FileStore
+  // O agendador (repetições e lembretes): roda de novo quando o relógio de teste muda e guarda os
+  // lembretes perdidos. Sem ele (testes da tela), não há lembretes perdidos.
+  scheduler?: Pick<Scheduler, 'tick' | 'takeMissed'>
+  // Esconder a janela na bandeja ("Entendi" no aviso da bandeja, P4).
+  hideToTray?: () => void
   onUnexpectedError?: (channel: string, error: unknown) => void
 }
 
 export type Routes = Map<string, Handler<unknown>>
 
-export function createRoutes({ db, app, clock, files, onUnexpectedError }: RouteContext): Routes {
+export function createRoutes({
+  db,
+  app,
+  clock,
+  files,
+  scheduler,
+  hideToTray,
+  onUnexpectedError
+}: RouteContext): Routes {
   const routes: Routes = new Map()
   const now = () => clock.now()
   const none = z.undefined()
@@ -238,8 +254,33 @@ export function createRoutes({ db, app, clock, files, onUnexpectedError }: Route
       throw new AppError('CONFLICT', 'O relógio de teste só existe no modo de desenvolvimento.')
     }
     clock.setOffset(offset)
+    // O relógio andou: as repetições e os lembretes que venceram nesse intervalo saem agora.
+    scheduler?.tick()
     return { offset }
   })
+
+  // Repetição (REP). Configurar e remover zeram o envelhecimento do card (ENV-05).
+  route(CHANNELS.recurrenceSave, saveRecurrenceInput, ({ cardId, rule }) =>
+    done(() => recurrence.save(db, cardId, rule, now()))
+  )
+  route(CHANNELS.recurrenceRemove, cardIdInput, ({ cardId }) =>
+    done(() => recurrence.remove(db, cardId, now()))
+  )
+  route(CHANNELS.recurrenceCreateAnyway, occurrenceIdInput, ({ occurrenceId }) =>
+    cards.summaryOf(db, recurrence.createAnyway(db, occurrenceId, now()))
+  )
+  route(CHANNELS.recurrenceDismiss, occurrenceIdInput, ({ occurrenceId }) =>
+    done(() => recurrence.dismiss(db, occurrenceId, now()))
+  )
+
+  // Lembretes perdidos com o app fechado (LEM-06) e o aviso da bandeja (P4).
+  route(CHANNELS.remindersMissed, none, () => scheduler?.takeMissed() ?? [])
+  route(CHANNELS.appHideToTray, none, () =>
+    done(() => {
+      settings.set(db, 'tray.noticeShown', true)
+      hideToTray?.()
+    })
+  )
 
   return routes
 }
