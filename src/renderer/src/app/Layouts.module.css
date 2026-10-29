@@ -15,6 +15,7 @@
 /* Área do quadro e do calendário do quadro: a barra flutuante fica por cima, embaixo. */
 .boardArea {
   position: relative;
+  isolation: isolate;
   flex: 1;
   min-height: 0;
   overflow: hidden;

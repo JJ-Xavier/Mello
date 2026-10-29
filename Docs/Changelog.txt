@@ -4,6 +4,51 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.9.0 — Etapa 9: fundo do quadro (29/10/2026)
+
+Adicionado
+- Editor de fundo (tela 6), aberto pelo "Alterar fundo" do quadro e do calendário do quadro: a
+  prévia ao vivo com o quadro em miniatura (as listas e os cards de verdade) e as abas Imagem,
+  Cor e Gradiente, com as 8 cores e os 6 gradientes do protótipo (FUN-01). Nada muda no quadro
+  até "Aplicar ao quadro"; Cancelar, o X e "Voltar ao quadro" descartam (FUN-07).
+- Imagem por clique ou arrastando, JPG, PNG ou WEBP de até 25 MB, conferida pelo conteúdo antes
+  de copiar (FUN-02). A miniatura mostra o recorte que aparece na tela, com o nome e o tamanho
+  ("Retrato 1080 × 1920 → recortado para a tela (16:10)").
+- Ajuste automático (FUN-04): foco na célula da grade 3 × 3 com mais detalhe, zoom de 112% fora
+  do centro, desfoque de 6 px na imagem carregada e o menor escurecer que deixa o texto
+  legível. Mexer num ajuste desliga o automático e mostra "Restaurar automático" (FUN-05); a
+  caixa "Ajuste automático" também liga e desliga; os selos "Auto" mostram o que vale.
+- Indicador de legibilidade: "Cards legíveis sobre este fundo" ou "Pouco contraste: aumente o
+  escurecer ou o desfoque" (FUN-06).
+- O fundo de imagem no quadro e no calendário do quadro, por inteiro (foco, zoom, desfoque e
+  escurecer), e nas miniaturas do Início, de "Mudar de quadros", dos quadros fechados e do
+  seletor do calendário, com o foco e o escurecer (FUN-03, FUN-08).
+- Tom do envelhecimento tirado da cor média da imagem (FUN-09): com a foto de montanhas do
+  protótipo, um bege perto do #d8bd9b original.
+
+Mudou
+- Canais novos: boards:uploadBackground e boards:setBackground. BoardSummary traz background
+  (tipo, valor, endereço e tamanho da imagem, ajustes) no lugar de bgKind e bgValue.
+- O protocolo mello-arquivo:// responde com CORS, para a tela ler os pixels da imagem de fundo
+  num canvas (ajuste automático). Ele continua só lendo a pasta de arquivos.
+- file.avg_color passa a ser usado: a cor média da imagem de fundo, guardada no primeiro uso.
+
+Decisões da etapa
+- Os controles do ajuste ficam sempre liberados: mexer desliga o automático (FUN-05). No
+  protótipo, as barras ficavam travadas com o automático ligado.
+- O contraste estimado (FUN-04 e FUN-06) é o do texto branco contra a luminância média do fundo
+  escurecido mais um desvio padrão; o desfoque reduz o desvio até sumir em 20 px. O foco só sai
+  do centro com pelo menos 10% mais detalhe. O limite de imagem carregada (24) foi calibrado com
+  os papéis de parede do Windows.
+- O nome do arquivo não é guardado: aparece logo depois do envio; ao reabrir, "Imagem do
+  quadro". Uma imagem enviada e não aplicada sai na limpeza dos arquivos sem uso (etapa 10).
+
+Testes
+- 25 novos (529 no total): o ajuste automático e a legibilidade com imagens sintéticas, o
+  recorte, a miniatura, enviar e aplicar no main (com as recusas), a tabela do envelhecimento e
+  o editor na tela. Capturas do editor e do fundo aplicado conferidas no app real.
+
+
 0.8.0 — Etapa 8: agendador, repetição e lembretes (26 a 28/10/2026)
 
 Adicionado

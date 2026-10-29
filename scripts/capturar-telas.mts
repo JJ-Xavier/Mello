@@ -14,7 +14,7 @@ import os from 'node:os'
 import path from 'node:path'
 import playwright, { type ElectronApplication, type Page } from 'playwright-core'
 
-const STAGE = 8
+const STAGE = 9
 const THEMES = ['escuro', 'claro']
 
 const root = path.resolve(import.meta.dirname, '..')
@@ -158,11 +158,49 @@ async function writePhoto(page: Page, name: string, stops: [number, string][]) {
   return file
 }
 
-// Anexa pelos canais de verdade: a janela "Abrir" (trocada) devolve os arquivos.
-async function attach(app: ElectronApplication, page: Page, cardId: string, files: string[]) {
+// Foto em retrato, como a "montanhas.jpg" da tela 6 (1080 × 1920): o céu e as montanhas do
+// fundo do protótipo, desenhados no canvas da janela e salvos como JPG.
+async function writeMountains(page: Page, name: string): Promise<string> {
+  const base64 = (await page.evaluate(`(async () => {
+    const canvas = new OffscreenCanvas(1080, 1920)
+    const context = canvas.getContext('2d')
+    const sky = context.createLinearGradient(0, 0, 0, 1920)
+    for (const [offset, color] of [[0, '#f7d6b5'], [0.45, '#e7c3a6'], [0.75, '#a9abb8'], [1, '#6d7387']]) {
+      sky.addColorStop(offset, color)
+    }
+    context.fillStyle = sky
+    context.fillRect(0, 0, 1080, 1920)
+    const ridges = [
+      ['M0 560 L120 500 L220 530 L360 440 L470 500 L600 430 L720 480 L860 400 L980 470 L1120 420 L1260 480 L1440 430 V900 H0Z', 'rgba(180,179,189,0.7)'],
+      ['M0 640 L140 560 L260 600 L420 520 L540 590 L700 520 L820 470 L990 460 L1080 540 L1220 500 L1340 560 L1440 520 V900 H0Z', '#8a8ea3'],
+      ['M0 720 L180 640 L320 690 L480 610 L620 680 L760 600 L900 660 L1060 590 L1200 650 L1320 610 L1440 660 V900 H0Z', '#5b6079'],
+      ['M0 800 L160 740 L300 780 L460 720 L640 790 L820 730 L980 790 L1160 740 L1300 780 L1440 750 V900 H0Z', '#33374b']
+    ]
+    context.setTransform(0.75, 0, 0, 0.75, 0, 1920 - 900 * 0.75)
+    for (const [d, color] of ridges) {
+      context.fillStyle = color
+      context.fill(new Path2D(d))
+    }
+    const bytes = new Uint8Array(await (await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.9 })).arrayBuffer())
+    let binary = ''
+    for (const byte of bytes) binary += String.fromCharCode(byte)
+    return btoa(binary)
+  })()`)) as string
+  const file = path.join(userDir, name)
+  fs.writeFileSync(file, Buffer.from(base64, 'base64'))
+  return file
+}
+
+// Troca a janela "Abrir" do Windows: a próxima escolha devolve estes arquivos.
+async function chooseFiles(app: ElectronApplication, files: string[]) {
   await app.evaluate(({ dialog }, chosen) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: chosen })
   }, files)
+}
+
+// Anexa pelos canais de verdade: a janela "Abrir" (trocada) devolve os arquivos.
+async function attach(app: ElectronApplication, page: Page, cardId: string, files: string[]) {
+  await chooseFiles(app, files)
   const picked = await mello<{ token: string }[]>(page, 'files.pick', { imagesOnly: false })
   await mello(page, 'attachments.add', { cardId, tokens: picked.map((p) => p.token) })
   const detail = await mello<{ attachments: { name: string; fileId: string }[] }>(
@@ -780,6 +818,66 @@ try {
 
     await go(page, '#/settings')
     await shot(page, '07-configuracoes', theme)
+  }
+
+  // Etapa 9: editor de fundo (tela 6). A janela "Abrir" (trocada) devolve a foto em retrato; a
+  // tela lê os pixels pelo protocolo (com CORS) e calcula o ajuste automático (FUN-04).
+  const mountains = await writeMountains(page, 'montanhas.jpg')
+  const openEditor = async () => {
+    await go(page, `#/boards/${casa.id}`)
+    await page.getByRole('link', { name: 'Alterar fundo' }).click()
+    const editor = page.getByRole('complementary', { name: 'Editor de fundo' })
+    await editor.waitFor()
+    return editor
+  }
+  const uploadMountains = async (editor: ReturnType<Page['getByRole']>) => {
+    await editor.getByRole('tab', { name: 'Imagem' }).click()
+    await chooseFiles(app, [mountains])
+    await editor.getByRole('button', { name: /Enviar imagem/ }).click()
+    await editor.getByText('Ajustado automaticamente').waitFor()
+    await page.waitForTimeout(400)
+  }
+  for (const theme of THEMES) {
+    await setTheme(theme)
+    const editor = await openEditor()
+    await page.waitForTimeout(300)
+    await shot(page, '06-fundo-gradiente', theme)
+    await editor.getByRole('tab', { name: 'Cor' }).click()
+    await editor.getByRole('button', { name: 'Azul-petróleo' }).click()
+    await shot(page, '06-fundo-cor', theme)
+    await uploadMountains(editor)
+    await shot(page, '06-fundo-imagem', theme)
+    await editor.getByRole('slider', { name: /ESCURECER/ }).fill('0')
+    await page.waitForTimeout(250)
+    await shot(page, '06-fundo-ajuste-manual', theme)
+    await editor.getByRole('link', { name: 'Cancelar' }).click()
+    await page.getByRole('heading', { name: 'Casa' }).waitFor()
+  }
+  // Aplica a foto no quadro "Casa" (FUN-08): as capturas seguintes têm o fundo de imagem, como
+  // as telas 2 e 8 do protótipo.
+  await setTheme('escuro')
+  await uploadMountains(await openEditor())
+  await page.getByRole('button', { name: 'Aplicar ao quadro' }).click()
+  await page.getByRole('heading', { name: 'Casa' }).waitFor()
+  const applied = await mello<{ background: object; bgTone: string }>(page, 'boards.get', {
+    boardId: casa.id
+  })
+  console.log(`Fundo aplicado: ${JSON.stringify(applied.background)}, tom ${applied.bgTone}`)
+  for (const theme of THEMES) {
+    await setTheme(theme)
+    await go(page, `#/boards/${casa.id}`)
+    await page.getByRole('heading', { name: 'Casa' }).waitFor()
+    await page.waitForTimeout(400)
+    await shot(page, '06-fundo-no-quadro', theme)
+    await go(page, `#/boards/${casa.id}/calendar`)
+    await page.getByRole('link', { name: /Consertar a torneira/ }).waitFor()
+    await page.mouse.move(2, 600)
+    await page.waitForTimeout(300)
+    await shot(page, '06-fundo-calendario', theme)
+    await go(page, '#/')
+    await page.getByRole('button', { name: 'Criar novo quadro' }).waitFor()
+    await page.waitForTimeout(300)
+    await shot(page, '06-fundo-miniatura', theme)
   }
 
   // Etapa 6: envelhecimento (telas 2 e 8, e o indicador da tela 4). O selo do relógio de teste

@@ -23,7 +23,7 @@ export function installRealApi(options: { now?: () => number; dev?: boolean } = 
   const tray = { hidden: 0 }
   const routes = createRoutes({
     db,
-    app: { version: '0.8.0', dataDir: 'C:\\dados', dev: options.dev ?? true },
+    app: { version: '0.9.0', dataDir: 'C:\\dados', dev: options.dev ?? true },
     clock: createClock(options.now),
     files: files.store,
     scheduler: { tick: () => {}, takeMissed: () => missed.splice(0) },

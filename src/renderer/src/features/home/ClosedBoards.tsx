@@ -34,7 +34,7 @@ export function ClosedBoards({ close }: { close: () => void }) {
       {closed.map((board) => (
         <div key={board.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div className={styles.closedItem}>
-            <BoardThumb kind={board.bgKind} value={board.bgValue} />
+            <BoardThumb background={board.background} />
             <span className={styles.closedText}>
               <span className={styles.closedTitle}>{board.title}</span>
               <span className={styles.closedWhen}>

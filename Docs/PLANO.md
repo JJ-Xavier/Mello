@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026 e etapa 8 em 28/10/2026**; a etapa 8 aguarda o commit (uma parte já foi commitada em 26/10). A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 e etapa 9 em 29/10/2026**; a etapa 9 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -471,8 +471,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** com o relógio adiantado, uma repetição semanal cria o card, pula quando o anterior está aberto e mostra tudo no calendário; um lembrete "No horário" aparece como notificação.
 - **Testes:** seção 6.4 completa; REP-01..17; LEM-01..07 com relógio falso.
 
-### Etapa 9 — Fundo do quadro
+### Etapa 9 — Fundo do quadro ✅ concluída em 29/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 529 testes no total (25 novos), lint e tipos limpos; capturas conferidas com a tela 6 nos dois temas, com o quadro, o calendário e o Início usando uma foto em retrato gerada pelo script. O editor é uma rota própria (`#/boards/:boardId/background`); o fundo chega à tela em `BoardSummary.background` e é desenhado por `BoardBackdrop`. O ajuste automático é puro (`shared/rules/backgroundAuto.ts`), sobre a cópia de 64 × 40 que a tela tira com o Chromium; para isso, o protocolo `mello-arquivo://` passou a responder com CORS. Canais novos `boards:uploadBackground` e `boards:setBackground`. Decisões da etapa: os controles ficam sempre liberados (mexer desliga o automático, FUN-05); o contraste estimado é a média mais um desvio padrão, que o desfoque reduz; o limite de "imagem carregada" foi calibrado com os papéis de parede do Windows; o nome do arquivo não é guardado. Versão 0.9.0. Detalhes no `Changelog.txt`.
 - **Entrega:** editor de fundo (prévia ao vivo com o quadro em miniatura; abas Imagem, Cor e Gradiente; envio por clique ou arrastando; ajuste automático com foco 3 × 3, zoom, escurecer e desfoque; indicador de legibilidade; "Restaurar automático"; Cancelar e "Aplicar ao quadro"); as 8 cores e os 6 gradientes do protótipo; o fundo no quadro, no calendário e na miniatura do Início; o tom do envelhecimento derivado da imagem.
 - **Telas:** 6, 1 (miniatura).
 - **Aceite:** uma foto clara recebe escurecimento automático e fica legível; mexer num controle desliga o "Auto"; restaurar volta aos valores automáticos.

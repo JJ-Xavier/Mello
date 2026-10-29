@@ -1,5 +1,8 @@
 // Protocolo mello-arquivo://arquivos/<sha256>.<ext>: entrega à tela as imagens e os anexos guardados
 // em %APPDATA%\Mello\arquivos, e nada além disso. Qualquer endereço fora do formato vira 404.
+// Responde com CORS liberado: a tela lê os pixels da imagem de fundo num canvas para o ajuste
+// automático (FUN-04), e sem isso o canvas fica bloqueado. O protocolo só lê, e só a tela do app o
+// conhece.
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { net, protocol } from 'electron'
@@ -12,7 +15,13 @@ export function registerFileSchemeAsPrivileged(): void {
   protocol.registerSchemesAsPrivileged([
     {
       scheme: FILE_SCHEME,
-      privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true }
+      privileges: {
+        standard: true,
+        secure: true,
+        supportFetchAPI: true,
+        stream: true,
+        corsEnabled: true
+      }
     }
   ])
 }
@@ -42,7 +51,10 @@ export function registerFileProtocol(filesDir: string): void {
     const full = resolveFileRequest(request.url, filesDir)
     if (full === null) return new Response('Não encontrado', { status: 404 })
     try {
-      return await net.fetch(pathToFileURL(full).toString())
+      const response = await net.fetch(pathToFileURL(full).toString())
+      const headers = new Headers(response.headers)
+      headers.set('Access-Control-Allow-Origin', '*')
+      return new Response(response.body, { status: response.status, headers })
     } catch {
       return new Response('Não encontrado', { status: 404 })
     }

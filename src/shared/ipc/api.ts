@@ -3,6 +3,7 @@
 import type { Result } from '../result'
 import type {
   ArchivedItems,
+  BackgroundImage,
   BoardDetail,
   BoardIdInput,
   BoardSummary,
@@ -13,9 +14,11 @@ import type {
   MoveBoardInput,
   MoveListInput,
   MoveListToBoardInput,
+  SetBackgroundInput,
   SortListInput,
   UpdateBoardInput,
-  UpdateListInput
+  UpdateListInput,
+  UploadBackgroundInput
 } from './boards'
 import type { CalendarAddCardInput, CalendarMonth, CalendarMonthInput } from './calendar'
 import type {
@@ -73,6 +76,8 @@ export const CHANNELS = {
   boardsReopen: 'boards:reopen',
   boardsDelete: 'boards:delete',
   boardsArchived: 'boards:archived',
+  boardsUploadBackground: 'boards:uploadBackground',
+  boardsSetBackground: 'boards:setBackground',
   listsCreate: 'lists:create',
   listsUpdate: 'lists:update',
   listsMove: 'lists:move',
@@ -165,6 +170,9 @@ export interface MelloApi {
     reopen(input: BoardIdInput): Promise<Result<null>>
     delete(input: BoardIdInput): Promise<Result<null>>
     archived(input: BoardIdInput): Promise<Result<ArchivedItems>>
+    // Editor de fundo (FUN-02, FUN-07): guarda a imagem para a prévia; aplicar muda o quadro.
+    uploadBackground(input: UploadBackgroundInput): Promise<Result<BackgroundImage>>
+    setBackground(input: SetBackgroundInput): Promise<Result<null>>
   }
   lists: {
     create(input: CreateListInput): Promise<Result<ListSummary>>
@@ -284,7 +292,9 @@ export function createApi(
       close: call(CHANNELS.boardsClose),
       reopen: call(CHANNELS.boardsReopen),
       delete: call(CHANNELS.boardsDelete),
-      archived: call(CHANNELS.boardsArchived)
+      archived: call(CHANNELS.boardsArchived),
+      uploadBackground: call(CHANNELS.boardsUploadBackground),
+      setBackground: call(CHANNELS.boardsSetBackground)
     },
     lists: {
       create: call(CHANNELS.listsCreate),

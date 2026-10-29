@@ -1,16 +1,14 @@
 import type { CSSProperties } from 'react'
-import { backgroundCss, type BackgroundKind } from '../../../shared/rules/background'
+import { backgroundCss, type BoardBackground } from '../../../shared/rules/background'
 
-// Miniatura do fundo de um quadro (48 × 32 nos menus do protótipo).
+// Miniatura do fundo de um quadro (48 × 32 nos menus do protótipo, FUN-08).
 export function BoardThumb({
-  kind,
-  value,
+  background,
   width = 48,
   height = 32,
   style
 }: {
-  kind: BackgroundKind
-  value: string
+  background: BoardBackground
   width?: number
   height?: number
   style?: CSSProperties
@@ -23,7 +21,7 @@ export function BoardThumb({
         height,
         flex: 'none',
         borderRadius: 4,
-        background: backgroundCss(kind, value),
+        background: backgroundCss(background),
         ...style
       }}
     />

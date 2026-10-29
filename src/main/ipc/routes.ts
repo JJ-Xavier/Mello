@@ -11,9 +11,11 @@ import {
   moveBoardInput,
   moveListInput,
   moveListToBoardInput,
+  setBackgroundInput,
   sortListInput,
   updateBoardInput,
-  updateListInput
+  updateListInput,
+  uploadBackgroundInput
 } from '../../shared/ipc/boards'
 import { calendarAddCardInput, calendarMonthInput } from '../../shared/ipc/calendar'
 import {
@@ -132,6 +134,13 @@ export function createRoutes({
     done(() => boards.remove(db, boardId))
   )
   route(CHANNELS.boardsArchived, boardIdInput, ({ boardId }) => boards.archived(db, boardId))
+  route(CHANNELS.boardsUploadBackground, uploadBackgroundInput, ({ boardId, token }) => {
+    const [pick] = picks.take([token])
+    return boards.uploadBackground(db, files, boardId, pick!, now())
+  })
+  route(CHANNELS.boardsSetBackground, setBackgroundInput, (input) =>
+    done(() => boards.setBackground(db, input, now()))
+  )
 
   route(CHANNELS.listsCreate, createListInput, ({ boardId, title }) =>
     lists.create(db, boardId, title, now())

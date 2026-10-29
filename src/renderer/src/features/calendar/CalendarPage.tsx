@@ -23,6 +23,7 @@ import { cx } from '../../lib/cx'
 import { formatMonth, formatMonthShort, MONTH_NAMES, weekdayNames } from '../../lib/format'
 import { useBoard, useBoards, useCalendar, useSettings } from '../../lib/queries'
 import { useNow } from '../../lib/useNow'
+import { ChangeBackground } from '../background/ChangeBackground'
 import boardStyles from '../board/BoardPage.module.css'
 import { ClosedBoardNotice } from '../board/ClosedBoardNotice'
 import styles from './Calendar.module.css'
@@ -182,7 +183,7 @@ function ScopePicker({
           onClick={() => pick(board.id)}
         >
           <span className={styles.mark}>{current === board.id && <Icon name="check" />}</span>
-          <BoardThumb kind={board.bgKind} value={board.bgValue} width={32} height={22} />
+          <BoardThumb background={board.background} width={32} height={22} />
           <span className={styles.scopeName}>{board.title}</span>
         </button>
       ))}
@@ -334,10 +335,7 @@ function BoardCalendar() {
       <div className={boardStyles.bar}>
         <h1 className={styles.barTitle}>{board.title}</h1>
         <div className={boardStyles.spacer} />
-        <button type="button" className={boardStyles.background} disabled title="Chega na etapa 9">
-          <Icon name="image" />
-          Alterar fundo
-        </button>
+        <ChangeBackground boardId={board.id} />
       </div>
       <MonthWithSettings
         boardId={board.id}

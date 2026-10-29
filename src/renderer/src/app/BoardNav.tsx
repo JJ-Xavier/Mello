@@ -43,7 +43,7 @@ function SwitchBoards({ currentId, close }: { currentId: string; close: () => vo
             background: board.id === currentId ? 'var(--accent-soft)' : undefined
           }}
         >
-          <BoardThumb kind={board.bgKind} value={board.bgValue} />
+          <BoardThumb background={board.background} />
           <span style={{ color: 'var(--strong)', fontWeight: 500 }}>{board.title}</span>
         </Link>
       ))}

@@ -1,7 +1,8 @@
 Referente as boas praticas da LGPD e aplicacões em desenvolvimentos de softwere
 
 Status: aprovado em 21/10/2026; revisado na etapa 1 (pasta do modo de desenvolvimento), na
-etapa 5 (anexos, 24/10/2026) e na etapa 8 (notificações dos lembretes, 26/10/2026). Será revisado
+etapa 5 (anexos, 24/10/2026), na etapa 8 (notificações dos lembretes, 26/10/2026) e na etapa 9
+(imagens de fundo, 29/10/2026). Será revisado
 também nas etapas 10 (backup, exportação e apagar tudo) e 12 (versão final).
 
 
@@ -34,6 +35,12 @@ arrasta para o card; o original continua onde estava, sem mudança. O mesmo arqu
 vezes é guardado uma vez só. Remover um anexo tira ele do card; a cópia guardada sai da pasta na
 limpeza dos arquivos sem uso (etapa 10). Excluir um card também não apaga na hora os arquivos
 dele. "Apagar tudo" apaga a pasta inteira.
+
+Imagens de fundo (etapa 9): a imagem escolhida no editor de fundo é copiada para a mesma pasta,
+do mesmo jeito, já no envio, para aparecer na prévia; se você cancelar, ela sai na limpeza dos
+arquivos sem uso. O ajuste automático é feito no seu computador, a partir de uma cópia reduzida
+(64 × 40 pixels) que fica só na memória; nada é enviado para fora. O nome do arquivo não é
+guardado.
 
 
 3. ONDE OS DADOS FICAM

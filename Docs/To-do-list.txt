@@ -1,8 +1,8 @@
 To-do list — Mello
 
-Atualizado em: 28/10/2026
-Situação: etapa 8 concluída em 28/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
-          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 9.
+Atualizado em: 29/10/2026
+Situação: etapa 9 concluída em 29/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
+          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 10.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -110,11 +110,12 @@ ETAPA 8 — AGENDADOR: REPETIÇÃO E LEMBRETES (concluída em 28/10/2026)
     hora na tarefa (CHK-05), na face e no calendário
 [x] Testes, conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 9 — FUNDO DO QUADRO
-[ ] Editor: imagem, cor, gradiente, prévia ao vivo (FUN-01..03, FUN-07)
-[ ] Ajuste automático, legibilidade, restaurar (FUN-04..06)
-[ ] Fundo no quadro, calendário e miniatura; tom do envelhecimento (FUN-08, FUN-09)
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 9 — FUNDO DO QUADRO (concluída em 29/10/2026)
+[x] Editor: imagem, cor, gradiente, prévia ao vivo (FUN-01..03, FUN-07)
+[x] Ajuste automático, legibilidade, restaurar (FUN-04..06), calibrado com os papéis de parede
+    do Windows
+[x] Fundo no quadro, calendário e miniatura; tom do envelhecimento (FUN-08, FUN-09)
+[x] Testes (529 no total), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 10 — CONFIGURAÇÕES, TEMA, BACKUP E DADOS
 [ ] Aparência, Envelhecimento, Calendário (tela 7)
@@ -153,6 +154,8 @@ PENDÊNCIAS E OBSERVAÇÕES
   (calendar.showTasks, calendar.strikeDone, calendar.weekStart). A seção Envelhecimento grava
   aging.enabled (lida desde a etapa 6) e mostra a prévia dos 6 níveis com o fog() de
   src/renderer/src/lib/fog.ts.
+- Etapa 10: a limpeza dos arquivos sem uso (DAD-08) também apaga as imagens de fundo enviadas
+  no editor e não aplicadas (FUN-02).
 - Etapa 10: a seção "Lembretes e bandeja" das Configurações grava tray.keep (lida desde a etapa
   8) e liga o "Mudar nas Configurações" do aviso da bandeja, hoje apagado. "Iniciar com o
   Windows" (app.autoStart) também entra lá.

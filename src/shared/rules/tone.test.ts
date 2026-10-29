@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BOARD_COLORS, BOARD_GRADIENTS, backgroundCss } from './background'
+import { BOARD_COLORS, BOARD_GRADIENTS, backgroundCss, type BackgroundKind } from './background'
 import { agingTone, averageColor, toneForBackground } from './tone'
 
 function hsl(hex: string): { s: number; l: number } {
@@ -58,14 +58,37 @@ describe('tom do envelhecimento (FUN-09)', () => {
 })
 
 describe('fundo em CSS', () => {
+  const bg = (
+    kind: BackgroundKind,
+    value: string,
+    url: string | null = null,
+    focus = 4,
+    dim = 0
+  ) => ({
+    kind,
+    value,
+    url,
+    focus,
+    dim
+  })
+
   it('gradiente vira o CSS do protótipo; cor vira a própria cor', () => {
-    expect(backgroundCss('gradient', 'mello')).toBe(
+    expect(backgroundCss(bg('gradient', 'mello'))).toBe(
       'linear-gradient(135deg,#1f5eff,#4d8dff 60%,#eef1f6)'
     )
-    expect(backgroundCss('color', '#a54800')).toBe('#a54800')
+    expect(backgroundCss(bg('color', '#a54800'))).toBe('#a54800')
   })
 
   it('um gradiente desconhecido cai no "Mello"', () => {
-    expect(backgroundCss('gradient', 'nao-existe')).toBe(BOARD_GRADIENTS[0]!.css)
+    expect(backgroundCss(bg('gradient', 'nao-existe'))).toBe(BOARD_GRADIENTS[0]!.css)
+  })
+
+  it('FUN-08: a miniatura da imagem, alinhada pelo foco e escurecida', () => {
+    const url = 'mello-arquivo://arquivos/abc.jpg'
+    expect(backgroundCss(bg('image', 'abc', url, 2, 30))).toBe(
+      'linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), ' +
+        'url("mello-arquivo://arquivos/abc.jpg") 100% 0% / cover no-repeat #33374b'
+    )
+    expect(backgroundCss(bg('image', 'abc'))).toBe('#33374b')
   })
 })

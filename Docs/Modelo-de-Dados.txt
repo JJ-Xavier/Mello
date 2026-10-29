@@ -99,8 +99,10 @@ file — arquivos guardados em <pasta de dados>\arquivos\<id>.<ext>
   Imagem (PNG, JPG, GIF, WebP, BMP) é reconhecida pelo conteúdo: ext e mime vêm dele, e width e
   height já vêm na orientação em que a imagem aparece (EXIF). Outros arquivos: ext do nome
   ([a-z0-9], até 10; senão "bin"), mime de uma lista curta ou application/octet-stream, width e
-  height NULL. avg_color fica NULL até a etapa 9 (fundo). O mesmo conteúdo com outro nome usa a
-  mesma linha (ANX-02). (etapa 5)
+  height NULL. O mesmo conteúdo com outro nome usa a mesma linha (ANX-02). (etapa 5)
+  avg_color: a cor média da imagem ("#rrggbb"), calculada pela tela no envio do fundo e guardada
+  na primeira vez que a imagem é aplicada a um quadro; de onde vem o tom do envelhecimento
+  (FUN-09). Fica NULL nos anexos e nas capas. (etapa 9)
 
 attachment — anexos
   id TEXT PK | card_id → card ON DELETE CASCADE | file_id → file ON DELETE RESTRICT

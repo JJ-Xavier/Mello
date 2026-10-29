@@ -28,10 +28,7 @@ import styles from './HomePage.module.css'
 function TileContent({ board }: { board: BoardSummary }) {
   return (
     <>
-      <span
-        className={styles.tileBg}
-        style={{ background: backgroundCss(board.bgKind, board.bgValue) }}
-      />
+      <span className={styles.tileBg} style={{ background: backgroundCss(board.background) }} />
       <span className={styles.tileTitle}>{board.title}</span>
     </>
   )

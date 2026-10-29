@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { HashRouter, Navigate, Route, Routes } from 'react-router'
 import { ConfirmProvider } from '../components/Confirm'
 import { NotifyProvider } from '../components/Notify'
+import { BackgroundEditor } from '../features/background/BackgroundEditor'
 import { BoardPage } from '../features/board/BoardPage'
 import { CalendarPage } from '../features/calendar/CalendarPage'
 import { HomePage } from '../features/home/HomePage'
@@ -39,6 +40,7 @@ export function App() {
                 <Route index element={<BoardPage />} />
                 <Route path="calendar" element={<CalendarPage scope="board" />} />
               </Route>
+              <Route path="boards/:boardId/background" element={<BackgroundEditor />} />
               <Route element={<SettingsLayout />}>
                 <Route path="settings" element={<SettingsPage />} />
               </Route>

@@ -115,9 +115,14 @@
   border-radius: 8px;
   background: #172b4d;
   color: #fff;
+  text-decoration: none;
   font:
     600 14px Inter,
     sans-serif;
+}
+
+.background:hover {
+  background: #09326c;
 }
 
 /* Listas: rolam na horizontal; o espaço de baixo fica livre para a barra flutuante. */

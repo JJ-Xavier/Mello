@@ -6,7 +6,8 @@ lista de conclusão) e na etapa 4 (CAR-09 e CAR-10, limites de tamanho e esclare
 ENV-05, ENV-06, ETQ-04, FLT-03 e NOT-05). A etapa 7 (calendário) veio antes da 6, por decisão de
 24/10/2026, e esclareceu as regras CAL. A etapa 6 (envelhecimento), feita depois, detalhou a
 ENV-08 e a ENV-10 (26/10/2026). A etapa 8 (repetição e lembretes) esclareceu as regras REP e
-LEM (26/10/2026).
+LEM (26/10/2026), e ganhou a hora na tarefa e o DAT-05 (28/10/2026). A etapa 9 (fundo do
+quadro) esclareceu as regras FUN (29/10/2026).
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -542,13 +543,21 @@ CAL-14  Tarefas mostram o título do card embaixo. No modo "todos os quadros", o
 
 
 17. FUNDO DO QUADRO (FUN)
+Testes (etapa 9): src/shared/rules/backgroundAuto.test.ts (ajuste automático e legibilidade com
+imagens sintéticas, foco e recorte), src/shared/rules/tone.test.ts (tom e miniatura),
+src/main/modules/boards.test.ts (enviar, aplicar e recusar) e
+src/renderer/src/features/background/BackgroundEditor.test.tsx (o editor).
 
 FUN-01  Cada quadro tem o seu fundo, de um destes tipos: Imagem; Cor (Azul Mello #1f5eff,
         Grafite #2c333a, Verde #216e4e, Roxo #5e4db2, Laranja #a54800, Vermelho #ae2e24,
         Azul-petróleo #206a83, Cinza claro #8590a2); Gradiente (Mello, Pôr do sol, Oceano,
         Floresta, Uva, Noite, com os valores do protótipo).
 FUN-02  Imagem: JPG, PNG ou WEBP, de até 25 MB, enviada por clique ou arrastando. É copiada para
-        a pasta de arquivos do app.
+        a pasta de arquivos do app. O formato é conferido pelo conteúdo, antes de copiar; outro
+        formato, ou mais de 25 MB, mostra o aviso e nada é copiado. A imagem é guardada já no
+        envio, para a prévia; se não for aplicada, sai na limpeza dos arquivos sem uso (DAD-08).
+        O nome do arquivo aparece no editor logo depois do envio; ao reabrir, "Imagem do
+        quadro". (etapa 9)
 FUN-03  A imagem cobre a tela toda, centrada no ponto de foco, ampliada pelo zoom, com uma camada
         preta de opacidade igual a "Escurecer" e o desfoque aplicado.
 FUN-04  Ao enviar a imagem, o ajuste automático calcula os quatro valores a partir de uma cópia
@@ -560,18 +569,37 @@ FUN-04  Ao enviar a imagem, o ajuste automático calcula os quatro valores a par
             branco e o fundo escurecido em pelo menos 4,5:1;
           - desfoque: 6 px quando o detalhe médio da imagem passa do limite (imagem "carregada");
             senão, 0.
+        Como as contas são feitas (etapa 9):
+          - a cópia reduzida é feita pelo Chromium, a partir da imagem inteira;
+          - detalhe de um pixel: a diferença de brilho (0 a 255) para o vizinho da direita mais
+            a do vizinho de baixo. O detalhe de uma célula é a média dos pixels dela. Uma célula
+            só tira o foco do centro com pelo menos 10% mais detalhe que ele (menos que isso é
+            empate);
+          - imagem "carregada": detalhe médio acima de 24. Calibrado com os papéis de parede do
+            Windows (os lisos ficam entre 6 e 12; as fotos de paisagem, entre 14 e 20; o mais
+            carregado, em 31);
+          - contraste: texto branco contra a luminância média do fundo escurecido mais um desvio
+            padrão (as partes claras pesam). O desfoque tira esse desvio aos poucos, até sumir
+            em 20 px. Com essa conta, a imagem mais clara (branca) pede 54%.
 FUN-05  Mexer em qualquer ajuste desliga o modo automático e mostra "Restaurar automático", que
-        recalcula os valores e liga o automático de novo.
+        recalcula os valores e liga o automático de novo. Os controles ficam sempre liberados (no
+        protótipo, as barras ficavam travadas com o automático ligado); a caixa "Ajuste
+        automático" também liga e desliga, e cada ajuste mostra o selo "Auto" enquanto ele vale.
+        (etapa 9)
 FUN-06  Indicador de legibilidade: "Cards legíveis sobre este fundo" (verde) quando o contraste
         estimado é de pelo menos 4,5:1; senão, "Pouco contraste: aumente o escurecer ou o
-        desfoque" (amarelo).
+        desfoque" (amarelo). O contraste estimado é o da FUN-04, com os ajustes do momento.
 FUN-07  A prévia é ao vivo. Nada é salvo até "Aplicar ao quadro"; "Cancelar" descarta tudo.
 FUN-08  O fundo aparece no quadro, no calendário daquele quadro e na miniatura do Início. O tema
-        do app não muda o fundo.
+        do app não muda o fundo. Nas miniaturas (Início, "Mudar de quadros", quadros fechados e
+        seletor do calendário), a imagem aparece com o foco e o escurecer; o zoom e o desfoque não
+        aparecem nesse tamanho. (etapa 9)
 FUN-09  Tom do envelhecimento: é a cor média do fundo (cor: a própria; gradiente: média das
         paradas; imagem: média calculada no envio). Ela é convertida para HSL, a saturação é
         limitada a 45% e a luminosidade é fixada em 73%. O resultado substitui o bege #d8bd9b do
-        protótipo.
+        protótipo. A cor média da imagem fica guardada no arquivo no primeiro uso, e o mesmo
+        arquivo em outro quadro usa essa cor. Trocar o fundo não zera o envelhecimento dos cards
+        (ENV-06). (etapa 9)
 
 
 18. TEMA (TEM)

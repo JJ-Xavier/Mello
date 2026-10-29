@@ -1,8 +1,14 @@
 import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
-import { createBoardInput, updateBoardInput } from '../../shared/ipc/boards'
-import { toneForBackground } from '../../shared/rules/tone'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { fileUrl } from '../../shared/files'
+import {
+  createBoardInput,
+  setBackgroundInput,
+  updateBoardInput,
+  type SetBackgroundInput
+} from '../../shared/ipc/boards'
+import { agingTone, toneForBackground } from '../../shared/rules/tone'
 import { createTestDb, insertCard } from '../db/test-db'
 import {
   activity,
@@ -17,6 +23,7 @@ import {
 } from '../db/schema'
 import * as boards from './boards'
 import { DEFAULT_LABEL_COLORS } from './labels'
+import { createTestFiles, jpegHeader, PNG_1X1 } from './test-files'
 
 const NOW = 1_800_000_000_000
 
@@ -54,7 +61,7 @@ describe('quadros', () => {
   it('QUA-03: fundo Mello, tom derivado do fundo e as 6 etiquetas padrão sem nome', () => {
     const created = boards.create(t.db, 'Casa', NOW)
     const detail = boards.get(t.db, created.id)
-    expect([detail.bgKind, detail.bgValue]).toEqual(['gradient', 'mello'])
+    expect(detail.background).toMatchObject({ kind: 'gradient', value: 'mello', url: null })
     expect(detail.bgTone).toBe(toneForBackground('gradient', 'mello'))
     const labels = t.db
       .select()
@@ -219,5 +226,142 @@ describe('quadros', () => {
 
   it('quadro inexistente dá NOT_FOUND', () => {
     expect(() => boards.get(t.db, randomUUID())).toThrow(/não encontrado/)
+  })
+})
+
+describe('fundo do quadro (FUN)', () => {
+  let files: ReturnType<typeof createTestFiles>
+  let boardId: string
+
+  beforeEach(() => {
+    files = createTestFiles()
+    boardId = boards.create(t.db, 'Casa', NOW).id
+  })
+  afterEach(() => files.cleanup())
+
+  const pick = (name: string, content: string | Uint8Array, size?: number) => {
+    const path = files.sample(name, content)
+    return { path, name, size: size ?? Buffer.byteLength(content) }
+  }
+  const upload = (name: string, content: string | Uint8Array, size?: number) =>
+    boards.uploadBackground(t.db, files.store, boardId, pick(name, content, size), NOW)
+  const imageBackground = (fileId: string, changes = {}): SetBackgroundInput['background'] => ({
+    kind: 'image',
+    value: fileId,
+    auto: true,
+    focus: 2,
+    zoom: 112,
+    dim: 30,
+    blur: 6,
+    avgColor: '#3366cc',
+    ...changes
+  })
+  const background = () => boards.get(t.db, boardId).background
+
+  it('FUN-01: cor e gradiente do protótipo, com o tom do envelhecimento de cada um (FUN-09)', () => {
+    boards.setBackground(t.db, { boardId, background: { kind: 'color', value: '#216e4e' } }, NOW)
+    expect(background()).toMatchObject({ kind: 'color', value: '#216e4e', url: null })
+    expect(boards.get(t.db, boardId).bgTone).toBe(toneForBackground('color', '#216e4e'))
+    boards.setBackground(t.db, { boardId, background: { kind: 'gradient', value: 'uva' } }, NOW)
+    expect(boards.get(t.db, boardId)).toMatchObject({
+      background: { kind: 'gradient', value: 'uva' },
+      bgTone: toneForBackground('gradient', 'uva')
+    })
+    const parse = (value: unknown) => setBackgroundInput.safeParse({ boardId, background: value })
+    expect(parse({ kind: 'color', value: '#123456' }).success).toBe(false)
+    expect(parse({ kind: 'gradient', value: 'arco-iris' }).success).toBe(false)
+  })
+
+  it('FUN-02: guarda JPG, PNG e WEBP e devolve o endereço, o tamanho e o nome', async () => {
+    const png = await upload('praia.png', PNG_1X1)
+    expect(png).toMatchObject({ name: 'praia.png', width: 1, height: 1 })
+    expect(png.url).toBe(fileUrl(png.fileId, 'png'))
+    const jpg = await upload('retrato.jpg', jpegHeader(1080, 1920, 1))
+    expect([jpg.width, jpg.height]).toEqual([1080, 1920])
+    const webp = Buffer.concat([
+      Buffer.from('RIFF'),
+      Buffer.from([30, 0, 0, 0]),
+      Buffer.from('WEBPVP8X'),
+      Buffer.from([10, 0, 0, 0, 0, 0, 0, 0]),
+      Buffer.from([0x7f, 0x07, 0x00, 0xaf, 0x04, 0x00])
+    ])
+    expect(await upload('vista.webp', webp)).toMatchObject({ width: 1920, height: 1200 })
+    // Enviar não muda o quadro (FUN-07).
+    expect(background().kind).toBe('gradient')
+  })
+
+  it('FUN-02: recusa outro formato, o que não é imagem e mais de 25 MB, sem copiar', async () => {
+    const gif = Buffer.concat([Buffer.from('GIF89a'), Buffer.from([10, 0, 10, 0, 0, 0, 0])])
+    await expect(upload('anima.gif', gif)).rejects.toThrow('Escolha uma imagem JPG, PNG ou WEBP.')
+    await expect(upload('nota.txt', 'texto')).rejects.toThrow('JPG, PNG ou WEBP')
+    await expect(upload('enorme.png', PNG_1X1, 26 * 1024 * 1024)).rejects.toThrow('25 MB')
+    expect(files.stored()).toEqual([])
+  })
+
+  it('FUN-03: aplicar a imagem com os ajustes; o tom vem da cor média, guardada no arquivo', async () => {
+    const saved = await upload('praia.png', PNG_1X1)
+    boards.setBackground(t.db, { boardId, background: imageBackground(saved.fileId) }, NOW + 1)
+    expect(boards.get(t.db, boardId)).toMatchObject({
+      background: {
+        kind: 'image',
+        value: saved.fileId,
+        url: saved.url,
+        width: 1,
+        height: 1,
+        auto: true,
+        focus: 2,
+        zoom: 112,
+        dim: 30,
+        blur: 6
+      },
+      bgTone: agingTone('#3366cc')
+    })
+    expect(t.db.select().from(file).get()!.avgColor).toBe('#3366cc')
+    // FUN-08: o Início e os quadros fechados também têm a imagem.
+    expect(boards.listOpen(t.db)[0]!.background.url).toBe(saved.url)
+
+    // O mesmo arquivo em outro quadro usa a cor média já guardada.
+    const other = boards.create(t.db, 'Trabalho', NOW).id
+    boards.setBackground(
+      t.db,
+      { boardId: other, background: imageBackground(saved.fileId, { avgColor: '#000000' }) },
+      NOW
+    )
+    expect(boards.get(t.db, other).bgTone).toBe(agingTone('#3366cc'))
+  })
+
+  it('voltar para cor ou gradiente zera os ajustes da imagem', async () => {
+    const saved = await upload('praia.png', PNG_1X1)
+    boards.setBackground(t.db, { boardId, background: imageBackground(saved.fileId) }, NOW)
+    boards.setBackground(t.db, { boardId, background: { kind: 'color', value: '#5e4db2' } }, NOW)
+    expect(background()).toEqual({
+      kind: 'color',
+      value: '#5e4db2',
+      url: null,
+      width: null,
+      height: null,
+      auto: true,
+      focus: 4,
+      zoom: 100,
+      dim: 0,
+      blur: 0
+    })
+  })
+
+  it('recusa imagem que não foi guardada e ajustes fora dos limites', () => {
+    expect(() =>
+      boards.setBackground(t.db, { boardId, background: imageBackground('a'.repeat(64)) }, NOW)
+    ).toThrow('Envie de novo')
+    const parse = (changes: object) =>
+      setBackgroundInput.safeParse({
+        boardId,
+        background: imageBackground('a'.repeat(64), changes)
+      })
+    expect(parse({}).success).toBe(true)
+    expect(parse({ focus: 9 }).success).toBe(false)
+    expect(parse({ zoom: 99 }).success).toBe(false)
+    expect(parse({ dim: 71 }).success).toBe(false)
+    expect(parse({ blur: 21 }).success).toBe(false)
+    expect(parse({ avgColor: 'azul' }).success).toBe(false)
   })
 })

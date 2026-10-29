@@ -1,5 +1,5 @@
 import { Link, Navigate, NavLink, Outlet, useLocation, useParams } from 'react-router'
-import { backgroundCss } from '../../../shared/rules/background'
+import { BoardBackdrop } from '../components/BoardBackdrop'
 import { Icon } from '../components/Icon'
 import { CardModal } from '../features/card/CardModal'
 import { ApiError } from '../lib/api'
@@ -57,11 +57,11 @@ export function BoardLayout() {
   if (board.error instanceof ApiError && board.error.code === 'NOT_FOUND') {
     return <Navigate to="/" replace />
   }
-  const background = board.data ? backgroundCss(board.data.bgKind, board.data.bgValue) : undefined
   return (
     <div className={cx(styles.screen, 'board-screen')}>
       <AppHeader variant="board" />
-      <div className={styles.boardArea} style={{ background }}>
+      <div className={styles.boardArea}>
+        {board.data && <BoardBackdrop background={board.data.background} />}
         <Outlet />
         <BoardNav boardId={boardId} />
       </div>

@@ -104,6 +104,11 @@ async function readHead(target: string): Promise<Uint8Array> {
   }
 }
 
+// Reconhece a imagem de um arquivo ainda fora da pasta do Mello, antes de copiar (FUN-02).
+export async function sniffFile(target: string): Promise<ReturnType<typeof sniffImage>> {
+  return sniffImage(await readHead(target))
+}
+
 // Copia para um nome provisório na pasta de arquivos e calcula o hash na mesma leitura. Assim o
 // hash é sempre o do que foi copiado, mesmo que o original mude no meio.
 async function copyWithHash(source: string, dir: string): Promise<{ hash: string; temp: string }> {

@@ -128,7 +128,9 @@ Mello/
 │   │   ├── ipc/dev.ts       relógio de teste do modo de desenvolvimento
 │   │   ├── ipc/recurrence.ts regra de repetição, aviso de pulada e lembretes perdidos
 │   │   └── rules/           aging.ts (nível do envelhecimento, ENV), background.ts (fundos
-│   │                        do protótipo), tone.ts (tom, FUN-09),
+│   │                        do protótipo, foco, recorte e miniatura, FUN), backgroundAuto.ts
+│   │                        (ajuste automático e legibilidade, FUN-04 e FUN-06), tone.ts
+│   │                        (tom, FUN-09),
 │   │                        finished.ts (FIN), dates.ts (datas, DAT), priority.ts (PRI),
 │   │                        color.ts (paleta e texto legível), checklist.ts (CHK),
 │   │                        filter.ts (FLT), richText.ts (texto rico, NOT-04),
@@ -149,12 +151,14 @@ Mello/
 │           │                seletores, checklists, descrição, nota, atividade, anexos,
 │           │                capa, menu do card, criar card), calendar/ (página, dia,
 │           │                itens), recurrence/ (diálogo Repetir e aviso de pulada),
-│           │                settings/
+│           │                background/ (editor de fundo e "Alterar fundo"), settings/
 │           ├── components/  Popover, Confirm, Notify, EditableTitle, dnd, DoneMark,
-│           │                PriorityIcon, RichEditor (TipTap), Cover (capa), Icon, Logo…
+│           │                PriorityIcon, RichEditor (TipTap), Cover (capa), BoardBackdrop
+│           │                (fundo do quadro), BoardThumb (miniatura), Icon, Logo…
 │           ├── lib/         api.ts (unwrap), queries.ts (consultas e ações), queryKeys.ts,
 │           │                format.ts (datas e tamanhos), clock.ts e useNow.ts (relógio da
-│           │                tela), fog.ts (visual do envelhecimento), useDebounced.ts, cx.ts
+│           │                tela), fog.ts (visual do envelhecimento), sampleImage.ts (cópia
+│           │                reduzida da imagem de fundo), useDebounced.ts, cx.ts
 │           ├── styles/      themes.css (paletas literais), fonts.css, base.css
 │           └── test/        preparação dos testes da tela (setup.ts, realApi.ts)
 ├── electron.vite.config.ts  vitest.config.mts  drizzle.config.ts  eslint.config.mjs
@@ -314,6 +318,9 @@ Rotas (HashRouter, porque o app instalado carrega a tela por file://):
     ...?card=<id>               Modal do card por cima do quadro, do calendário (CAL-11) e do
                                 Início
     #/boards/:boardId/calendar  Calendário do quadro, com a barra flutuante
+    #/boards/:boardId/background
+                                Editor de fundo (tela 6), em tela cheia, sem o cabeçalho;
+                                Cancelar e "Aplicar ao quadro" voltam para onde estava
     #/settings                  Configurações ("Voltar" leva para a tela de onde veio)
     qualquer outro              volta ao Início
 
@@ -452,6 +459,11 @@ lendo o começo do arquivo): PNG, JPG, GIF, WebP e BMP, com a largura e a altura
 girada pelo EXIF tem as duas trocadas, como o Chromium a mostra). A extensão de uma imagem vem do
 conteúdo; a dos outros arquivos, do nome.
 
+Desde a etapa 9, o protocolo responde com CORS liberado (privilégio corsEnabled e o cabeçalho
+Access-Control-Allow-Origin: *): a tela lê os pixels da imagem de fundo num canvas para o ajuste
+automático (seção 13), e sem isso o Chromium bloqueia a leitura. O protocolo só lê, e só a tela
+do app o conhece.
+
 Um arquivo guardado nunca muda (o espelho do backup depende disso, DAD-05). "Abrir" copia o anexo,
 só leitura e com o nome original, para %TEMP%\Mello\<id do anexo>\ (no desenvolvimento,
 %TEMP%\Mello-dev) e abre essa cópia com o programa padrão. Programas (.exe, .bat, .msi, .ps1…) não
@@ -537,7 +549,43 @@ assinatura de código e verificação do remetente de cada mensagem de IPC.
   "Abrir o Mello" e "Sair". Clicar no ícone abre a janela.
 
 
-13. PRÓXIMAS PARTES
+13. FUNDO DO QUADRO (etapa 9)
+
+O fundo de cada quadro fica nas colunas bg_* do quadro: o tipo (cor, gradiente ou imagem), o
+valor (hex, id do gradiente ou id do arquivo), os ajustes da imagem (automático, foco 0 a 8,
+zoom, escurecer, desfoque) e o tom do envelhecimento (FUN-09). A tela recebe tudo junto em
+BoardSummary.background, com o endereço e o tamanho da imagem.
+
+Onde aparece:
+- components/BoardBackdrop.tsx desenha o fundo por inteiro (FUN-03), atrás do conteúdo do quadro,
+  do calendário do quadro e da prévia do editor: a imagem cobre a área, alinhada pelo foco
+  (0%, 50% ou 100% em cada eixo), ampliada a partir do foco pelo zoom, com o desfoque (a imagem
+  passa um pouco da área para as bordas não clarearem) e uma camada preta com a opacidade do
+  escurecer.
+- As miniaturas (Início, "Mudar de quadros", quadros fechados, seletor do calendário) usam o
+  backgroundCss do shared/rules/background.ts: a imagem com o foco e o escurecer, sem o zoom e o
+  desfoque, que não aparecem nesse tamanho (FUN-08).
+
+O editor (features/background/BackgroundEditor.tsx) guarda o rascunho na tela e só grava no
+"Aplicar ao quadro" (FUN-07):
+1. Enviar imagem: a ficha de files:pick ou files:dropped vai para boards:uploadBackground, que
+   reconhece a imagem pelo conteúdo antes de copiar (JPG, PNG ou WEBP, até 25 MB, FUN-02) e a
+   guarda na pasta de arquivos, devolvendo o endereço. Uma imagem enviada e não aplicada sai na
+   limpeza dos arquivos sem uso (DAD-08, etapa 10).
+2. Ajuste automático: lib/sampleImage.ts reduz a imagem a 64 × 40 com o próprio Chromium
+   (createImageBitmap) e lê os pixels num canvas; shared/rules/backgroundAuto.ts calcula o foco,
+   o zoom, o escurecer, o desfoque e a cor média (FUN-04), e o contraste estimado do indicador
+   (FUN-06). Tudo puro, testado com imagens sintéticas; o limite de "imagem carregada" foi
+   calibrado com os papéis de parede do Windows.
+3. boards:setBackground grava o fundo. Com imagem, a cor média da análise fica no arquivo
+   (file.avg_color, no primeiro uso) e vira o tom do envelhecimento (agingTone). Não mexe nos
+   cards (ENV-06).
+
+O nome do arquivo aparece no editor logo depois do envio; ao reabrir, ele mostra "Imagem do
+quadro" (o nome não é guardado, para não precisar de uma coluna nova).
+
+
+14. PRÓXIMAS PARTES
 
 - O backup de hora em hora entra no agendador na etapa 10. O envelhecimento não precisa dele: a
   tela recalcula o nível sozinha (etapa 6).
@@ -571,3 +619,7 @@ HISTÓRICO
 26/10/2026 — etapa 8: agendador (scheduler.ts) com repetições e lembretes, bandeja e
              notificações (tray.ts), avisos do main para a tela (data:changed, app:openCard,
              tray:notice), canais recurrence:* e reminders:missed, ícones em resources/.
+29/10/2026 — etapa 9: fundo do quadro (seção 13): editor em rota própria, BoardBackdrop,
+             boards:uploadBackground e boards:setBackground, BoardSummary.background no lugar
+             de bgKind e bgValue, ajuste automático puro (backgroundAuto.ts) com a leitura dos
+             pixels na tela, protocolo de arquivos com CORS.

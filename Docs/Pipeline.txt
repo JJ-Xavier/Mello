@@ -1,6 +1,6 @@
 Pipeline — Mello
 
-Status: atualizado na etapa 8 (26/10/2026, ícones da bandeja e capturas com a segunda abertura).
+Status: atualizado na etapa 9 (29/10/2026, capturas do editor de fundo com uma foto gerada).
 Os comandos da seção 4 existem e foram conferidos.
 
 
@@ -105,7 +105,10 @@ npm run typecheck ...... confere os tipos do TypeScript (main/preload, tela e te
 npm run capturas ....... compila, abre o app com uma pasta de dados temporária, confere banco e
                          IPC e salva capturas de cada tela em capturas/etapa-N/ (pasta ignorada
                          pelo Git). Abre o app duas vezes (a segunda para os lembretes perdidos e
-                         o aviso da bandeja) e lista as notificações em vez de mostrá-las
+                         o aviso da bandeja) e lista as notificações em vez de mostrá-las.
+                         Desde a etapa 9, desenha uma foto em retrato (o céu e as montanhas
+                         do protótipo, 1080 × 1920), envia pelo editor de fundo, mostra no
+                         terminal o ajuste automático calculado e aplica no quadro "Casa"
 npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit)
 node scripts/gerar-icones.mts
                          gera os PNGs do logo em resources/ (bandeja e notificações). Precisa do

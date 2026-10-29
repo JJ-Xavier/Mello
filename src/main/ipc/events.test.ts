@@ -341,6 +341,28 @@ const KEEPS: Scenario[] = [
     input: (f) => ({ boardId: f.boardId, index: 1 })
   },
   {
+    name: 'trocar o fundo do quadro por uma cor',
+    channel: CHANNELS.boardsSetBackground,
+    input: (f) => ({ boardId: f.boardId, background: { kind: 'color', value: '#216e4e' } })
+  },
+  {
+    name: 'trocar o fundo do quadro por uma imagem',
+    channel: CHANNELS.boardsSetBackground,
+    input: (f) => ({
+      boardId: f.boardId,
+      background: {
+        kind: 'image',
+        value: f.fileId,
+        auto: true,
+        focus: 4,
+        zoom: 100,
+        dim: 20,
+        blur: 0,
+        avgColor: '#808080'
+      }
+    })
+  },
+  {
     name: 'fechar o quadro',
     channel: CHANNELS.boardsClose,
     input: (f) => ({ boardId: f.boardId })
@@ -387,6 +409,7 @@ const NOT_APPLICABLE = [
   CHANNELS.boardsCreate,
   CHANNELS.boardsDelete,
   CHANNELS.boardsArchived,
+  CHANNELS.boardsUploadBackground,
   CHANNELS.listsCreate,
   CHANNELS.labelsList,
   CHANNELS.cardsDelete,

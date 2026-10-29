@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardDetail, ListDetail } from '../../../../shared/ipc/boards'
 import type { CardSummary } from '../../../../shared/ipc/cards'
+import { BACKGROUND_DEFAULTS } from '../../../../shared/rules/background'
 import {
   applyMove,
   edgeStep,
@@ -167,8 +168,14 @@ describe('o quadro depois de soltar', () => {
     position: 'a0',
     isFavorite: false,
     closedAt: null,
-    bgKind: 'gradient',
-    bgValue: 'mello',
+    background: {
+      kind: 'gradient',
+      value: 'mello',
+      url: null,
+      width: null,
+      height: null,
+      ...BACKGROUND_DEFAULTS
+    },
     bgTone: '#739ffc',
     lists: [
       list('a', [card('c1'), card('c2')]),

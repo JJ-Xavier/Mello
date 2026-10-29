@@ -1,6 +1,6 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 8 (504 testes, em 28/10/2026).
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 9 (529 testes, em 29/10/2026).
 Atualizado a cada etapa.
 
 
@@ -537,6 +537,49 @@ src/renderer/src/features/calendar/CalendarPage.test.tsx (1 novo) e BoardCards.t
 Os testes da tela simulam os avisos do main (realApi.ts, emit) e a lista dos lembretes perdidos;
 a notificação de verdade e a bandeja são conferidas no app real (seção 5).
 
+Etapa 9 — 25 testes novos
+
+src/shared/rules/backgroundAuto.test.ts (FUN-03, FUN-04, FUN-06, FUN-09; imagens sintéticas de
+64 × 40)
+- Foto clara: o menor escurecer, de 2 em 2%, que deixa o texto branco legível (50% para a de
+  brilho 230; 48% não basta); foto escura não escurece; branca pura e metade branca, metade preta
+  pedem 54%.
+- Detalhe concentrado no canto superior direito leva o foco para lá, com zoom de 112%; detalhe
+  espalhado por igual é empate e fica no centro, com 100%; imagem carregada ganha 6 px de
+  desfoque e a lisa, nenhum; a cor média.
+- Indicador: menos de 4,5:1 sem o escurecer; o desfoque e o escurecer sobem o contraste.
+- O foco alinha a imagem (0%, 50% ou 100%); o recorte de uma foto em retrato numa tela 16:10, no
+  centro e no alto; o zoom aproxima a partir do foco.
+
+src/shared/rules/tone.test.ts (FUN-08, 1 novo)
+- A miniatura da imagem: a camada do escurecer, o endereço e o foco; sem endereço, a cor de
+  espera.
+
+src/main/modules/boards.test.ts (FUN-01 a FUN-03, FUN-07 a FUN-09; 6 novos)
+- Cor e gradiente do protótipo, com o tom de cada um; a entrada recusa cor e gradiente fora da
+  lista.
+- Guarda JPG, PNG e WEBP com o tamanho e o nome; enviar não muda o quadro. Recusa GIF, texto e
+  mais de 25 MB sem copiar nada.
+- Aplicar a imagem grava os ajustes e o tom da cor média, que fica no arquivo; o mesmo arquivo
+  em outro quadro usa a cor guardada; o Início traz o endereço da imagem. Voltar para uma cor
+  zera os ajustes. Imagem não guardada e ajustes fora dos limites são recusados.
+
+src/main/ipc/events.test.ts (ENV-06, 2 novos)
+- Trocar o fundo por uma cor e por uma imagem não mexe no envelhecimento; boards:uploadBackground
+  classificado.
+
+src/renderer/src/features/background/BackgroundEditor.test.tsx (tela 6; a leitura dos pixels é
+trocada por uma foto clara sintética, porque o jsdom não tem canvas)
+- Abre pelo "Alterar fundo" com o fundo atual; Cancelar volta sem mudar nada.
+- FUN-01 e FUN-07: a cor aparece na prévia e só vai para o quadro no "Aplicar".
+- FUN-04 a FUN-06: a imagem enviada chega com o ajuste automático (os 4 selos "Auto", 50% de
+  escurecer, "Cards legíveis"); mexer no escurecer mostra o aviso de pouco contraste e desliga o
+  automático; "Restaurar automático" volta; o foco escolhido à mão é gravado; o quadro mostra a
+  imagem.
+- FUN-02: soltar a imagem no "Enviar imagem"; GIF mostra o aviso.
+- Reabrir com a imagem mostra os ajustes salvos e "Imagem do quadro".
+- FUN-08: a miniatura do Início com a imagem.
+
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
 
@@ -558,7 +601,12 @@ temporária (MELLO_DATA_DIR) e:
 6. desde a etapa 8, encerra o app como o "Sair" da bandeja, cria dois lembretes de ontem e abre
    o app de novo com os mesmos dados: captura o aviso dos lembretes perdidos, fecha a janela
    para o aviso da bandeja e confere que o "Entendi" deixa a janela escondida;
-7. apaga a pasta temporária.
+7. desde a etapa 9, antes da fase final, desenha uma foto em retrato (o céu e as montanhas do
+   protótipo, 1080 × 1920), envia pelo editor de fundo com a janela "Abrir" trocada, captura o
+   editor (gradiente, cor, imagem com o ajuste automático e o ajuste à mão), aplica a foto no
+   quadro "Casa" e captura o quadro, o calendário do quadro e o Início. A leitura dos pixels passa
+   pelo protocolo de verdade (com CORS); o script mostra no terminal o ajuste calculado;
+8. apaga a pasta temporária.
 
 O Electron do script abre com opções do Chromium que mantêm a janela desenhando mesmo coberta ou
 com o monitor desligado pelo Windows; sem elas, a captura podia esperar um quadro que não chegava
@@ -674,5 +722,17 @@ Etapa 8 (conferido em 28/10/2026, no app real pelo Playwright)
 [ ] No seu computador, com o npm run dev: um lembrete "No horário" para daqui a 2 minutos
     aparece como notificação do Windows, e clicar nela abre o card; o ícone da bandeja aparece
     ao lado do relógio, com "Abrir o Mello" e "Sair".
+
+Etapa 9 (conferido em 29/10/2026, no app real pelo Playwright)
+[x] A foto em retrato enviada pelo editor ganhou o ajuste automático no app real (a tela leu os
+    pixels pelo protocolo): foco inferior esquerdo, zoom 112%, escurecer 46%, sem desfoque, e o
+    tom do envelhecimento #c9b6ab, um bege perto do #d8bd9b do protótipo.
+[x] Escurecer em 0% mostrou o aviso amarelo de pouco contraste, "Ajustado à mão" e o
+    "Restaurar automático".
+[x] Capturas da etapa 9 conferidas com a tela 6 nos dois temas: o editor (prévia com a marca do
+    foco, miniatura com o recorte, os selos "Auto", o indicador), a cor e o gradiente; o quadro
+    e o calendário com a foto; a miniatura do Início.
+[ ] No seu computador: arrastar uma foto do Explorer para o "Enviar imagem" e aplicar; trocar
+    para uma cor e voltar.
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

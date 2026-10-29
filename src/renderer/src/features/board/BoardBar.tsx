@@ -1,5 +1,5 @@
 // Barra do quadro (Quadro.dc.html): título editável, filtro (FLT), favoritar, "Alterar fundo"
-// (etapa 9) e o menu "…" com itens arquivados e fechar quadro (NovosEstados.dc.html).
+// (o editor de fundo, FUN) e o menu "…" com itens arquivados e fechar quadro (NovosEstados.dc.html).
 import { useId, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { BoardDetail } from '../../../../shared/ipc/boards'
@@ -15,6 +15,7 @@ import { api, unwrap } from '../../lib/api'
 import { cx } from '../../lib/cx'
 import { useAction } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
+import { ChangeBackground } from '../background/ChangeBackground'
 import { ArchivedItems } from './ArchivedItems'
 import styles from './BoardPage.module.css'
 
@@ -183,10 +184,7 @@ export function BoardBar({
       >
         <Icon name="star" size={20} />
       </button>
-      <button type="button" className={styles.background} disabled title="Chega na etapa 9">
-        <Icon name="image" />
-        Alterar fundo
-      </button>
+      <ChangeBackground boardId={board.id} />
       <button
         type="button"
         className={styles.barIcon}

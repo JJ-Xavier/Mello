@@ -1,0 +1,21 @@
+/* O fundo do quadro por inteiro (FUN-03), atrás do conteúdo. Quem o usa tem position e isolation:
+   isolate, e o z-index -1 deixa o fundo embaixo de tudo, dentro dele. */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: #33374b;
+}
+
+.image {
+  position: absolute;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.dim {
+  position: absolute;
+  inset: 0;
+  background: #000;
+}

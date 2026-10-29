@@ -1,13 +1,27 @@
-// Quadros (QUA). Todas as funções recebem o "agora" por parâmetro.
+// Quadros (QUA) e o fundo do quadro (FUN). Todas as funções recebem o "agora" por parâmetro.
 import { randomUUID } from 'node:crypto'
 import { and, asc, desc, eq, isNotNull, isNull, max, sql } from 'drizzle-orm'
-import type { ArchivedItems, BoardDetail, BoardSummary, ListSummary } from '../../shared/ipc/boards'
+import { fileUrl } from '../../shared/files'
+import type {
+  ArchivedItems,
+  BackgroundImage,
+  BoardDetail,
+  BoardSummary,
+  ListSummary,
+  SetBackgroundInput
+} from '../../shared/ipc/boards'
 import { AppError } from '../../shared/result'
-import { DEFAULT_BACKGROUND } from '../../shared/rules/background'
-import { toneForBackground } from '../../shared/rules/tone'
+import {
+  BACKGROUND_DEFAULTS,
+  BACKGROUND_IMAGE_EXTENSIONS,
+  BACKGROUND_IMAGE_MAX_BYTES,
+  DEFAULT_BACKGROUND
+} from '../../shared/rules/background'
+import { agingTone, toneForBackground } from '../../shared/rules/tone'
 import type { Db, DbOrTx } from '../db/client'
-import { board, card, list } from '../db/schema'
+import { board, card, file, list } from '../db/schema'
 import { summariesByList } from './cards'
+import { sniffFile, storeFile, type FileStore } from './files'
 import { createDefaultLabels } from './labels'
 import { keyAfter, keyAt, keysFor, rebalance, visibleIndex } from './position'
 
@@ -19,14 +33,59 @@ export const DEFAULT_LISTS = [
   { title: 'Entregue', isDoneList: true, freezesAging: true }
 ]
 
-const summary = {
+const summaryColumns = {
   id: board.id,
   title: board.title,
   position: board.position,
   isFavorite: board.isFavorite,
   closedAt: board.closedAt,
   bgKind: board.bgKind,
-  bgValue: board.bgValue
+  bgValue: board.bgValue,
+  bgAuto: board.bgAuto,
+  bgFocus: board.bgFocus,
+  bgZoom: board.bgZoom,
+  bgDim: board.bgDim,
+  bgBlur: board.bgBlur,
+  fileExt: file.ext,
+  fileWidth: file.width,
+  fileHeight: file.height
+}
+
+// Os quadros com o fundo: a imagem vem da tabela de arquivos (o endereço e o tamanho).
+function selectSummaries(db: DbOrTx) {
+  return db
+    .select(summaryColumns)
+    .from(board)
+    .leftJoin(file, and(eq(board.bgKind, 'image'), eq(file.id, board.bgValue)))
+}
+
+type SummaryRow = NonNullable<ReturnType<ReturnType<typeof selectSummaries>['get']>>
+
+function toSummary(row: SummaryRow): BoardSummary {
+  const ext = row.bgKind === 'image' ? row.fileExt : null
+  return {
+    id: row.id,
+    title: row.title,
+    position: row.position,
+    isFavorite: row.isFavorite,
+    closedAt: row.closedAt,
+    background: {
+      kind: row.bgKind,
+      value: row.bgValue,
+      url: ext ? fileUrl(row.bgValue, ext) : null,
+      width: ext ? row.fileWidth : null,
+      height: ext ? row.fileHeight : null,
+      auto: row.bgAuto,
+      focus: row.bgFocus,
+      zoom: row.bgZoom,
+      dim: row.bgDim,
+      blur: row.bgBlur
+    }
+  }
+}
+
+function summaryOf(db: DbOrTx, boardId: string): BoardSummary {
+  return toSummary(selectSummaries(db).where(eq(board.id, boardId)).get()!)
 }
 
 function requireBoard(db: DbOrTx, boardId: string) {
@@ -38,22 +97,20 @@ function requireBoard(db: DbOrTx, boardId: string) {
 // Quadros abertos do Início e de "Mudar de quadros": favoritos primeiro e, dentro de cada grupo,
 // a ordem manual (QUA-06). Modelos ficam de fora (seção própria na etapa 11).
 export function listOpen(db: DbOrTx): BoardSummary[] {
-  return db
-    .select(summary)
-    .from(board)
+  return selectSummaries(db)
     .where(and(isNull(board.closedAt), eq(board.isTemplate, false)))
     .orderBy(desc(board.isFavorite), asc(board.position))
     .all()
+    .map(toSummary)
 }
 
 // "Ver todos os quadros fechados" (QUA-04), do fechado mais recente para o mais antigo.
 export function listClosed(db: DbOrTx): BoardSummary[] {
-  return db
-    .select(summary)
-    .from(board)
+  return selectSummaries(db)
     .where(isNotNull(board.closedAt))
     .orderBy(desc(board.closedAt))
     .all()
+    .map(toSummary)
 }
 
 // Listas ativas do quadro, em ordem, com a quantidade de cards ativos de cada uma (LIS-09).
@@ -81,13 +138,7 @@ export function get(db: DbOrTx, boardId: string): BoardDetail {
   const found = requireBoard(db, boardId)
   const cards = summariesByList(db, boardId)
   return {
-    id: found.id,
-    title: found.title,
-    position: found.position,
-    isFavorite: found.isFavorite,
-    closedAt: found.closedAt,
-    bgKind: found.bgKind,
-    bgValue: found.bgValue,
+    ...summaryOf(db, boardId),
     bgTone: found.bgTone,
     lists: activeLists(db, boardId).map((l) => ({ ...l, cards: cards.get(l.id) ?? [] }))
   }
@@ -128,7 +179,7 @@ export function create(db: Db, title: string, now: number): BoardSummary {
         .run()
     })
     createDefaultLabels(tx, id)
-    return tx.select(summary).from(board).where(eq(board.id, id)).get()!
+    return summaryOf(tx, id)
   })
 }
 
@@ -142,7 +193,7 @@ export function update(
   if (input.title !== undefined) changes.title = input.title
   if (input.isFavorite !== undefined) changes.isFavorite = input.isFavorite
   db.update(board).set(changes).where(eq(board.id, input.boardId)).run()
-  return db.select(summary).from(board).where(eq(board.id, input.boardId)).get()!
+  return summaryOf(db, input.boardId)
 }
 
 // Ordem manual no Início (QUA-06). O índice conta só os quadros abertos do mesmo grupo
@@ -217,4 +268,81 @@ export function archived(db: DbOrTx, boardId: string): ArchivedItems {
     cards: cards.map((c) => ({ ...c, archivedAt: c.archivedAt! })),
     lists: lists.map((l) => ({ ...l, archivedAt: l.archivedAt! }))
   }
+}
+
+// FUN-02: a imagem escolhida ou solta no editor, JPG, PNG ou WEBP de até 25 MB, reconhecida pelo
+// conteúdo antes de ser copiada. Fica guardada para a prévia; o quadro só muda com setBackground
+// (FUN-07). Uma imagem que não chegou a ser aplicada sai na limpeza dos arquivos sem uso (DAD-08).
+export async function uploadBackground(
+  db: Db,
+  store: FileStore,
+  boardId: string,
+  pick: { path: string; name: string; size: number },
+  now: number
+): Promise<BackgroundImage> {
+  requireBoard(db, boardId)
+  if (pick.size > BACKGROUND_IMAGE_MAX_BYTES) {
+    throw new AppError('INVALID_INPUT', 'A imagem passa de 25 MB. Escolha uma menor.')
+  }
+  const image = await sniffFile(pick.path)
+  if (!image || !BACKGROUND_IMAGE_EXTENSIONS.includes(image.ext)) {
+    throw new AppError('INVALID_INPUT', 'Escolha uma imagem JPG, PNG ou WEBP.')
+  }
+  const saved = await storeFile(db, store, pick.path, now, { imageOnly: true })
+  return {
+    fileId: saved.id,
+    url: fileUrl(saved.id, saved.ext),
+    width: saved.width!,
+    height: saved.height!,
+    name: pick.name
+  }
+}
+
+// FUN-01 e FUN-07: "Aplicar ao quadro". Cor e gradiente voltam os ajustes ao padrão. O tom do
+// envelhecimento (FUN-09) sai da cor ou do gradiente, ou da cor média da imagem, guardada no
+// arquivo no primeiro uso. Não mexe nos cards (o envelhecimento continua contando).
+export function setBackground(db: Db, input: SetBackgroundInput, now: number): void {
+  const chosen = input.background
+  db.transaction((tx) => {
+    requireBoard(tx, input.boardId)
+    if (chosen.kind !== 'image') {
+      tx.update(board)
+        .set({
+          bgKind: chosen.kind,
+          bgValue: chosen.value,
+          bgAuto: BACKGROUND_DEFAULTS.auto,
+          bgFocus: BACKGROUND_DEFAULTS.focus,
+          bgZoom: BACKGROUND_DEFAULTS.zoom,
+          bgDim: BACKGROUND_DEFAULTS.dim,
+          bgBlur: BACKGROUND_DEFAULTS.blur,
+          bgTone: toneForBackground(chosen.kind, chosen.value),
+          updatedAt: now
+        })
+        .where(eq(board.id, input.boardId))
+        .run()
+      return
+    }
+    const image = tx.select().from(file).where(eq(file.id, chosen.value)).get()
+    if (!image || image.width === null || !BACKGROUND_IMAGE_EXTENSIONS.includes(image.ext)) {
+      throw new AppError('NOT_FOUND', 'A imagem não foi encontrada. Envie de novo.')
+    }
+    const avgColor = image.avgColor ?? chosen.avgColor
+    if (image.avgColor === null) {
+      tx.update(file).set({ avgColor }).where(eq(file.id, image.id)).run()
+    }
+    tx.update(board)
+      .set({
+        bgKind: 'image',
+        bgValue: image.id,
+        bgAuto: chosen.auto,
+        bgFocus: chosen.focus,
+        bgZoom: chosen.zoom,
+        bgDim: chosen.dim,
+        bgBlur: chosen.blur,
+        bgTone: agingTone(avgColor),
+        updatedAt: now
+      })
+      .where(eq(board.id, input.boardId))
+      .run()
+  })
 }

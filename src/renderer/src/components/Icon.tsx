@@ -158,6 +158,14 @@ const paths = {
       <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
       <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
     </>
+  ),
+  // Editor de fundo (Fundo.dc.html)
+  upload: <path d="M12 16V4M7 9l5-5 5 5M4 20h16" />,
+  legible: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8 12 3 3 5-6" />
+    </>
   )
 } satisfies Record<string, ReactNode>
 
