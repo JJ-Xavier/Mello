@@ -174,6 +174,18 @@ describe('calendário do quadro (tela 5)', () => {
     expect(order.at(-1)).toBe('Concluir tarefa Tarefa do dia')
   })
 
+  it('a hora vem antes do título do card e da tarefa; as tarefas em ordem de horário', async () => {
+    const id = await card('Dentista', '2026-10-23T15:00')
+    await task(id, 'Levar exames', '2026-10-23T14:00')
+    await task(id, 'Comprar remédio', '2026-10-23')
+    boardCalendar()
+    const cell = await day('sex., 23 de outubro')
+    const link = await within(cell).findByRole('link', { name: 'Abrir card Dentista' })
+    expect(link.textContent).toBe('15:00Dentista')
+    const tasks = [...cell.querySelectorAll('button[aria-pressed]')].map((b) => b.textContent)
+    expect(tasks).toEqual(['Comprar remédioDentista', '14:00 Levar examesDentista'])
+  })
+
   it('CAL-09: filtros Cards e Tarefas independentes; o inicial de Tarefas vem das Configurações', async () => {
     store('calendar.showTasks', false)
     const id = await card('Prova', '2026-10-23')

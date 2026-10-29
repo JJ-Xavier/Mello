@@ -4,7 +4,7 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
-0.8.0 — Etapa 8: agendador, repetição e lembretes (26/10/2026)
+0.8.0 — Etapa 8: agendador, repetição e lembretes (26 a 28/10/2026)
 
 Adicionado
 - Diálogo "Repetir card" (tela 6b): frequência (diária, semanal com os dias, mensal no dia X, a
@@ -29,13 +29,25 @@ Adicionado
   lembretes e as repetições; na primeira vez, o aviso "O Mello continua na bandeja". Menu da
   bandeja com "Abrir o Mello" e "Sair".
 - Textos completos da atividade da repetição: criado, pulada e não criadas (com as datas).
+- Data e hora (pedido de 28/10/2026, tela 17A do canvas, aprovada sem os atalhos de data): a
+  tarefa do checklist também tem hora (CHK-05). O seletor de data, o mesmo para o card e para a
+  tarefa, ganhou os horários prontos (09:00, 12:00, 18:00 e "Sem hora"), hoje marcado na grade e
+  a linha que mostra, enquanto se escolhe, se fica no prazo ou em atraso e quanto falta ("No
+  prazo · faltam 2 dias e 4 h", "Em atraso · há 3 h", DAT-05). No do card, embaixo do lembrete,
+  aparece quando a notificação sai.
 
 Mudou
 - Canais novos: recurrence:save, remove, createAnyway e dismiss; reminders:missed;
   app:hideToTray. Avisos do main para a tela (eventos): data:changed, app:openCard e
   tray:notice; o preload repassa só esses nomes.
+- Data de entrega: o modal mostra "No prazo", "Em atraso" ou "Concluído" (DAT-03); com hora, a
+  face do card mostra a hora ("30 de out., 18:00"), a tarefa também ("10 set. 18:00"), e o
+  calendário mostra a hora antes do título, com as tarefas do dia em ordem de horário (CAL-08,
+  CAL-10). checklist_item.due_date aceita "AAAA-MM-DDTHH:mm" (a coluna já era texto, sem
+  migração).
 - O main tem o agendador (scheduler.ts) e a bandeja com as notificações (tray.ts). O relógio de
-  teste roda o agendador ao mudar.
+  teste roda o agendador ao mudar. Desligar, reiniciar ou sair da conta do Windows encerra o
+  Mello de verdade: esconder na bandeja seguraria o desligamento.
 - A face do card traz nextRepeat; recurring passa a ser "repetição ativa". O card do modal traz
   a regra (recurrence) e o aviso (skipNotice); o mês do calendário traz as fantasmas (repeats).
 - Configurações lidas: tray.keep e tray.noticeShown (o main grava o aviso).

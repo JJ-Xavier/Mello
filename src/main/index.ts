@@ -188,6 +188,14 @@ async function start(): Promise<void> {
 
   const window = createWindow()
   mainWindow = window
+  // O Windows desligando, reiniciando ou saindo da conta encerra de verdade: esconder na bandeja
+  // seguraria o desligamento.
+  window.on('query-session-end', () => {
+    quitting = true
+  })
+  window.on('session-end', () => {
+    quitting = true
+  })
   window.on('close', (event) => keepInTray(window, event))
   window.on('closed', () => {
     mainWindow = null

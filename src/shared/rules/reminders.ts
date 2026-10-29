@@ -20,6 +20,24 @@ export function reminderAt(dueAt: string | null, reminder: ReminderKind): number
 
 const time = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
 const shortDate = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short' })
+const longDay = new Intl.DateTimeFormat('pt-BR', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short'
+})
+
+// Embaixo do "Lembrete" no seletor de data: quando a notificação sai, "qui., 29 de out., 18:00",
+// e se esse horário já passou. Null sem lembrete.
+export function reminderPreview(
+  dueAt: string | null,
+  reminder: ReminderKind,
+  now: number
+): string | null {
+  const at = reminderAt(dueAt, reminder)
+  if (at === null) return null
+  const when = `${longDay.format(at)}, ${time.format(at)}`
+  return at < now ? `${when} (horário já passou)` : when
+}
 
 // "hoje, 18:00", "amanhã", "ontem, 18:00", "26 de out., 18:00" (NovosEstados.dc.html).
 export function dueText(dueAt: string, now: number): string {

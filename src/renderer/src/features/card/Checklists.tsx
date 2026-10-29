@@ -16,7 +16,6 @@ import type { CardDetail } from '../../../../shared/ipc/cards'
 import type { Checklist, ChecklistItem } from '../../../../shared/ipc/checklists'
 import { CHECKLIST_TITLE_MAX, ITEM_TEXT_MAX } from '../../../../shared/limits'
 import { itemDateState, progress } from '../../../../shared/rules/checklist'
-import { formatDayInput, parseDayInput } from '../../../../shared/rules/dates'
 import { screenReaderInstructions, useDragSensors } from '../../components/dnd'
 import { EditableTitle } from '../../components/EditableTitle'
 import { Icon } from '../../components/Icon'
@@ -28,9 +27,11 @@ import { cx } from '../../lib/cx'
 import { formatItemDate } from '../../lib/format'
 import { queryKeys } from '../../lib/queryKeys'
 import styles from './CardModal.module.css'
+import { DueForm } from './DatePicker'
 import { useCardAction } from './useCardAction'
 
-// "Data da tarefa" (Estados.dc.html): só o dia e "Mostrar no calendário" (CHK-05).
+// "Data da tarefa" (NovoDataHoraA.dc.html): o dia e, se quiser, a hora, como no card, e "Mostrar
+// no calendário" (CHK-05).
 function ItemDate({
   item,
   close,
@@ -40,65 +41,30 @@ function ItemDate({
   close: () => void
   onSave: (due: { dueDate: string | null; showInCalendar: boolean }) => void
 }) {
-  const [text, setText] = useState(item.dueDate ? formatDayInput(item.dueDate) : '')
   const [show, setShow] = useState(item.showInCalendar)
-  const [error, setError] = useState('')
-
-  const save = (event: FormEvent) => {
-    event.preventDefault()
-    const day = parseDayInput(text)
-    if (!day) return setError('Data inválida. Use dd/mm/aaaa.')
-    close()
-    onSave({ dueDate: day, showInCalendar: show })
-  }
 
   return (
-    <form className={styles.stack} style={{ gap: 10 }} onSubmit={save}>
-      <PopoverHeader title="Data da tarefa" onClose={close} />
-      <div className={styles.itemQuote}>{item.text}</div>
-      <label className={ui.label}>
-        Data
-        <input
-          className={ui.fld}
-          value={text}
-          placeholder="dd/mm/aaaa"
-          autoFocus
-          onChange={(event) => {
-            setText(event.target.value)
-            setError('')
-          }}
-        />
-      </label>
-      <label className={styles.checkLine}>
-        <input
-          type="checkbox"
-          className={ui.check}
-          checked={show}
-          onChange={(event) => setShow(event.target.checked)}
-        />
-        Mostrar no calendário
-      </label>
-      {error && (
-        <p className={cx(ui.note, ui.danger)} role="alert">
-          {error}
-        </p>
+    <DueForm
+      title="Data da tarefa"
+      dayLabel="Data"
+      dueAt={item.dueDate}
+      finished={item.isDone}
+      top={<div className={styles.itemQuote}>{item.text}</div>}
+      bottom={() => (
+        <label className={styles.checkLine}>
+          <input
+            type="checkbox"
+            className={ui.check}
+            checked={show}
+            onChange={(event) => setShow(event.target.checked)}
+          />
+          Mostrar no calendário
+        </label>
       )}
-      <button type="submit" className={ui.pri}>
-        Salvar
-      </button>
-      {item.dueDate && (
-        <button
-          type="button"
-          className={ui.sec}
-          onClick={() => {
-            close()
-            onSave({ dueDate: null, showInCalendar: show })
-          }}
-        >
-          Remover
-        </button>
-      )}
-    </form>
+      onSave={(dueDate) => onSave({ dueDate, showInCalendar: show })}
+      onRemove={() => onSave({ dueDate: null, showInCalendar: show })}
+      close={close}
+    />
   )
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dueText, reminderAt, reminderNotification } from './reminders'
+import { dueText, reminderAt, reminderNotification, reminderPreview } from './reminders'
 
 const at = (d: number, h: number, m = 0) => new Date(2026, 9, d, h, m).getTime()
 
@@ -37,5 +37,22 @@ describe('texto da notificação (LEM-03)', () => {
         now
       )
     ).toEqual({ title: 'Mello · Pagar condomínio', body: 'Entrega hoje, 18:00 · Casa' })
+  })
+})
+
+describe('quando a notificação sai, no seletor de data', () => {
+  const now = at(28, 14)
+
+  it('o dia e a hora do lembrete; sem hora, 09:00 (LEM-02)', () => {
+    expect(reminderPreview('2026-10-30T18:00', 'day_before', now)).toBe('qui., 29 de out., 18:00')
+    expect(reminderPreview('2026-10-30', 'at_time', now)).toBe('sex., 30 de out., 09:00')
+  })
+
+  it('avisa quando o horário já passou; sem lembrete ou sem data, nada', () => {
+    expect(reminderPreview('2026-10-28T11:00', 'at_time', now)).toBe(
+      'qua., 28 de out., 11:00 (horário já passou)'
+    )
+    expect(reminderPreview('2026-10-30T18:00', 'none', now)).toBeNull()
+    expect(reminderPreview(null, 'at_time', now)).toBeNull()
   })
 })

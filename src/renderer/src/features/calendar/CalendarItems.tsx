@@ -1,11 +1,11 @@
 // Os itens de um dia do calendário (Calendario.dc.html e NovoCalendarioTodos.dc.html). Card:
-// etiquetas, ✓, relógio de atraso (CAL-08), título, ↻, prioridade e, em todos os quadros, o nome
-// do quadro (CAL-14); clicar abre o modal por cima (CAL-11). Tarefa: caixa de marcar, texto e o
-// card de origem (CAL-14); clicar marca ou desmarca (CAL-11). Repetição que não virou card
+// etiquetas, ✓, relógio de atraso (CAL-08), a hora, título, ↻, prioridade e, em todos os quadros,
+// o nome do quadro (CAL-14); clicar abre o modal por cima (CAL-11). Tarefa: caixa de marcar, a
+// hora, texto e o card de origem (CAL-14); clicar marca ou desmarca (CAL-11). Repetição que não virou card
 // (REP-14): tracejada, com o aviso embaixo; clicar abre o card mais recente da série.
 import { Link } from 'react-router'
 import type { CalendarCard, CalendarRepeat, CalendarTask } from '../../../../shared/ipc/calendar'
-import { isOverdue } from '../../../../shared/rules/dates'
+import { isOverdue, splitDue } from '../../../../shared/rules/dates'
 import { priorityLevel } from '../../../../shared/rules/priority'
 import { DoneMark } from '../../components/DoneMark'
 import { Icon } from '../../components/Icon'
@@ -27,6 +27,11 @@ export interface ItemOptions {
   strike: boolean
   // Calendário de todos os quadros: os cards mostram o quadro e as tarefas, "card · quadro".
   allBoards: boolean
+}
+
+// A hora da entrega, quando há ("18:00"), antes do título (NovoDataHoraA.dc.html).
+function hourOf(due: string): string | null {
+  return splitDue(due).time
 }
 
 function CardItem({ card, now, strike, allBoards }: { card: CalendarCard } & ItemOptions) {
@@ -59,6 +64,9 @@ function CardItem({ card, now, strike, allBoards }: { card: CalendarCard } & Ite
           <span className={styles.late}>
             <Icon name="clock" size={14} />
           </span>
+        )}
+        {hourOf(card.dueAt) && (
+          <span className={cx(styles.time, late && styles.lateText)}>{hourOf(card.dueAt)}</span>
         )}
         <span className={styles.text}>{card.title}</span>
         {card.recurring && (
@@ -129,6 +137,7 @@ function TaskItem({ task, now, strike, allBoards }: { task: CalendarTask } & Ite
       <TaskBox done={task.isDone} />
       <span className={styles.taskText}>
         <span className={cx(styles.text, late && styles.lateText, struck && styles.struck)}>
+          {hourOf(task.dueDate) && <span className={styles.time}>{hourOf(task.dueDate)} </span>}
           {task.text}
         </span>
         <span className={cx(styles.sub, struck && styles.struckLine)}>

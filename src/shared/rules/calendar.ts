@@ -56,10 +56,16 @@ export function sortDayCards<T extends { dueAt: string; priority: number | null;
   )
 }
 
-// As tarefas do dia ficam juntas por card (pelo título do card); dentro do card, na ordem do
-// checklist, que é a ordem em que chegam.
-export function sortDayTasks<T extends { cardTitle: string }>(tasks: readonly T[]): T[] {
-  return [...tasks].sort((a, b) => byTitle.compare(a.cardTitle, b.cardTitle))
+// CAL-10: entre as tarefas do dia, sem hora primeiro, depois pela hora; empate juntas por card
+// (pelo título do card) e, dentro do card, na ordem do checklist, que é a ordem em que chegam.
+export function sortDayTasks<T extends { dueDate: string; cardTitle: string }>(
+  tasks: readonly T[]
+): T[] {
+  const time = (dueDate: string) => dueDate.split('T')[1] ?? ''
+  return [...tasks].sort(
+    (a, b) =>
+      time(a.dueDate).localeCompare(time(b.dueDate)) || byTitle.compare(a.cardTitle, b.cardTitle)
+  )
 }
 
 // CAL-12: o card do "Adicionar" entra na primeira lista do quadro que não é de conclusão (as listas

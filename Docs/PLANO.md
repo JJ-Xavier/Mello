@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026 e etapa 6 em 26/10/2026**; a etapa 6 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026 e etapa 8 em 28/10/2026**; a etapa 8 aguarda o commit (uma parte já foi commitada em 26/10). A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -274,7 +274,7 @@ Convenções: IDs são UUID em texto. `created_at`, `updated_at` e os demais cam
 | Tabela | Campos |
 |---|---|
 | `checklist` | `id` PK, `card_id` → `card` CASCADE, `title` TEXT NOT NULL, `position` TEXT NOT NULL, `hide_checked` INTEGER NOT NULL DEFAULT 0 |
-| `checklist_item` | `id` PK, `checklist_id` → `checklist` CASCADE, `text` TEXT NOT NULL, `is_done` INTEGER NOT NULL DEFAULT 0, `due_date` TEXT NULL (`AAAA-MM-DD`), `show_in_calendar` INTEGER NOT NULL DEFAULT 1, `position` TEXT NOT NULL, `created_at`, `updated_at` |
+| `checklist_item` | `id` PK, `checklist_id` → `checklist` CASCADE, `text` TEXT NOT NULL, `is_done` INTEGER NOT NULL DEFAULT 0, `due_date` TEXT NULL (`AAAA-MM-DD` ou `AAAA-MM-DDTHH:mm`, com hora desde 28/10/2026), `show_in_calendar` INTEGER NOT NULL DEFAULT 1, `position` TEXT NOT NULL, `created_at`, `updated_at` |
 
 ### `activity` — histórico do card
 
@@ -463,8 +463,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** um mês com cards finalizados, atrasados e tarefas marcadas aparece como no protótipo; trocar de mês e de escopo funciona.
 - **Testes:** CAL-01..14; montagem da grade (meses de 5 e 6 semanas, início no domingo e na segunda, ano bissexto); riscado conforme FIN-01; itens arquivados, modelos e quadros fechados ficam de fora.
 
-### Etapa 8 — Agendador: repetição e lembretes
+### Etapa 8 — Agendador: repetição e lembretes ✅ concluída em 28/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 504 testes no total (81 novos), lint e tipos limpos; capturas conferidas com as telas 6b, 9, 5 e 16 nos dois temas. O agendador fica em `src/main/scheduler.ts`, a bandeja e as notificações em `src/main/tray.ts` e os ícones (do logo do protótipo) em `resources/`. Canais novos `recurrence:save`, `remove`, `createAnyway` e `dismiss`, `reminders:missed` e `app:hideToTray`, e os eventos `data:changed`, `app:openCard` e `tray:notice`. O `recurrence:preview` não foi preciso: a prévia usa as mesmas contas do agendador, na tela. Decisões da etapa: salvar a regra vale a partir dali; só o aviso de pulada mais recente fica no card; série sem card sai; "Mudar nas Configurações" do aviso da bandeja fica apagado até a etapa 10. Pedido de 28/10/2026, feito na mesma etapa: a tarefa do checklist também tem hora, e o seletor de data (o do card e o da tarefa, tela 17A aprovada no canvas, sem atalhos de data) tem horários prontos e mostra se fica no prazo ou em atraso e quanto falta (DAT-05); a hora aparece na face e no calendário. Versão 0.8.0. Detalhes no `Changelog.txt`.
 - **Entrega:** diálogo "Repetir card" completo (frequência, dias, horário, lista, o que copiar, se o anterior não estiver concluído, término, "Próximas:", Salvar e Remover); agendador no main (seção 6.4); aviso de repetição pulada dentro do card, com "Criar agora mesmo assim" e "Dispensar"; ↻ e próximo dia na face; repetições fantasma, puladas e perdidas no calendário; lembretes com notificação do Windows (o clique abre o card) e o aviso dos perdidos; bandeja do Windows (P4).
 - **Telas:** 6b, 9 (aviso de repetição pulada), 4 (Repetir), 5 (fantasmas); 16 (aviso da bandeja, lembretes perdidos, notificação).
 - **Aceite:** com o relógio adiantado, uma repetição semanal cria o card, pula quando o anterior está aberto e mostra tudo no calendário; um lembrete "No horário" aparece como notificação.

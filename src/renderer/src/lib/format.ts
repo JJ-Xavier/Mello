@@ -38,9 +38,12 @@ export function formatDue(dueAt: string): string {
   return hour ? `${shortDate.format(date)}, ${time.format(date)}` : shortDate.format(date)
 }
 
-// Data de uma tarefa do checklist: "10 set." (Card.dc.html).
-export function formatItemDate(day: string): string {
-  return shortDate.format(dueDate(day).getTime()).replace(' de ', ' ')
+// Data de uma tarefa do checklist: "10 set." ou "10 set. 18:00" (Card.dc.html e
+// NovoDataHoraA.dc.html).
+export function formatItemDate(due: string): string {
+  const { day, time: hour } = splitDue(due)
+  const date = shortDate.format(dueDate(day).getTime()).replace(' de ', ' ')
+  return hour ? `${date} ${hour}` : date
 }
 
 // "Última movimentação": "17 de out. de 2026, 18:06".

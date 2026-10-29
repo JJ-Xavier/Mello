@@ -17,7 +17,8 @@ COMO LER
 - Regras marcadas com "(aprovada 21/10)" eram propostas e foram aprovadas junto com o plano.
 - "Agora" é sempre um relógio que os testes conseguem controlar.
 - Datas de entrega são "horário de relógio" local, sem fuso: "2026-10-20" (dia inteiro) ou
-  "2026-10-20T14:30" (com hora). Datas de tarefas do checklist são só o dia.
+  "2026-10-20T14:30" (com hora). As tarefas do checklist usam o mesmo formato (com hora desde
+  28/10/2026).
 
 
 1. QUADROS (QUA)
@@ -261,28 +262,42 @@ CHK-02  Progresso do checklist = itens marcados / total, em porcentagem arredond
         azul e fica verde em 100%. Checklist vazio mostra 0%.
 CHK-03  Na face do card aparece x/y somando todos os checklists. Some quando não há itens.
 CHK-04  "Ocultar itens marcados" vale por checklist e fica salvo.
-CHK-05  Cada item pode ter uma data (só o dia) e a opção "Mostrar no calendário", ligada por
-        padrão.
+CHK-05  Cada item pode ter uma data, com o dia e, se quiser, a hora, no mesmo seletor do card
+        (DAT-01, DAT-05), e a opção "Mostrar no calendário", ligada por padrão. Sem hora, vence
+        no fim do dia; com hora, quando o horário passa (DAT-02). (hora: decidido em 28/10/2026)
 CHK-06  O selo de data do item é cinza; vermelho quando a data já passou e o item não está
-        marcado; verde quando está marcado.
+        marcado; verde quando está marcado. Com hora, o selo mostra a hora: "10 set. 18:00".
 
 
 10. DATAS E ATRASO (DAT)
 Testes (etapa 3, a regra e a cor na face): src/shared/rules/dates.test.ts e
 src/renderer/src/features/board/BoardCards.test.tsx. Etapa 4 (seletor de data, "Em atraso" no
 modal, DAT-04): src/shared/rules/cardRules.test.ts, src/main/modules/lists.test.ts e
-src/renderer/src/features/card/CardModal.test.tsx.
+src/renderer/src/features/card/CardModal.test.tsx. Data e hora (28/10/2026, DAT-05 e a hora da
+tarefa): src/shared/rules/dates.test.ts, src/shared/rules/reminders.test.ts e o bloco "data e
+hora (DAT-05)" de src/renderer/src/features/card/CardModal.test.tsx.
 
 DAT-01  A data de entrega do card tem dia e, opcionalmente, hora. No seletor, a data é digitada
-        como dd/mm/aaaa (ou escolhida na grade do mês) e a hora como hh:mm; uma data que não
-        existe (31/02) não é salva. (etapa 4)
+        como dd/mm/aaaa (ou escolhida na grade do mês, com hoje marcado) e a hora como hh:mm, ou
+        escolhida nos horários prontos (09:00, 12:00, 18:00 e "Sem hora"); um horário pronto sem
+        dia escolhido vale para hoje. Uma data que não existe (31/02) ou uma hora inválida
+        (25:00) não é salva. Sem atalhos de data ("Hoje", "Amanhã"): escolhe o dia, a hora e
+        salva. (etapa 4; horários prontos e tela NovoDataHoraA.dc.html: 28/10/2026)
 DAT-02  Um card está atrasado quando não está finalizado e o prazo passou: com hora, quando o
         instante passou; sem hora, quando o dia acabou.
-DAT-03  Card atrasado: selo "Em atraso" no modal e data em vermelho na face. Card finalizado com
-        data: data em verde na face.
+DAT-03  No modal, o campo "Data de entrega" tem o selo "No prazo" (cinza), "Em atraso"
+        (vermelho) ou "Concluído" (verde, card finalizado). Na face, a data fica em vermelho no
+        atraso e em verde no finalizado; com hora, a face mostra a hora: "30 de out., 18:00".
 DAT-04  "Ordenar por data de entrega": do prazo mais cedo para o mais tarde, com os cards sem data
         no fim. Ordenação estável. Uma data sem hora vale até o fim do dia, então vem depois de um
         horário no mesmo dia. (etapa 4)
+DAT-05  Embaixo dos campos, o seletor (do card e da tarefa) mostra, enquanto se escolhe, se a data
+        fica no prazo ou em atraso e quanto falta ou há quanto tempo venceu. Com hora, em dias,
+        horas e minutos: "No prazo · faltam 2 dias e 4 h", "Em atraso · há 3 h". Sem hora, em
+        dias: "vence hoje, até o fim do dia", "vence amanhã", "vence em 5 dias", "venceu ontem",
+        "venceu há 4 dias". Finalizado: "Concluído · não conta como atraso". No seletor do card,
+        embaixo do lembrete, aparece quando a notificação sai ("Notificação: qui., 29 de out.,
+        18:00"), avisando quando esse horário já passou. (decidido em 28/10/2026)
 
 
 11. LEMBRETES (LEM)
@@ -500,11 +515,14 @@ CAL-07  Riscado (com "Riscar itens finalizados" ligado): card finalizado (FIN-01
         finalizado" some. Um card com ✓ fora de uma lista de conclusão mostra o ✓, mas não fica
         riscado (FIN-04). (etapa 7)
 CAL-08  Card atrasado (DAT-02) mostra o relógio vermelho. Tarefa atrasada tem o texto vermelho.
+        Card e tarefa com hora mostram a hora antes do título ("18:00 Pintar o quarto"), em
+        vermelho no atraso. (hora: 28/10/2026)
 CAL-09  Os filtros "Cards" e "Tarefas do checklist" são independentes. O valor inicial de
         "Tarefas" vem das Configurações.
 CAL-10  Ordem dentro do dia: cards antes das tarefas. Entre cards: sem hora primeiro, depois pela
-        hora; empate por prioridade e depois pelo título. Entre tarefas: juntas por card (pelo
-        título do card) e, dentro do card, na ordem do checklist. (etapa 7)
+        hora; empate por prioridade e depois pelo título. Entre tarefas: sem hora primeiro,
+        depois pela hora; empate juntas por card (pelo título do card) e, dentro do card, na
+        ordem do checklist. (etapa 7; hora das tarefas: 28/10/2026)
 CAL-11  Clicar num card abre o modal dele por cima do calendário. Clicar numa tarefa marca ou
         desmarca o item (ENV-05). (aprovada 21/10: o protótipo também marcava o card ao clicar, mas pela
         regra FIN-01 marcar o ✓ sozinho não finaliza) Vale também para os itens da lista do

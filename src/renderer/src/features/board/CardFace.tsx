@@ -2,7 +2,7 @@
 // de descrição, checklist, nota e anexos, a repetição (REP-13) e a prioridade. "Modelo" entra na
 // etapa 11.
 import type { CardSummary } from '../../../../shared/ipc/cards'
-import { dueDate, isOverdue } from '../../../../shared/rules/dates'
+import { isOverdue } from '../../../../shared/rules/dates'
 import { priorityLevel } from '../../../../shared/rules/priority'
 import { nextRepeatText } from '../../../../shared/rules/recurrence'
 import { Cover } from '../../components/Cover'
@@ -10,7 +10,7 @@ import { DoneMark } from '../../components/DoneMark'
 import { Icon } from '../../components/Icon'
 import { PriorityIcon } from '../../components/PriorityIcon'
 import { cx } from '../../lib/cx'
-import { formatShortDate } from '../../lib/format'
+import { formatDue } from '../../lib/format'
 import styles from './CardFace.module.css'
 
 interface CardFaceProps {
@@ -27,7 +27,7 @@ function DueChip({ dueAt, finished, now }: { dueAt: string; finished: boolean; n
   return (
     <span className={cx(styles.chip, late && styles.late, finished && styles.finished)}>
       <Icon name="clock" size={14} />
-      {formatShortDate(dueDate(dueAt).getTime())}
+      {formatDue(dueAt)}
       {late && <span className="visually-hidden">, em atraso</span>}
       {finished && <span className="visually-hidden">, concluído</span>}
     </span>

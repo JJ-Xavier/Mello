@@ -65,7 +65,8 @@ function itemsByDay(
   }
   if (showTasks) {
     for (const task of data.tasks) {
-      tasksOf.set(task.dueDate, [...(tasksOf.get(task.dueDate) ?? []), task])
+      const day = task.dueDate.slice(0, 10)
+      tasksOf.set(day, [...(tasksOf.get(day) ?? []), task])
     }
   }
   for (const day of new Set([...cardsOf.keys(), ...repeatsOf.keys(), ...tasksOf.keys()])) {

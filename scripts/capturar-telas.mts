@@ -173,12 +173,13 @@ async function attach(app: ElectronApplication, page: Page, cardId: string, file
   return Object.fromEntries(detail.attachments.map((a) => [a.name, a.fileId]))
 }
 
-// Um checklist com itens; done marca os primeiros, dates dá a data (dias a partir de hoje).
+// Um checklist com itens; done marca os primeiros, date dá a data (dias a partir de hoje) e time,
+// a hora.
 async function addChecklist(
   page: Page,
   cardId: string,
   title: string,
-  items: { text: string; done?: boolean; date?: number }[]
+  items: { text: string; done?: boolean; date?: number; time?: string }[]
 ) {
   const checklist = await mello<{ id: string }>(page, 'checklists.create', { cardId, title })
   for (const item of items) {
@@ -190,7 +191,10 @@ async function addChecklist(
     if (item.date !== undefined) {
       await mello(page, 'items.update', {
         itemId: created.id,
-        due: { dueDate: day(item.date), showInCalendar: true }
+        due: {
+          dueDate: item.time ? `${day(item.date)}T${item.time}` : day(item.date),
+          showInCalendar: true
+        }
       })
     }
   }
@@ -365,7 +369,7 @@ async function seed(app: ElectronApplication, page: Page): Promise<Seeded> {
   await addChecklist(page, pintar, 'Preparação', [
     { text: 'Afastar os móveis', done: true, date: -5 },
     { text: 'Cobrir o chão', done: true },
-    { text: 'Lixar as paredes', date: -1 }
+    { text: 'Lixar as paredes', date: -1, time: '18:00' }
   ])
   await addChecklist(page, pintar, 'Pintura', [
     { text: 'Primeira demão', date: 2 },
@@ -817,7 +821,10 @@ try {
 
     // Etapa 8 (telas 9 e 5): com o relógio 14 dias à frente, "Compras da semana" ficou em aberto
     // e as repetições foram puladas: o aviso no card e as tracejadas no calendário.
-    await page.getByRole('link', { name: /Compras da semana/ }).first().click()
+    await page
+      .getByRole('link', { name: /Compras da semana/ })
+      .first()
+      .click()
     const skipped = page.getByRole('dialog', { name: 'Compras da semana' })
     await skipped.getByText(/pulada\./).waitFor()
     await page.waitForTimeout(300)
@@ -825,7 +832,10 @@ try {
     await page.keyboard.press('Escape')
     await page.waitForTimeout(250)
     await go(page, `#/boards/${casa.id}/calendar`)
-    await page.getByRole('link', { name: /Pulada: a anterior está em aberto/ }).first().waitFor()
+    await page
+      .getByRole('link', { name: /Pulada: a anterior está em aberto/ })
+      .first()
+      .waitFor()
     await page.mouse.move(2, 600)
     await page.waitForTimeout(300)
     await shot(page, '05-calendario-repeticoes', theme)

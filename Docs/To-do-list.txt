@@ -1,7 +1,7 @@
 To-do list — Mello
 
-Atualizado em: 26/10/2026
-Situação: etapa 8 concluída em 26/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
+Atualizado em: 28/10/2026
+Situação: etapa 8 concluída em 28/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
           (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 9.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
@@ -98,13 +98,16 @@ ETAPA 7 — CALENDÁRIO (concluída em 24/10/2026, antes da 6)
 [x] Configurações do calendário lidas do banco (settings:get; a tela que grava é da etapa 10)
 [x] Testes (387 no total), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 8 — AGENDADOR: REPETIÇÃO E LEMBRETES (concluída em 26/10/2026)
+ETAPA 8 — AGENDADOR: REPETIÇÃO E LEMBRETES (concluída em 28/10/2026)
 [x] Diálogo Repetir (REP-01..06, REP-17) e o campo "Repetição" no modal
 [x] Agendador: criar, pular e avisar, app fechado (REP-07..12, REP-16)
 [x] Aviso de repetição pulada no card, com "Criar agora mesmo assim" e "Dispensar" (REP-09)
 [x] ↻ na face, fantasmas no calendário, remover repetição (REP-13..15)
 [x] Lembretes com notificação do Windows e os perdidos ao abrir (LEM)
 [x] Bandeja do Windows e o aviso da primeira vez (P4, LEM-07)
+[x] Data e hora do card e da tarefa (pedido de 28/10/2026): tela 17A no canvas, aprovada sem os
+    atalhos de data; horários prontos, "No prazo" ou "Em atraso" com quanto falta (DAT-05),
+    hora na tarefa (CHK-05), na face e no calendário
 [x] Testes, conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 9 — FUNDO DO QUADRO

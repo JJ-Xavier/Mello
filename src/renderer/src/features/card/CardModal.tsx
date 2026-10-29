@@ -18,7 +18,7 @@ import {
 import { useSearchParams } from 'react-router'
 import type { CardDetail, UpdateCardInput } from '../../../../shared/ipc/cards'
 import { CHECKLIST_TITLE_MAX } from '../../../../shared/limits'
-import { isOverdue } from '../../../../shared/rules/dates'
+import { dueStatus } from '../../../../shared/rules/dates'
 import { isFinished } from '../../../../shared/rules/finished'
 import { priorityLevel } from '../../../../shared/rules/priority'
 import { recurrenceSummary } from '../../../../shared/rules/recurrence'
@@ -44,7 +44,7 @@ import { CardMenu } from './CardMenu'
 import styles from './CardModal.module.css'
 import { Checklists } from './Checklists'
 import { CoverPicker } from './CoverPicker'
-import { DatePicker } from './DatePicker'
+import { DatePicker, StatusTag } from './DatePicker'
 import { Description } from './Description'
 import { LabelChip, LabelPicker } from './LabelPicker'
 import { Note } from './Note'
@@ -160,6 +160,7 @@ function FieldPicker({
     <DatePicker
       dueAt={card.dueAt}
       reminder={card.reminder}
+      finished={isFinished(card.isDone, card)}
       onSave={(due) => update({ cardId: card.id, due })}
       close={close}
       onBack={onBack}
@@ -199,7 +200,7 @@ function Fields({ card, now }: { card: CardDetail; now: number }) {
   const { data: labels = [] } = useLabels(card.boardId)
   const chosen = labels.filter((l) => card.labelIds.includes(l.id))
   const priority = priorityLevel(card.priority)
-  const late = card.dueAt !== null && isOverdue(card.dueAt, isFinished(card.isDone, card), now)
+  const status = card.dueAt !== null && dueStatus(card.dueAt, isFinished(card.isDone, card), now)
 
   return (
     <div className={styles.fields}>
@@ -253,7 +254,7 @@ function Fields({ card, now }: { card: CardDetail; now: number }) {
             popoverTarget={dueId}
           >
             {formatDue(card.dueAt)}
-            {late && <span className={styles.lateTag}>Em atraso</span>}
+            {status && <StatusTag status={status} />}
             <Icon name="chevronDown" />
           </button>
           <Popover id={dueId} label="Datas">

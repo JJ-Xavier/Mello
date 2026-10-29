@@ -89,7 +89,7 @@ describe('cards no quadro', () => {
     expect(within(created).queryByRole('img', { name: 'Concluído' })).toBeNull()
   })
 
-  it('CAR-04: a face mostra etiqueta, ✓, data (verde ou em atraso) e os ícones', async () => {
+  it('CAR-04: a face mostra etiqueta, ✓, data e hora (verde ou em atraso) e os ícones', async () => {
     const urgent = db.select().from(label).where(eq(label.boardId, board.id)).all()[1]!
     db.update(label).set({ name: 'Urgente' }).where(eq(label.id, urgent.id)).run()
     const late = insertCard(db, lists['A fazer']!, {
@@ -108,7 +108,7 @@ describe('cards no quadro', () => {
       .where(eq(cardTable.id, late))
       .run()
     const done = insertCard(db, lists['Concluído']!, { title: 'Faxina', isDone: true })
-    db.update(cardTable).set({ dueAt: '2020-01-10' }).where(eq(cardTable.id, done)).run()
+    db.update(cardTable).set({ dueAt: '2020-01-10T18:00' }).where(eq(cardTable.id, done)).run()
     renderBoard()
 
     const contas = await screen.findByRole('link', { name: /Contas/ })
@@ -123,6 +123,8 @@ describe('cards no quadro', () => {
     const faxina = await screen.findByRole('link', { name: /Faxina/ })
     expect(within(faxina).getByRole('img', { name: 'Concluído' })).toBeTruthy()
     expect(within(faxina).getByText(', concluído')).toBeTruthy()
+    // Com hora, a face mostra a hora junto com a data (NovoDataHoraA.dc.html).
+    expect(within(faxina).getByText('10 de jan., 18:00')).toBeTruthy()
     expect(within(faxina).queryByText(', em atraso')).toBeNull()
   })
 

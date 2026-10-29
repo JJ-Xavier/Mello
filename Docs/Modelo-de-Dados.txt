@@ -73,7 +73,8 @@ checklist
 
 checklist_item
   id TEXT PK | checklist_id → checklist ON DELETE CASCADE | text TEXT NOT NULL
-  is_done INTEGER NOT NULL DEFAULT 0 | due_date TEXT NULL ("AAAA-MM-DD")
+  is_done INTEGER NOT NULL DEFAULT 0 | due_date TEXT NULL ("AAAA-MM-DD" ou "AAAA-MM-DDTHH:mm",
+  com hora desde 28/10/2026; a coluna já era texto, sem migração)
   show_in_calendar INTEGER NOT NULL DEFAULT 1 | position TEXT NOT NULL | created_at, updated_at
 
 activity — histórico do card

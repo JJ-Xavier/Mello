@@ -426,6 +426,13 @@
   color: var(--danger-txt);
 }
 
+/* A hora da entrega antes do título. */
+.time {
+  flex: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .repeat {
   display: inline-flex;
   color: var(--muted);

@@ -1,7 +1,7 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 6 (423 testes, em 26/10/2026; a 6
-veio depois da 7). Atualizado a cada etapa.
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 8 (504 testes, em 28/10/2026).
+Atualizado a cada etapa.
 
 
 1. COMO RODAR
@@ -435,6 +435,108 @@ src/renderer/src/app/DevClock.test.tsx (relógio de teste)
 - Aceite da etapa: adiantando o relógio dia a dia, o card passa pelos níveis 0 a 5 nos dias
   certos (3, 6, 9, 12 e 14).
 
+Etapa 8 — 69 testes novos (mais os 12 da data e hora, no fim desta parte)
+
+src/shared/rules/recurrence.test.ts (REP-01, REP-06, REP-13, REP-17)
+- Diária (inclusive salva antes do horário do dia), semanal com segunda e quarta, mensal no dia
+  31 (fevereiro, abril e o dia 29 do ano bissexto), a cada N dias contando do dia em que foi
+  salva, virada de ano.
+- Término numa data (inclusive) e depois de N vezes, descontando as que já venceram.
+- REP-17: o resumo de cada frequência; "Todo" com domingo e sábado; semanal sem dias.
+- O agora como ocorrência, o dia do aviso ("seg., 19 de out."), a prévia ("seg. 26/10") e o
+  próximo dia da face ("seg." nos próximos 6 dias, "28 out." depois).
+
+src/shared/rules/reminders.test.ts (LEM-01 a LEM-03)
+- "No horário" e "1 dia antes"; data sem hora às 09:00 (LEM-02); sem lembrete ou sem data não
+  dispara.
+- O texto: hoje, ontem, amanhã ou a data; título "Mello · <card>" e "Entrega <data> · <quadro>".
+
+src/shared/rules/activity.test.ts (1 novo)
+- Os textos da repetição: criado (REP-12), pulada (REP-08), uma e várias não criadas (REP-10).
+
+src/main/modules/recurrence.test.ts (a seção 6.4 do PLANO.md; REP-01 a REP-17)
+- Salvar liga o card à série, zera o envelhecimento e mostra o ↻ com o próximo dia; alterar
+  mantém a contagem e vale a partir de agora; a lista de destino precisa ser ativa e do quadro;
+  a entrada exige os dias, o dia do mês, o N, o horário e o término; REP-15 (remover deixa os
+  cards, sem o ↻, e apaga as ocorrências).
+- REP-04 e REP-12: nada antes do horário; no horário, o card no topo da lista, com o título, as
+  etiquetas, a prioridade, a descrição e o checklist desmarcado e sem data, sem nota, nível 0,
+  a atividade e a ocorrência; a data de entrega copiada com o lembrete; sem as opções, só o
+  título. REP-05 (copia do mais recente). Rodar duas vezes no mesmo minuto não duplica.
+- REP-07 a REP-09: pula e avisa no anterior, com a próxima; o ✓ fora da conclusão não conta;
+  "Criar mesmo assim" na regra; "Criar agora mesmo assim" e "Dispensar"; o aviso novo substitui
+  o anterior; anterior arquivado não conta.
+- REP-10: 10 dias fechado numa diária cria 1 e registra 9 como perdidas, num registro só da
+  atividade. REP-16: lista de destino arquivada, quadro fechado e lista excluída pausam; ao
+  voltar, vale a REP-10. REP-06: depois de N vezes (as perdidas contam) e numa data. Série sem
+  nenhum card sai.
+- REP-14: as fantasmas do mês (próximas, pulada e perdida), com o card mais recente; pausada sem
+  as próximas; quadro fechado sem nada; a restrição UNIQUE.
+
+src/main/modules/reminders.test.ts (LEM-02 a LEM-06)
+- Dispara no horário uma vez só, com o card e o quadro; "1 dia antes" e data sem hora, na ordem
+  em que venceram; LEM-05 (finalizado, arquivado, modelo, lista arquivada e quadro fechado; o
+  finalizado continua pendente); LEM-04 (mudar a data rearma); LEM-06 (mais de 7 dias é
+  descartado; a entrega que passou fica em atraso).
+
+src/main/scheduler.test.ts (REP-11, LEM-03, LEM-06; relógio e temporizador falsos)
+- Na abertura, os perdidos viram o aviso agrupado, uma vez, sem notificação; com o app aberto,
+  cada lembrete vira uma notificação; roda a cada minuto e avisa a tela quando a repetição cria
+  um card; um erro numa rodada não para o agendador.
+
+src/main/modules/settings.test.ts (1 novo)
+- tray.keep e tray.noticeShown nos padrões; o main grava uma chave e recusa valor fora do schema.
+
+src/main/ipc/events.test.ts (3 novos)
+- ENV-05: configurar a repetição (na tabela) e remover a repetição. ENV-06: "Dispensar" e "Criar
+  agora mesmo assim" não mexem no card do aviso. reminders:missed e app:hideToTray classificados.
+
+src/renderer/src/features/recurrence/Recurrence.test.tsx (relógio falso só no Date)
+- Diálogo: começa semanal no dia de hoje, com "Próximas:" e a lista do card, e salva (o campo
+  "Repetição" mostra o resumo); mensal no dia 31 com "depois de N vezes" (digitar no campo
+  escolhe a opção); erros de dia e de horário; remover; a dica do checklist.
+- Face: ↻ com o dia da semana; FLT-03 com a repetição ativa.
+- Aviso de pulada com a próxima; "Criar agora mesmo assim" cria o card; "Dispensar" só some
+  com o aviso; REP-14 no calendário (pulada e próximas) e o clique abre o card.
+
+src/renderer/src/app/AppEvents.test.tsx (avisos do main)
+- data:changed recarrega a tela; app:openCard abre o card (LEM-03); o aviso da bandeja com o
+  "Entendi" (P4); LEM-06: o aviso dos lembretes perdidos, com "Abrir" e "Dispensar", uma vez só.
+
+Data e hora do card e da tarefa (pedido de 28/10/2026, ainda na etapa 8) — 12 testes novos
+
+src/shared/rules/dates.test.ts (DAT-05, 4 novos)
+- A duração em dias, horas e minutos; com hora, quanto falta, "vence agora" e há quanto tempo
+  venceu (pelo menos 1 min); sem hora, em dias, valendo até o fim do dia; finalizado não conta
+  atraso.
+
+src/shared/rules/reminders.test.ts (2 novos)
+- Quando a notificação sai, no seletor: "1 dia antes", data sem hora às 09:00, o aviso de
+  horário que já passou e nada sem lembrete ou sem data.
+
+src/shared/rules/calendar.test.ts (CAL-10, 1 novo) e src/main/modules/calendar.test.ts (1 novo)
+- Tarefas sem hora primeiro, depois pela hora, empate juntas por card; tarefa com hora no fim
+  do mês entra no mês, a de 01/11 00:00 não.
+
+src/main/modules/checklists.test.ts (CHK-05, alterado)
+- A data da tarefa aceita a hora; hora que não existe (24:00) ou sem os dois dígitos é recusada.
+
+src/renderer/src/features/card/CardModal.test.tsx (DAT-05, 3 novos; relógio parado em qua.,
+28/10/2026, 14:00)
+- O seletor: hoje marcado na grade; "18:00" sem dia vale para hoje; "No prazo · faltam 4 h",
+  "Em atraso · há 3 h", "Sem hora" até o fim do dia, "faltam 2 dias e 4 h"; a notificação do
+  "1 dia antes"; salvar mostra "30 de out., 18:00" e "No prazo" no modal.
+- Hora inválida: "Confira a data e a hora" e o erro ao salvar, sem gravar.
+- CHK-05: a tarefa com hora fica "28 out. 11:00, em atraso"; marcada, deixa de estar em atraso.
+
+src/renderer/src/features/calendar/CalendarPage.test.tsx (1 novo) e BoardCards.test.tsx
+(alterado)
+- No calendário, a hora antes do título do card e da tarefa, e as tarefas em ordem de horário.
+  Na face, a data com a hora ("10 de jan., 18:00").
+
+Os testes da tela simulam os avisos do main (realApi.ts, emit) e a lista dos lembretes perdidos;
+a notificação de verdade e a bandeja são conferidas no app real (seção 5).
+
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
 
@@ -449,7 +551,14 @@ temporária (MELLO_DATA_DIR) e:
 4. desde a etapa 6, numa fase final, adianta o relógio de teste pelo atalho (Ctrl+Alt+→) e mexe
    em cada card num dia diferente, para os 5 níveis do envelhecimento aparecerem; o selo do
    relógio sai numa captura própria e fica escondido nas outras;
-5. apaga a pasta temporária.
+5. desde a etapa 8, a mesma fase deixa uma série semanal em aberto, para o aviso de pulada e as
+   repetições tracejadas do calendário aparecerem; a notificação do Windows é trocada por uma
+   anotação no main (nada aparece na tela), e o script lista os lembretes que dispararam e falha
+   se nenhum disparou;
+6. desde a etapa 8, encerra o app como o "Sair" da bandeja, cria dois lembretes de ontem e abre
+   o app de novo com os mesmos dados: captura o aviso dos lembretes perdidos, fecha a janela
+   para o aviso da bandeja e confere que o "Entendi" deixa a janela escondida;
+7. apaga a pasta temporária.
 
 O Electron do script abre com opções do Chromium que mantêm a janela desenhando mesmo coberta ou
 com o monitor desligado pelo Windows; sem elas, a captura podia esperar um quadro que não chegava
@@ -545,5 +654,25 @@ Etapa 6 (conferido em 26/10/2026, no app real pelo Playwright; feita depois da 7
 [ ] No seu computador: Ctrl+Alt+→ com o npm run dev. Em alguns computadores com placa de vídeo
     Intel, Ctrl+Alt+seta gira a tela (atalho do driver); se acontecer, o atalho do relógio
     precisa mudar.
+
+Etapa 8 (conferido em 28/10/2026, no app real pelo Playwright)
+[x] Com o relógio de teste adiantado 14 dias, a série semanal "Compras da semana" em aberto foi
+    pulada duas vezes: o aviso no card mostra a mais recente e a próxima, e o calendário mostra
+    a pulada e as próximas tracejadas.
+[x] Os lembretes que venceram no intervalo viraram notificação (3, entre eles o "No horário" de
+    "Compras da semana"), com o título e o texto da LEM-03; a notificação foi trocada por uma
+    anotação, para não aparecer na tela durante o roteiro.
+[x] Na segunda abertura, os dois lembretes de ontem, criados com o app aberto e não disparados,
+    viraram o aviso "Você perdeu 2 lembretes".
+[x] Fechar a janela pela primeira vez mostrou o aviso da bandeja, e o "Entendi" deixou a janela
+    escondida com o app rodando; "Sair" (app.quit) encerrou.
+[x] Capturas da etapa 8 conferidas com as telas 6b, 9, 5 e 16, nos dois temas.
+[x] Data e hora (28/10/2026): o seletor do card e o da tarefa conferidos com a tela 17A
+    (horários prontos, hoje marcado, "No prazo · faltam 19 h e 12 min", "Em atraso · há 1 dia
+    e 3 h", a notificação do lembrete); "No prazo" no modal; a hora na face e no calendário
+    ("18:00 Lixar as paredes" em vermelho).
+[ ] No seu computador, com o npm run dev: um lembrete "No horário" para daqui a 2 minutos
+    aparece como notificação do Windows, e clicar nela abre o card; o ícone da bandeja aparece
+    ao lado do relógio, com "Abrir o Mello" e "Sair".
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

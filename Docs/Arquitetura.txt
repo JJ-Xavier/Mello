@@ -189,7 +189,8 @@ vai para o log, aparece um aviso "Não foi possível abrir o Mello" e o app fech
 Fechar a janela (etapa 8, P4 e LEM-07): com "Manter o Mello na bandeja" ligado (tray.keep, o
 padrão), a janela só se esconde e o agendador continua. Na primeira vez, o main manda o aviso
 tray:notice e a tela mostra "O Mello continua na bandeja"; o "Entendi" (app:hideToTray) grava
-tray.noticeShown e esconde a janela. Com a opção desligada, fechar encerra. "Sair", no menu da
+tray.noticeShown e esconde a janela. Com a opção desligada, fechar encerra. O Windows desligando,
+reiniciando ou saindo da conta (query-session-end, session-end) também encerra de verdade. "Sair", no menu da
 bandeja, encerra de verdade: para o agendador, tira o ícone e fecha o banco.
 
 

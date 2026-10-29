@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MelloApi } from '../../../../shared/ipc/api'
 import type { BoardSummary } from '../../../../shared/ipc/boards'
 import { App } from '../../app/App'
@@ -199,6 +199,88 @@ describe('modal do card: checklist (CHK)', () => {
       dueDate: '2020-09-10',
       showInCalendar: false
     })
+  })
+})
+
+// O seletor de data e hora (NovoDataHoraA.dc.html) com o relógio parado em qua., 28/10/2026, 14:00.
+describe('modal do card: data e hora (DAT-05)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 28, 14, 0))
+  })
+  afterEach(() => vi.useRealTimers())
+
+  const field = (scope: HTMLElement, label: string) =>
+    within(scope).getByLabelText(label) as HTMLInputElement
+
+  it('o seletor mostra se fica no prazo ou em atraso; os horários prontos', async () => {
+    const modal = await openCard()
+    const menu = await openPopover(modal, 'Adicionar', 'Adicionar ao card')
+    fireEvent.click(within(menu).getByRole('button', { name: 'Data de entrega' }))
+    const status = await within(menu).findByRole('status')
+    expect(status.textContent).toBe('Sem data de entrega')
+    expect(within(menu).getByRole('button', { name: '28/10/2026, hoje' })).toBeTruthy()
+
+    // Um horário pronto sem dia escolhido vale para hoje.
+    fireEvent.click(within(menu).getByRole('button', { name: '18:00' }))
+    expect(field(menu, 'Data de entrega').value).toBe('28/10/2026')
+    expect(field(menu, 'Hora').value).toBe('18:00')
+    expect(within(menu).getByRole('button', { name: '18:00', pressed: true })).toBeTruthy()
+    expect(status.textContent).toBe('No prazofaltam 4 h')
+
+    fireEvent.change(field(menu, 'Hora'), { target: { value: '11:00' } })
+    expect(status.textContent).toBe('Em atrasohá 3 h')
+    fireEvent.click(within(menu).getByRole('button', { name: 'Sem hora' }))
+    expect(status.textContent).toBe('No prazovence hoje, até o fim do dia')
+
+    fireEvent.click(within(menu).getByRole('button', { name: '30/10/2026' }))
+    fireEvent.click(within(menu).getByRole('button', { name: '18:00' }))
+    expect(status.textContent).toBe('No prazofaltam 2 dias e 4 h')
+    fireEvent.change(within(menu).getByLabelText('Lembrete'), { target: { value: 'day_before' } })
+    expect(within(menu).getByText('Notificação: qui., 29 de out., 18:00')).toBeTruthy()
+    fireEvent.click(within(menu).getByRole('button', { name: 'Salvar' }))
+
+    expect(await within(modal).findByText('30 de out., 18:00')).toBeTruthy()
+    expect(within(modal).getByText('No prazo')).toBeTruthy()
+    expect(await saved()).toMatchObject({ dueAt: '2026-10-30T18:00', reminder: 'day_before' })
+  })
+
+  it('hora inválida não é salva', async () => {
+    const modal = await openCard()
+    const menu = await openPopover(modal, 'Adicionar', 'Adicionar ao card')
+    fireEvent.click(within(menu).getByRole('button', { name: 'Data de entrega' }))
+    fireEvent.change(await within(menu).findByLabelText('Data de entrega'), {
+      target: { value: '30/10/2026' }
+    })
+    fireEvent.change(field(menu, 'Hora'), { target: { value: '25:00' } })
+    expect(within(menu).getByRole('status').textContent).toBe('Confira a data e a hora')
+    fireEvent.click(within(menu).getByRole('button', { name: 'Salvar' }))
+    expect((await within(menu).findByRole('alert')).textContent).toBe('Hora inválida. Use hh:mm.')
+    expect((await saved()).dueAt).toBeNull()
+  })
+
+  it('CHK-05: a tarefa também tem hora, e atrasa quando o horário passa', async () => {
+    const checklist = await unwrap(api.checklists.create({ cardId, title: 'Itens' }))
+    await unwrap(api.items.create({ checklistId: checklist.id, text: 'Pão' }))
+    const modal = await openCard()
+    const section = await within(modal).findByRole('region', { name: 'Itens' })
+    const popover = await openPopover(section, 'Definir data da tarefa', 'Data da tarefa')
+    fireEvent.click(within(popover).getByRole('button', { name: '28/10/2026, hoje' }))
+    fireEvent.change(field(popover, 'Hora'), { target: { value: '11:00' } })
+    expect(within(popover).getByRole('status').textContent).toBe('Em atrasohá 3 h')
+    fireEvent.click(within(popover).getByRole('button', { name: 'Salvar' }))
+
+    expect(
+      await within(section).findByRole('button', {
+        name: 'Data da tarefa: 28 out. 11:00, em atraso'
+      })
+    ).toBeTruthy()
+    expect((await saved()).checklists[0]!.items[0]).toMatchObject({ dueDate: '2026-10-28T11:00' })
+
+    fireEvent.click(within(section).getByRole('checkbox', { name: 'Pão' }))
+    expect(
+      await within(section).findByRole('button', { name: 'Data da tarefa: 28 out. 11:00' })
+    ).toBeTruthy()
   })
 })
 

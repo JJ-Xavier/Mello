@@ -3,10 +3,11 @@
 Planejador pessoal para Windows, inspirado no Trello: quadros Kanban e um calendário mensal com os
 mesmos cards. Roda 100% no computador, sem conta, sem nuvem e sem internet.
 
-> **Status:** em desenvolvimento. As etapas 1 a 7 de 12 estão prontas: a base do app, o banco
+> **Status:** em desenvolvimento. As etapas 1 a 8 de 12 estão prontas: a base do app, o banco
 > de dados, os quadros, as listas, os cards com arrastar e soltar, o modal do card com etiquetas,
 > prioridade, datas, descrição, checklists, nota, atividade, anexos e capa, o envelhecimento dos
-> cards parados e o calendário mensal (de um quadro ou de todos).
+> cards parados, o calendário mensal (de um quadro ou de todos), os cards que se repetem, os
+> lembretes do Windows e a bandeja.
 > O andamento está em [Docs/PLANO.md](Docs/PLANO.md) e [Docs/To-do-list.txt](Docs/To-do-list.txt).
 
 ## O que o Mello faz (versão 1.0)

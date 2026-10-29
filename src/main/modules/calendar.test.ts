@@ -77,6 +77,16 @@ describe('calendário: o que aparece no mês (CAL-05)', () => {
     ])
   })
 
+  it('tarefas com hora (CHK-05), só do mês', () => {
+    const id = dated('Reforma', null)
+    task(id, 'Fim do mês', '2026-10-31T23:30')
+    task(id, 'Setembro', '2026-09-30T23:59')
+    task(id, 'Novembro', '2026-11-01T00:00')
+    expect(october().tasks.map((item) => [item.text, item.dueDate])).toEqual([
+      ['Fim do mês', '2026-10-31T23:30']
+    ])
+  })
+
   it('o card traz as etiquetas na ordem do quadro, a prioridade e o quadro', () => {
     const [first, second] = t.db.select().from(label).where(eq(label.boardId, casa)).all()
     const id = dated('Pagar', '2026-10-20', 'A fazer', { labelIds: [second!.id, first!.id] })

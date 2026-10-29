@@ -21,6 +21,44 @@ export function isOverdue(dueAt: string, finished: boolean, now: number): boolea
   return now >= nextDay.getTime()
 }
 
+// Uma duração em minutos: "2 dias e 4 h", "3 h e 20 min", "40 min". Com dias, os minutos saem.
+export function durationText(minutes: number): string {
+  const days = Math.floor(minutes / 1440)
+  const hours = Math.floor((minutes % 1440) / 60)
+  const rest = minutes % 60
+  if (days > 0) return `${days} ${days === 1 ? 'dia' : 'dias'}${hours > 0 ? ` e ${hours} h` : ''}`
+  if (hours > 0) return `${hours} h${rest > 0 ? ` e ${rest} min` : ''}`
+  return `${rest} min`
+}
+
+export interface DueStatus {
+  kind: 'onTime' | 'late' | 'done'
+  text: string
+}
+
+// DAT-05: o que o seletor e o modal mostram da data: no prazo, em atraso (DAT-02) ou concluído, e
+// quanto falta ou há quanto tempo venceu. Com hora, em dias, horas e minutos; sem hora, em dias.
+export function dueStatus(dueAt: string, finished: boolean, now: number): DueStatus {
+  if (finished) return { kind: 'done', text: 'não conta como atraso' }
+  const late = isOverdue(dueAt, false, now)
+  if (dueAt.includes('T')) {
+    const diff = dueDate(dueAt).getTime() - now
+    if (late)
+      return { kind: 'late', text: `há ${durationText(Math.max(1, Math.floor(-diff / 60_000)))}` }
+    const left = Math.ceil(diff / 60_000)
+    return { kind: 'onTime', text: left === 0 ? 'vence agora' : `faltam ${durationText(left)}` }
+  }
+  const days = Math.round((dueDate(dueAt).getTime() - dueDate(dayOf(now)).getTime()) / 86_400_000)
+  if (late) return { kind: 'late', text: days === -1 ? 'venceu ontem' : `venceu há ${-days} dias` }
+  const text =
+    days === 0
+      ? 'vence hoje, até o fim do dia'
+      : days === 1
+        ? 'vence amanhã'
+        : `vence em ${days} dias`
+  return { kind: 'onTime', text }
+}
+
 // "AAAA-MM-DD" do dia local de um instante.
 export function dayOf(epochMs: number): string {
   const date = new Date(epochMs)
@@ -42,13 +80,13 @@ function validDay(year: number, month: number, date: number): boolean {
   return check.getFullYear() === year && check.getMonth() === month - 1 && check.getDate() === date
 }
 
-// "AAAA-MM-DD" de um dia que existe (as datas das tarefas do checklist).
+// "AAAA-MM-DD" de um dia que existe.
 export function isDay(text: string): boolean {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text)
   return match !== null && validDay(Number(match[1]), Number(match[2]), Number(match[3]))
 }
 
-// Data de entrega válida: "AAAA-MM-DD" ou "AAAA-MM-DDTHH:mm" (DAT-01).
+// Data de entrega válida, do card ou da tarefa: "AAAA-MM-DD" ou "AAAA-MM-DDTHH:mm" (DAT-01).
 export function isDue(text: string): boolean {
   const { day, time } = splitDue(text)
   return isDay(day) && (time === null || parseTimeInput(time) === time)

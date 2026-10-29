@@ -1,7 +1,7 @@
 // Contratos de checklists e itens (CHK).
 import { z } from 'zod'
 import { CHECKLIST_TITLE_MAX, ITEM_TEXT_MAX } from '../limits'
-import { isDay } from '../rules/dates'
+import { isDue } from '../rules/dates'
 
 const id = z.uuid()
 const index = z.int().min(0)
@@ -19,13 +19,14 @@ export const moveChecklistInput = z.object({ checklistId: id, index })
 
 export const itemIdInput = z.object({ itemId: id })
 export const createItemInput = z.object({ checklistId: id, text })
-// due: a data da tarefa (só o dia) e "Mostrar no calendário" (CHK-05); dueDate null remove a data.
+// due: a data da tarefa, com ou sem hora, e "Mostrar no calendário" (CHK-05); dueDate null remove a
+// data.
 export const updateItemInput = z.object({
   itemId: id,
   text: text.optional(),
   due: z
     .object({
-      dueDate: z.string().refine(isDay, 'Data inválida.').nullable(),
+      dueDate: z.string().refine(isDue, 'Data inválida.').nullable(),
       showInCalendar: z.boolean()
     })
     .optional()

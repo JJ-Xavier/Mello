@@ -113,11 +113,21 @@ describe('ordem dentro do dia (CAL-10)', () => {
 
   it('tarefas juntas por card, na ordem em que chegam dentro do card', () => {
     const sorted = sortDayTasks([
-      { cardTitle: 'Reforma', text: 'Tinta' },
-      { cardTitle: 'CNH', text: 'Documentos' },
-      { cardTitle: 'Reforma', text: 'Orçamento' }
+      { cardTitle: 'Reforma', text: 'Tinta', dueDate: '2026-10-21' },
+      { cardTitle: 'CNH', text: 'Documentos', dueDate: '2026-10-21' },
+      { cardTitle: 'Reforma', text: 'Orçamento', dueDate: '2026-10-21' }
     ])
     expect(sorted.map((t) => t.text)).toEqual(['Documentos', 'Tinta', 'Orçamento'])
+  })
+
+  it('tarefas sem hora primeiro, depois pela hora; empate juntas por card', () => {
+    const sorted = sortDayTasks([
+      { cardTitle: 'Reforma', text: 'Pintar', dueDate: '2026-10-21T18:00' },
+      { cardTitle: 'Reforma', text: 'Lixar', dueDate: '2026-10-21T09:00' },
+      { cardTitle: 'Reforma', text: 'Tinta', dueDate: '2026-10-21' },
+      { cardTitle: 'CNH', text: 'Foto', dueDate: '2026-10-21T09:00' }
+    ])
+    expect(sorted.map((t) => t.text)).toEqual(['Tinta', 'Foto', 'Lixar', 'Pintar'])
   })
 })
 

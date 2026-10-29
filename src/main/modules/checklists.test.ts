@@ -70,12 +70,14 @@ describe('itens do checklist (CHK)', () => {
     listId = checklists.create(t.db, cardId, 'Caixas', NOW).id
   })
 
-  it('texto de 1 a 500; data só com o dia', () => {
+  it('texto de 1 a 500; data com o dia e, se quiser, a hora (CHK-05)', () => {
     expect(createItemInput.safeParse({ checklistId: randomUUID(), text: ' ' }).success).toBe(false)
     const due = (dueDate: string) =>
       updateItemInput.safeParse({ itemId: randomUUID(), due: { dueDate, showInCalendar: true } })
     expect(due('2026-10-20').success).toBe(true)
-    expect(due('2026-10-20T10:00').success).toBe(false)
+    expect(due('2026-10-20T10:00').success).toBe(true)
+    expect(due('2026-10-20T24:00').success).toBe(false)
+    expect(due('2026-10-20T9:00').success).toBe(false)
     expect(due('2026-02-30').success).toBe(false)
   })
 
