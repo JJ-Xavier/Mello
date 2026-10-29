@@ -14,6 +14,8 @@ export type HeaderVariant = 'home' | 'board' | 'settings'
 
 export interface SettingsLocationState {
   from?: string
+  // A seção que abre à vista (o "Mudar nas Configurações" do aviso da bandeja abre "lembretes").
+  section?: string
 }
 
 function backLabel(from: string): string {

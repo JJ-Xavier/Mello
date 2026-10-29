@@ -1,7 +1,8 @@
 // Agendador: roda ao abrir o app e a cada minuto, também com a janela escondida na bandeja
-// (REP-11, LEM-07). Cada rodada processa as repetições que venceram (modules/recurrence.ts) e
-// dispara os lembretes (modules/reminders.ts). Não importa o Electron: a notificação chega por
-// Notifier, e os testes passam um falso.
+// (REP-11, LEM-07). Cada rodada processa as repetições que venceram (modules/recurrence.ts),
+// dispara os lembretes (modules/reminders.ts) e, depois da abertura, confere o backup de hora em
+// hora (DAD-01, modules/data.ts). Não importa o Electron: a notificação chega por Notifier, e os
+// testes passam um falso.
 import type { MissedReminder } from '../shared/ipc/recurrence'
 import { reminderNotification } from '../shared/rules/reminders'
 import type { Clock } from './clock'
@@ -31,9 +32,11 @@ export function createScheduler(options: {
   notifier: Notifier
   // O agendador mudou dados: a tela recarrega (evento data:changed).
   onChange: () => void
+  // DAD-01: o backup de hora em hora, que decide sozinho se é hora e cuida dos próprios erros.
+  backup?: () => Promise<unknown>
   onError?: (error: unknown) => void
 }): Scheduler {
-  const { db, clock, notifier, onChange, onError } = options
+  const { db, clock, notifier, onChange, backup, onError } = options
   let missed: MissedReminder[] = []
   let timer: ReturnType<typeof setInterval> | null = null
 
@@ -62,6 +65,8 @@ export function createScheduler(options: {
     } catch (error) {
       onError?.(error)
     }
+    // O backup da abertura é feito antes, pelo index.ts.
+    if (!opening) void backup?.()
   }
 
   return {

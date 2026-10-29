@@ -14,5 +14,7 @@ export const queryKeys = {
   calendarAll: ['calendar'] as const,
   calendar: (scope: string, year: number, month: number) =>
     ['calendar', scope, year, month] as const,
-  settings: ['settings'] as const
+  settings: ['settings'] as const,
+  // Os backups da pasta atual e os avisos dela (Dados e backup).
+  backups: ['data', 'backups'] as const
 }

@@ -4,6 +4,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { openSqlite, type Sqlite } from './client'
 import { appliedMigrations, applyMigrations, migrations, pendingMigrations } from './migrate'
+import { listBackups } from '../modules/backup'
 import { openDatabase } from './open'
 
 const NOW = new Date(2026, 9, 21, 14, 30).getTime()
@@ -117,7 +118,42 @@ describe('migrações', () => {
     expect(backup.prepare('SELECT count(*) AS n FROM board').get()).toEqual({ n: 1 })
     expect(tableNames(backup)).not.toContain('teste')
     backup.close()
+    expect(listBackups(backupsDir)[0]!.kind).toBe('migration')
     second.sqlite.close()
+  })
+
+  it('DAD-04: o backup antes de migrar vai para a pasta escolhida, com o espelho dos arquivos', async () => {
+    const file = path.join(dir, 'mello.db')
+    const external = path.join(dir, 'HD externo')
+    const filesDir = path.join(dir, 'arquivos')
+    fs.mkdirSync(external)
+    fs.mkdirSync(filesDir)
+    const first = await openDatabase({ file, backupsDir: path.join(dir, 'backups'), now: NOW })
+    insertBoard(first.sqlite)
+    const hash = 'd'.repeat(64)
+    first.sqlite
+      .prepare(
+        "INSERT INTO file (id, ext, mime, size, created_at) VALUES (?, 'pdf', 'application/pdf', 1, 0)"
+      )
+      .run(hash)
+    fs.writeFileSync(path.join(filesDir, `${hash}.pdf`), 'x')
+    first.sqlite
+      .prepare("INSERT INTO setting (key, value) VALUES ('backup.folder', ?)")
+      .run(JSON.stringify(external))
+    first.sqlite.close()
+
+    const nova = { tag: '9999_teste', sql: 'CREATE TABLE teste (id TEXT PRIMARY KEY NOT NULL)' }
+    const second = await openDatabase({
+      file,
+      backupsDir: path.join(dir, 'backups'),
+      filesDir,
+      now: NOW,
+      known: [...migrations, nova]
+    })
+    second.sqlite.close()
+    expect(path.dirname(second.backupPath!)).toBe(external)
+    expect(fs.existsSync(path.join(external, 'arquivos', `${hash}.pdf`))).toBe(true)
+    expect(fs.existsSync(path.join(dir, 'backups'))).toBe(false)
   })
 
   it('um banco novo não gera backup', async () => {

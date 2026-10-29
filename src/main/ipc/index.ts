@@ -3,9 +3,10 @@ import { app, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { Clock } from '../clock'
 import type { Db } from '../db/client'
+import type { DataService } from '../modules/data'
 import type { FileStore } from '../modules/files'
 import type { Scheduler } from '../scheduler'
-import { createRoutes } from './routes'
+import { createRoutes, type DesktopPort } from './routes'
 
 export interface IpcContext {
   dataDir: string
@@ -14,6 +15,8 @@ export interface IpcContext {
   files: FileStore
   scheduler: Scheduler
   hideToTray: () => void
+  data: DataService
+  desktop: DesktopPort
 }
 
 export function registerIpc({
@@ -22,7 +25,9 @@ export function registerIpc({
   clock,
   files,
   scheduler,
-  hideToTray
+  hideToTray,
+  data,
+  desktop
 }: IpcContext): void {
   const routes = createRoutes({
     db,
@@ -31,6 +36,8 @@ export function registerIpc({
     files,
     scheduler,
     hideToTray,
+    data,
+    desktop,
     onUnexpectedError: (channel, error) => log.error(`[ipc] ${channel}`, error)
   })
   for (const [channel, handler] of routes) {

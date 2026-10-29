@@ -1,5 +1,5 @@
 // Datas como no protótipo, pelo Intl do navegador (pt-BR).
-import { dueDate, splitDue } from '../../../shared/rules/dates'
+import { dayOf, dueDate, splitDue } from '../../../shared/rules/dates'
 
 const shortDate = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short' })
 const time = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -89,4 +89,16 @@ export function formatSize(bytes: number): string {
   if (bytes < 1024 ** 2) return `${Math.round(bytes / 1024)} KB`
   if (bytes < 1024 ** 3) return `${oneDecimal.format(bytes / 1024 ** 2)} MB`
   return `${oneDecimal.format(bytes / 1024 ** 3)} GB`
+}
+
+// Quando um backup foi feito (NovoConfig.dc.html): "Hoje, 14:00", "Ontem, 18:40" ou
+// "27 de out., 09:12" (com o ano, se for de outro ano).
+export function formatWhen(epochMs: number, now: number): string {
+  const hour = time.format(epochMs)
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (dayOf(epochMs) === dayOf(now)) return `Hoje, ${hour}`
+  if (dayOf(epochMs) === dayOf(yesterday.getTime())) return `Ontem, ${hour}`
+  const sameYear = new Date(epochMs).getFullYear() === new Date(now).getFullYear()
+  return `${(sameYear ? shortDate : fullDate).format(epochMs)}, ${hour}`
 }

@@ -8,7 +8,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { imageSize } from 'image-size'
 import type { PickedFile } from '../../shared/ipc/files'
 import { FILE_NAME_MAX } from '../../shared/limits'
@@ -20,6 +20,8 @@ import { file } from '../db/schema'
 export interface SystemPort {
   // Janela "Abrir" do Windows. Devolve os caminhos escolhidos (nenhum, se cancelar).
   chooseFiles(options: { imagesOnly: boolean }): Promise<string[]>
+  // Janela de escolher pasta (backup e exportação, etapa 10). null, se cancelar.
+  chooseFolder(options: { title: string; defaultPath: string }): Promise<string | null>
   // Abre com o programa padrão. Devolve '' ou a mensagem de erro do Windows.
   openPath(target: string): Promise<string>
   // Abre o Explorer com o arquivo selecionado.
@@ -212,3 +214,36 @@ export function createPicks(max = 200) {
 }
 
 export type Picks = ReturnType<typeof createPicks>
+
+// Nome de um arquivo guardado (<sha256>.<ext>) e das cópias provisórias que sobram de uma cópia que
+// caiu no meio.
+export const STORED_NAME = /^[0-9a-f]{64}\.[a-z0-9]{1,10}$/
+const LEFTOVER = /\.(tmp|parcial)$/
+
+// DAD-08: na abertura do app, saem os arquivos que nada mais usa: o registro em file sem anexo,
+// capa ou fundo que aponte para ele, e o arquivo da pasta sem registro. Os backups guardados têm
+// os deles no espelho (backup.ts). Só mexe em nomes do Mello; o resto da pasta fica como está.
+export function cleanUnusedFiles(db: DbOrTx, dir: string): { removed: number } {
+  db.run(sql`
+    DELETE FROM file
+    WHERE id NOT IN (SELECT file_id FROM attachment)
+      AND id NOT IN (SELECT cover_value FROM card
+                     WHERE cover_kind = 'image' AND cover_value IS NOT NULL)
+      AND id NOT IN (SELECT bg_value FROM board WHERE bg_kind = 'image')
+  `)
+  const known = new Set(
+    db
+      .select({ id: file.id, ext: file.ext })
+      .from(file)
+      .all()
+      .map((row) => `${row.id}.${row.ext}`)
+  )
+  let removed = 0
+  for (const name of fs.readdirSync(dir)) {
+    if ((STORED_NAME.test(name) && !known.has(name)) || LEFTOVER.test(name)) {
+      fs.rmSync(path.join(dir, name), { force: true })
+      removed++
+    }
+  }
+  return { removed }
+}

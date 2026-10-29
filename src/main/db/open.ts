@@ -1,4 +1,5 @@
-import { createBackup } from '../modules/backup'
+import { createBackup, rotateBackups } from '../modules/backup'
+import { backupTarget } from '../modules/data'
 import { createDb, openSqlite, type Db, type Sqlite } from './client'
 import {
   appliedMigrations,
@@ -10,7 +11,10 @@ import {
 
 export interface OpenDatabaseOptions {
   file: string
+  // A pasta padrão dos backups; a escolhida nas Configurações vale se estiver disponível (DAD-04).
   backupsDir: string
+  // A pasta de arquivos do app, para o espelho do backup (DAD-05).
+  filesDir?: string
   now: number
   known?: Migration[]
 }
@@ -28,17 +32,18 @@ export async function openDatabase(options: OpenDatabaseOptions): Promise<Opened
   const sqlite = openSqlite(options.file)
   try {
     const pending = pendingMigrations(sqlite, options.known ?? migrations)
+    const db = createDb(sqlite)
     let backupPath: string | null = null
     if (pending.length > 0 && appliedMigrations(sqlite).length > 0) {
-      backupPath = await createBackup(sqlite, options.backupsDir, options.now)
+      const { folder } = backupTarget(db, options.backupsDir)
+      backupPath = await createBackup(sqlite, folder, options.now, {
+        kind: 'migration',
+        filesDir: options.filesDir
+      })
+      rotateBackups(folder)
     }
     applyMigrations(sqlite, pending, options.now)
-    return {
-      sqlite,
-      db: createDb(sqlite),
-      applied: pending.map((migration) => migration.tag),
-      backupPath
-    }
+    return { sqlite, db, applied: pending.map((migration) => migration.tag), backupPath }
   } catch (error) {
     sqlite.close()
     throw error

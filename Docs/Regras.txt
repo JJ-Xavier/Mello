@@ -7,7 +7,8 @@ ENV-05, ENV-06, ETQ-04, FLT-03 e NOT-05). A etapa 7 (calendário) veio antes da 
 24/10/2026, e esclareceu as regras CAL. A etapa 6 (envelhecimento), feita depois, detalhou a
 ENV-08 e a ENV-10 (26/10/2026). A etapa 8 (repetição e lembretes) esclareceu as regras REP e
 LEM (26/10/2026), e ganhou a hora na tarefa e o DAT-05 (28/10/2026). A etapa 9 (fundo do
-quadro) esclareceu as regras FUN (29/10/2026).
+quadro) esclareceu as regras FUN (29/10/2026). A etapa 10 (Configurações, tema e dados)
+esclareceu as regras TEM e DAD e fechou a LEM-07 e a ANX-04 (29/10/2026).
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -330,8 +331,11 @@ LEM-07  Com "Manter o Mello na bandeja" ligado (o padrão), fechar a janela esco
         Na primeira vez que a janela fecha, o aviso "O Mello continua na bandeja" (tela 16)
         explica, e "Entendi" esconde a janela; o aviso não volta. Fechar de novo com o aviso
         aberto também esconde. O menu da bandeja tem "Abrir o Mello" e "Sair", e clicar no ícone
-        abre a janela; abrir o Mello de novo pelo atalho também. A opção fica nas Configurações
-        na etapa 10; até lá, "Mudar nas Configurações" aparece apagado. (etapa 8)
+        abre a janela; abrir o Mello de novo pelo atalho também. (etapa 8)
+        A opção fica em Configurações → "Lembretes e bandeja", junto com "Iniciar com o Windows"
+        (P4, desligado por padrão: o Mello abre direto na bandeja quando o Windows inicia; só no
+        app instalado). "Mudar nas Configurações", no aviso, abre essa seção com a janela aberta.
+        (etapa 10)
 
 
 12. NOTA E DESCRIÇÃO (NOT)
@@ -397,8 +401,8 @@ ANX-03  Imagens mostram miniatura. "Abrir" usa o programa padrão do Windows.
         o botão vira "Mostrar na pasta". (decidido em 23/10, etapa 5)
 ANX-04  Remover um anexo apaga a referência. O arquivo só é apagado do disco quando nada mais o
         usa (DAD-08).
-        Remover pede confirmação. A limpeza dos arquivos sem uso entra na etapa 10, junto com o
-        espelho do backup. (etapa 5)
+        Remover pede confirmação. (etapa 5) A limpeza dos arquivos sem uso é a da DAD-08, na
+        abertura seguinte do app. (etapa 10)
 ANX-05  Arquivos acima de 200 MB pedem confirmação antes de copiar.
         Cancelar não anexa nenhum dos arquivos escolhidos. (etapa 5)
 CAP-01  Capa pode ser: nenhuma, uma cor (paleta das etiquetas) ou uma imagem (enviada na hora ou
@@ -603,8 +607,12 @@ FUN-09  Tom do envelhecimento: é a cor média do fundo (cor: a própria; gradie
 
 
 18. TEMA (TEM)
+Testes (etapa 10): src/renderer/src/features/settings/SettingsPage.test.tsx e
+src/main/modules/settings.test.ts.
 
 TEM-01  Escuro (padrão), Claro e Igual ao sistema.
+        Em Configurações → Aparência, com as prévias do protótipo. Vale na hora, em todas as
+        telas e na barra de título do Windows. (etapa 10)
 TEM-02  As paletas são as variáveis do protótipo, sem alteração:
           escuro: --bg #1d2125, --panel #22272b, --line #38414a, --txt #b6c2cf,
                   --strong #dee4ea, --muted #9fadbc, --btn #2c333a, --accent #579dff,
@@ -616,6 +624,8 @@ TEM-02  As paletas são as variáveis do protótipo, sem alteração:
         claro usam --btn #e4e6ea. O app usa a união de todas, sem mudar nenhum valor
         (src/renderer/src/styles/themes.css, etapa 1).
 TEM-03  "Igual ao sistema" acompanha a troca de tema do Windows sem reiniciar o app.
+        Quem decide é o Electron: o main passa a escolha para o Chromium, e a tela segue o
+        prefers-color-scheme, que já responde com o tema do Windows. (etapa 10)
 TEM-04  O fundo dos quadros não muda com o tema.
 
 
@@ -648,24 +658,62 @@ MOD-05  Criar um quadro a partir de modelo copia as listas (com as opções dela
 
 
 21. DADOS, BACKUP E EXPORTAÇÃO (DAD)
+Testes (etapa 10): src/main/modules/backup.test.ts, src/main/modules/data.test.ts,
+src/main/modules/files.test.ts (DAD-08), src/main/db/db.test.ts (DAD-01 antes de migrar),
+src/main/scheduler.test.ts e src/renderer/src/features/settings/SettingsPage.test.tsx.
 
 DAD-01  Backup automático: ao abrir o app (se o último tiver mais de 1 hora), a cada 1 hora em
         que houve alteração, antes de cada migração do banco e antes de cada restauração.
+        Ao abrir, só se houver algum quadro (um banco vazio não precisa). De hora em hora: o
+        agendador confere a cada minuto; o backup sai quando já passou 1 hora do último e o
+        banco mudou desde ele (no máximo um por hora, nenhum sem alteração). "Fazer backup
+        agora" faz um na hora. Um backup automático que falha vira um aviso no canto da tela; o
+        app continua. (etapa 10)
 DAD-02  O backup é um arquivo consistente gerado pela API de backup do SQLite, nunca uma cópia do
         banco aberto. Nome: mello-AAAA-MM-DD_HHmm.db.
+        Cada backup é um arquivo só, sem -wal ao lado (pode ser copiado ou sincronizado sozinho).
+        O tipo (ao abrir, automático, manual, antes de atualizar o banco, antes de restaurar)
+        fica gravado no próprio arquivo, e a lista o mostra. O arquivo só ganha o nome final
+        quando está completo. (etapa 10)
 DAD-03  Ficam guardados os 10 backups mais recentes.
+        "Mais recentes" são os últimos gravados (a data do arquivo), e não o horário do nome: se
+        o relógio voltar, o backup novo não é o primeiro a sair. A rotação só apaga arquivos com
+        o nome da DAD-02; o resto da pasta fica como está. O backup feito antes de restaurar não
+        roda a rotação: o backup escolhido pode ser o mais antigo. (etapa 10)
 DAD-04  A pasta padrão é %APPDATA%\Mello\backups. Ela pode ser trocada nas Configurações, por
         exemplo para um HD externo ou uma pasta do OneDrive/Google Drive. Se a pasta escolhida
         estiver indisponível, o backup vai para a pasta padrão e o app avisa.
+        A pasta é escolhida pela janela do Windows; escolher faz um backup nela na hora. A pasta
+        de dados do Mello (ou uma dentro dela) não serve, porque o espelho cairia em cima dos
+        arquivos do app; escolher a pasta padrão volta para a padrão. Indisponível: o aviso
+        aparece no canto da tela uma vez por sessão, e a seção "Dados e backup" mostra a pasta
+        padrão com o aviso amarelo até a escolhida voltar. Com os backups no mesmo disco dos
+        dados (fora de uma pasta do OneDrive, Google Drive ou Dropbox), a seção mostra o aviso
+        de "mesmo disco" do protótipo. (etapa 10)
 DAD-05  Os arquivos (anexos, fundos e capas) são espelhados em <pasta de backup>\arquivos. Só os
         que ainda não estão lá são copiados (o nome é o hash, então não mudam).
+        São os arquivos que o próprio backup conhece, copiados antes de o backup ganhar o nome
+        final: um backup da lista sempre tem os arquivos dele. (etapa 10)
 DAD-06  Restaurar: você escolhe um backup; o estado atual vira um backup antes; o banco é trocado,
         os arquivos que faltam vêm do espelho e o app reinicia.
+        Pede confirmação. Antes de mexer em qualquer coisa, o Mello confere o arquivo: um banco
+        danificado, de outro programa ou de uma versão mais nova do Mello não é restaurado, e
+        nada muda. (etapa 10)
 DAD-07  Exportar: cria a pasta Mello-exportacao-AAAA-MM-DD com dados.json (todas as tabelas, em
         formato legível) e a subpasta arquivos.
+        A janela do Windows pergunta onde criar a pasta (começa em Documentos); se já houver uma
+        do mesmo dia, a nova ganha " (2)". O dados.json tem a versão, a data e cada tabela como
+        está no banco (uma linha por registro, datas em milissegundos), com uma propriedade por
+        linha. No fim, o Explorer abre com o dados.json selecionado. (etapa 10)
 DAD-08  Arquivos sem nenhuma referência no banco são apagados da pasta do app na abertura
         seguinte. No espelho do backup, só saem quando nenhum dos backups guardados os usa.
+        Sem uso: o arquivo sem anexo, capa ou fundo que aponte para ele (o fundo enviado no
+        editor e não aplicado também). Saem ainda as cópias provisórias de uma cópia que caiu no
+        meio. Nomes que não são do Mello ficam. (etapa 10)
 DAD-09  "Apagar tudo" pede para digitar APAGAR. Apaga o banco e os arquivos, com uma opção à parte
         para apagar também os backups. O app reinicia vazio.
+        Nos backups (pasta padrão e a escolhida), só saem os backups e o espelho; o resto da
+        pasta fica. As configurações voltam ao padrão (elas estão no banco). O log técnico fica
+        (LGPD.txt). (etapa 10)
 DAD-10  O app não envia nenhum dado para fora do computador: não usa rede e não tem telemetria.
         Usar uma pasta de backup sincronizada com a nuvem é uma escolha sua (ver LGPD.txt).

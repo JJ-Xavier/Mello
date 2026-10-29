@@ -22,6 +22,13 @@ import type {
 } from './boards'
 import type { CalendarAddCardInput, CalendarMonth, CalendarMonthInput } from './calendar'
 import type {
+  BackupItem,
+  BackupOverview,
+  DeleteAllInput,
+  ExportResult,
+  RestoreBackupInput
+} from './data'
+import type {
   CardDetail,
   CardIdInput,
   CardSummary,
@@ -62,7 +69,7 @@ import type {
   OpenCardEvent,
   SaveRecurrenceInput
 } from './recurrence'
-import type { Settings } from './settings'
+import type { SetSettingInput, Settings } from './settings'
 
 export const CHANNELS = {
   appInfo: 'app:info',
@@ -120,6 +127,15 @@ export const CHANNELS = {
   calendarMonth: 'calendar:month',
   calendarAddCard: 'calendar:addCard',
   settingsGet: 'settings:get',
+  settingsSet: 'settings:set',
+  dataBackups: 'data:backups',
+  dataBackupNow: 'data:backupNow',
+  dataChooseBackupFolder: 'data:chooseBackupFolder',
+  dataRestore: 'data:restore',
+  dataExport: 'data:export',
+  dataOpenFolder: 'data:openFolder',
+  dataDeleteAll: 'data:deleteAll',
+  dataNotices: 'data:notices',
   devClock: 'dev:clock',
   devSetClock: 'dev:setClock',
   recurrenceSave: 'recurrence:save',
@@ -131,18 +147,20 @@ export const CHANNELS = {
 } as const
 
 // Avisos do main para a tela (sem resposta): o agendador mudou dados (o cache é recarregado), a
-// notificação de um lembrete foi clicada (abre o card) e a janela foi fechada pela primeira vez
-// com o Mello na bandeja (P4).
+// notificação de um lembrete foi clicada (abre o card), a janela foi fechada pela primeira vez
+// com o Mello na bandeja (P4) e há um aviso do backup automático (DAD-04, data:notices).
 export const EVENTS = {
   dataChanged: 'data:changed',
   openCard: 'app:openCard',
-  trayNotice: 'tray:notice'
+  trayNotice: 'tray:notice',
+  backupNotice: 'backup:notice'
 } as const
 
 export interface EventPayloads {
   [EVENTS.dataChanged]: undefined
   [EVENTS.openCard]: OpenCardEvent
   [EVENTS.trayNotice]: undefined
+  [EVENTS.backupNotice]: undefined
 }
 
 export type MelloEvent = keyof EventPayloads
@@ -235,6 +253,24 @@ export interface MelloApi {
   }
   settings: {
     get(): Promise<Result<Settings>>
+    // Grava uma configuração da tela e devolve todas. O tema e o "Iniciar com o Windows" valem na
+    // hora.
+    set(input: SetSettingInput): Promise<Result<Settings>>
+  }
+  // Dados e backup (DAD). Restaurar e apagar tudo reiniciam o app, então a resposta não chega.
+  data: {
+    backups(): Promise<Result<BackupOverview>>
+    backupNow(): Promise<Result<BackupItem>>
+    // Abre a janela do Windows; cancelar devolve null. Escolher faz um backup na pasta nova.
+    chooseBackupFolder(): Promise<Result<BackupOverview | null>>
+    restore(input: RestoreBackupInput): Promise<Result<null>>
+    // Pergunta onde salvar; cancelar devolve null. No fim, o Explorer abre com o dados.json.
+    export(): Promise<Result<ExportResult | null>>
+    openFolder(): Promise<Result<null>>
+    deleteAll(input: DeleteAllInput): Promise<Result<null>>
+    // DAD-04: os avisos do backup automático ainda não mostrados (a pasta escolhida indisponível,
+    // uma falha). Cada aviso vem uma vez só; o evento backup:notice diz que chegou um novo.
+    notices(): Promise<Result<string[]>>
   }
   // Relógio de teste: só muda no modo de desenvolvimento.
   dev: {
@@ -357,7 +393,18 @@ export function createApi(
       addCard: call(CHANNELS.calendarAddCard)
     },
     settings: {
-      get: call(CHANNELS.settingsGet)
+      get: call(CHANNELS.settingsGet),
+      set: call(CHANNELS.settingsSet)
+    },
+    data: {
+      backups: call(CHANNELS.dataBackups),
+      backupNow: call(CHANNELS.dataBackupNow),
+      chooseBackupFolder: call(CHANNELS.dataChooseBackupFolder),
+      restore: call(CHANNELS.dataRestore),
+      export: call(CHANNELS.dataExport),
+      openFolder: call(CHANNELS.dataOpenFolder),
+      deleteAll: call(CHANNELS.dataDeleteAll),
+      notices: call(CHANNELS.dataNotices)
     },
     dev: {
       clock: call(CHANNELS.devClock),

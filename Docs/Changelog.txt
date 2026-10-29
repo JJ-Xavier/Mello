@@ -4,6 +4,67 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.10.0 — Etapa 10: Configurações, tema, backup e dados (29/10/2026)
+
+Adicionado
+- Tela de Configurações (telas 7 e 15) com as cinco seções numa coluna só e o menu da esquerda
+  que leva à seção e marca a que está à vista. Cada opção vale na hora.
+- Aparência (TEM-01): Escuro, Claro e Igual ao sistema, com as prévias do protótipo. O tema muda
+  todas as telas e a barra de título do Windows na hora; "Igual ao sistema" acompanha a troca de
+  tema do Windows sem reiniciar (TEM-03).
+- Envelhecimento dos cards: ligar e desligar (ENV-03), a prévia dos 6 níveis com o mesmo desenho
+  do quadro, o que zera e as listas que não envelhecem, agrupadas por quadro.
+- Calendário: mostrar as tarefas, riscar os finalizados e o primeiro dia da semana.
+- Lembretes e bandeja: manter na bandeja ao fechar e iniciar com o Windows (abre direto na
+  bandeja; só no app instalado). O "Mudar nas Configurações" do aviso da bandeja abre esta seção.
+- Dados e backup: a pasta de backup com "Escolher pasta" e os avisos de "mesmo disco" e de pasta
+  indisponível (DAD-04); "Fazer backup agora" e a lista dos backups guardados, com quando, tipo e
+  tamanho, e "Restaurar" (DAD-06); "Exportar dados" (DAD-07); "Abrir pasta de dados"; "Apagar
+  tudo" com a confirmação por APAGAR e a opção de apagar também os backups (DAD-09).
+- Backup automático (DAD-01): ao abrir (se o último tiver mais de 1 hora), de hora em hora com
+  alteração, antes de migrar e antes de restaurar. Ficam os 10 mais recentes (DAD-03), com os
+  arquivos espelhados na pasta de backup (DAD-05).
+- Limpeza dos arquivos sem uso na abertura (DAD-08): anexos removidos, cards excluídos e fundos
+  enviados e não aplicados.
+
+Mudou
+- Canais novos: settings:set e data:backups, backupNow, chooseBackupFolder, restore, export,
+  openFolder, deleteAll e notices; o evento backup:notice. Chaves novas: theme, app.autoStart e
+  backup.folder.
+- O tema não é mais fixo no escuro: o main passa a escolha para o Chromium, e a tela segue o
+  prefers-color-scheme (lib/theme.ts). O script de capturas troca o tema pela configuração de
+  verdade, sem a emulação de tema do Playwright.
+- Cada backup é um arquivo só (sem -wal ao lado), com o tipo gravado no cabeçalho. O backup
+  antes de migrar também vai para a pasta escolhida e espelha os arquivos.
+
+Decisões da etapa
+- O tema é decidido só pelo main (nativeTheme); a tela não lê a configuração para pintar. Assim a
+  primeira pintura já sai no tema certo, e o "Igual ao sistema" segue o Windows sozinho.
+- O tipo de cada backup fica no user_version do próprio arquivo (o número que o SQLite reserva ao
+  app), e não num arquivo à parte: mover ou copiar um backup leva o tipo junto.
+- Backup de hora em hora: o agendador confere a cada minuto, e o backup sai quando já passou 1
+  hora do último e o banco mudou (contado pelo total_changes() do SQLite).
+- A pasta de dados do Mello não pode ser a pasta de backup (o espelho cairia em cima dos arquivos
+  do app). Escolher uma pasta faz um backup nela na hora.
+- O aviso de "mesmo disco" não aparece numa pasta do OneDrive, do Google Drive ou do Dropbox, que
+  têm cópia fora do computador.
+- Restaurar confere o arquivo antes (danificado, de outro programa ou de uma versão mais nova não
+  serve), e o backup feito antes de restaurar não roda a rotação.
+- "Apagar tudo" apaga, nas pastas de backup, só os backups e o espelho; o log técnico fica.
+- O backup.lastAt do plano não existe: o horário do último backup sai do nome do arquivo.
+- Os "10 mais recentes" são os últimos gravados (a data do arquivo), e não os de horário mais
+  novo no nome: com o relógio voltando, o backup recém-feito não pode ser o primeiro a sair. O
+  roteiro de capturas achou isso com o relógio de teste.
+
+Testes
+- 41 novos (570 no total): os arquivos de backup (nome, arquivo só, tipo, espelho, rotação,
+  limpeza do espelho, conferência e restauração), o serviço de dados (backup ao abrir e de hora
+  em hora, pasta indisponível, restaurar, exportar, apagar tudo), a limpeza dos arquivos sem uso,
+  o backup antes de migrar na pasta escolhida, o settings:set, o agendador e a tela de
+  Configurações inteira (tema, envelhecimento, calendário, bandeja, dados). Capturas das telas 7
+  e 15 conferidas no app real, com exportar, trocar de pasta, restaurar e apagar tudo de verdade.
+
+
 0.9.0 — Etapa 9: fundo do quadro (29/10/2026)
 
 Adicionado

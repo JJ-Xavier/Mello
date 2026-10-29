@@ -124,4 +124,22 @@ describe('agendador', () => {
     s.tick()
     expect(errors).toHaveLength(1)
   })
+
+  it('DAD-01: depois da abertura, cada rodada confere o backup de hora em hora', () => {
+    vi.useFakeTimers()
+    let checks = 0
+    const s = createScheduler({
+      db: t.db,
+      clock: createClock(() => now),
+      notifier: { notify: () => {} },
+      onChange: () => {},
+      backup: async () => checks++
+    })
+    s.start()
+    expect(checks).toBe(0)
+    vi.advanceTimersByTime(TICK_MS * 2)
+    s.tick()
+    s.stop()
+    expect(checks).toBe(3)
+  })
 })

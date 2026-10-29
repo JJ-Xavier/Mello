@@ -8,6 +8,7 @@ import { BoardPage } from '../features/board/BoardPage'
 import { CalendarPage } from '../features/calendar/CalendarPage'
 import { HomePage } from '../features/home/HomePage'
 import { SettingsPage } from '../features/settings/SettingsPage'
+import { useThemeClass } from '../lib/theme'
 import { AppEvents } from './AppEvents'
 import { DevClock } from './DevClock'
 import { BoardLayout, HomeLayout, SettingsLayout } from './Layouts'
@@ -26,6 +27,7 @@ function createQueryClient(): QueryClient {
 // HashRouter porque o app instalado carrega a tela por file://.
 export function App() {
   const [queryClient] = useState(createQueryClient)
+  useThemeClass()
   return (
     <QueryClientProvider client={queryClient}>
       <NotifyProvider>

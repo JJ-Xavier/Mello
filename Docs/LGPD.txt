@@ -1,9 +1,9 @@
 Referente as boas praticas da LGPD e aplicacões em desenvolvimentos de softwere
 
 Status: aprovado em 21/10/2026; revisado na etapa 1 (pasta do modo de desenvolvimento), na
-etapa 5 (anexos, 24/10/2026), na etapa 8 (notificações dos lembretes, 26/10/2026) e na etapa 9
-(imagens de fundo, 29/10/2026). Será revisado
-também nas etapas 10 (backup, exportação e apagar tudo) e 12 (versão final).
+etapa 5 (anexos, 24/10/2026), na etapa 8 (notificações dos lembretes, 26/10/2026), na etapa 9
+(imagens de fundo, 29/10/2026) e na etapa 10 (backup, exportação e apagar tudo, 29/10/2026).
+Será revisado também na etapa 12 (versão final).
 
 
 1. RESUMO
@@ -33,8 +33,9 @@ contatos). Eles ficam guardados como você os colocou, sem criptografia própria
 Anexos: o Mello copia para a pasta dele só os arquivos que você escolhe na janela do Windows ou
 arrasta para o card; o original continua onde estava, sem mudança. O mesmo arquivo anexado duas
 vezes é guardado uma vez só. Remover um anexo tira ele do card; a cópia guardada sai da pasta na
-limpeza dos arquivos sem uso (etapa 10). Excluir um card também não apaga na hora os arquivos
-dele. "Apagar tudo" apaga a pasta inteira.
+próxima vez que o app abre (limpeza dos arquivos sem uso). Excluir um card também não apaga na
+hora os arquivos dele. Cópias dos arquivos podem continuar nos backups (seção 4) até eles saírem
+da rotação. "Apagar tudo" apaga a pasta inteira.
 
 Imagens de fundo (etapa 9): a imagem escolhida no editor de fundo é copiada para a mesma pasta,
 do mesmo jeito, já no envio, para aparecer na prévia; se você cancelar, ela sai na limpeza dos
@@ -78,23 +79,34 @@ do disco (BitLocker). Quem tem acesso à sua conta do Windows consegue ler esses
 4. BACKUP E EXPORTAÇÃO
 
 - Backup automático: ao abrir o app, a cada hora em que houve alteração, antes de atualizar a
-  estrutura do banco e antes de restaurar. Ficam os 10 mais recentes.
+  estrutura do banco e antes de restaurar. Ficam os 10 mais recentes. Cada backup é uma cópia
+  completa do banco; os arquivos (anexos, fundos e capas) ficam ao lado, na subpasta arquivos da
+  pasta de backup, enquanto algum backup guardado os usar.
 - Por padrão, os backups ficam no mesmo disco (%APPDATA%\Mello\backups). Isso NÃO protege contra
-  defeito no disco. O recomendado é apontar a pasta de backup, nas Configurações, para um HD
-  externo ou para uma pasta sincronizada.
+  defeito no disco, e a seção "Dados e backup" mostra um aviso enquanto for assim. O recomendado
+  é apontar a pasta de backup, nas Configurações, para um HD externo ou para uma pasta
+  sincronizada. Se a pasta escolhida não estiver disponível (HD desligado), o backup vai para a
+  pasta padrão e o app avisa.
 - Se você escolher uma pasta sincronizada (OneDrive, Google Drive, Dropbox), os backups passam a
   ser enviados para esse serviço pelo programa dele, não pelo Mello. A partir daí, valem os termos
-  e a política de privacidade desse serviço. É uma escolha sua, e o app avisa ao configurar.
-- Restaurar: Configurações → Dados e backup → escolha o backup. O estado atual é salvo antes.
-- Exportar: gera uma pasta com dados.json (todas as informações, em texto legível) e uma cópia dos
-  arquivos. Serve para guardar, consultar ou levar os dados para outro programa (portabilidade).
+  e a política de privacidade desse serviço. É uma escolha sua: a seção "Dados e backup" diz
+  "Tudo fica neste computador. Nada é enviado para a internet.", e o Mello em si não usa rede.
+- Restaurar: Configurações → Dados e backup → "Restaurar" no backup escolhido. O estado atual é
+  salvo num backup antes, e o app reinicia.
+- Exportar: você escolhe onde, e o Mello cria a pasta Mello-exportacao-AAAA-MM-DD com dados.json
+  (todas as informações, em texto legível) e uma cópia dos arquivos. Serve para guardar,
+  consultar ou levar os dados para outro programa (portabilidade). A exportação não é
+  criptografada: guarde-a com o mesmo cuidado dos dados originais.
 
 
 5. APAGAR TUDO
 
 Configurações → Dados e backup → "Apagar tudo". É preciso digitar APAGAR para confirmar. Isso
-apaga o banco e a pasta de arquivos. Os backups só são apagados se você marcar a opção separada
-para isso, porque podem estar em outro disco. Depois, o app reinicia vazio.
+apaga o banco (com as configurações) e a pasta de arquivos. Os backups só são apagados se você
+marcar a opção separada para isso, porque podem estar em outro disco; com ela, saem os backups e
+os arquivos deles da pasta padrão e da escolhida (outros arquivos dessas pastas ficam). Depois, o
+app reinicia vazio. Os registros técnicos (logs) ficam; eles não têm o conteúdo dos cards, e a
+pasta pode ser apagada à mão.
 
 Para não deixar nada para trás, apague também, à mão, as exportações que você tiver gerado e os
 backups que estiverem em pastas sincronizadas com a nuvem.

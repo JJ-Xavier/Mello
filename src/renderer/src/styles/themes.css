@@ -74,6 +74,8 @@
   --accent-hi: #85b8ff;
   /* só no escuro: editor de fundo (Fundo.dc.html), "Ajustado automaticamente" e "Cards legíveis" */
   --ok-txt: #b3df72;
+  /* só no escuro: o aviso da pasta de backup (NovoConfig.dc.html); o ícone usa --cal-note */
+  --warn-box: #4f3a0e;
 }
 
 .tema-claro {
@@ -131,6 +133,7 @@
   --warn-txt: #533f04;
   --accent-hi: var(--accent);
   --ok-txt: #216e4e;
+  --warn-box: var(--warn-bg);
 }
 
 /* As telas do quadro usam --btn #e4e6ea no tema claro (Quadro.dc.html e QuadroClaro.dc.html). */

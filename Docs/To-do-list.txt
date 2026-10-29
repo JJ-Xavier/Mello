@@ -1,8 +1,8 @@
 To-do list — Mello
 
 Atualizado em: 29/10/2026
-Situação: etapa 9 concluída em 29/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
-          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 10.
+Situação: etapa 10 concluída em 29/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
+          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 11.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -118,12 +118,12 @@ ETAPA 9 — FUNDO DO QUADRO (concluída em 29/10/2026)
 [x] Testes (529 no total), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 10 — CONFIGURAÇÕES, TEMA, BACKUP E DADOS
-[ ] Aparência, Envelhecimento, Calendário (tela 7)
-[ ] Lembretes e bandeja; Dados e backup (seções novas)
-[ ] Tema claro/sistema em todas as telas (TEM)
-[ ] Backup automático, restaurar, exportar, apagar tudo (DAD)
-[ ] Limpeza dos arquivos sem uso (DAD-08), junto com o espelho do backup (DAD-05)
-[ ] Testes, conferência visual, documentos (LGPD), aviso de pronto para commit
+[x] Aparência, Envelhecimento, Calendário (tela 7), gravando pelo settings:set
+[x] Lembretes e bandeja; Dados e backup (tela 15); "Mudar nas Configurações" do aviso da bandeja
+[x] Tema claro/sistema em todas as telas, pelo prefers-color-scheme (TEM)
+[x] Backup automático, restaurar, exportar, apagar tudo (DAD)
+[x] Limpeza dos arquivos sem uso (DAD-08), junto com o espelho do backup (DAD-05)
+[x] Testes (570 no total), conferência visual, documentos (LGPD), aviso de pronto para commit
 
 ETAPA 11 — BUSCA E MODELOS
 [ ] Busca do topo (BUS)
@@ -150,15 +150,9 @@ PENDÊNCIAS E OBSERVAÇÕES
   que vale é a FIN-01 (lista de conclusão E ✓), registrada no post-it verde "Telas novas".
 - Versão: a etapa 7 é a 0.7.0 e a 6, feita depois, é a 0.7.1 (decisão de 25/10/2026). As
   próximas seguem "0.N.0 na etapa N" (a 8 é a 0.8.0).
-- Etapa 10: a seção Calendário das Configurações grava as chaves que o calendário já lê
-  (calendar.showTasks, calendar.strikeDone, calendar.weekStart). A seção Envelhecimento grava
-  aging.enabled (lida desde a etapa 6) e mostra a prévia dos 6 níveis com o fog() de
-  src/renderer/src/lib/fog.ts.
-- Etapa 10: a limpeza dos arquivos sem uso (DAD-08) também apaga as imagens de fundo enviadas
-  no editor e não aplicadas (FUN-02).
-- Etapa 10: a seção "Lembretes e bandeja" das Configurações grava tray.keep (lida desde a etapa
-  8) e liga o "Mudar nas Configurações" do aviso da bandeja, hoje apagado. "Iniciar com o
-  Windows" (app.autoStart) também entra lá.
+- Etapa 12: "Iniciar com o Windows" só registra o Mello na inicialização do Windows no app
+  instalado (no desenvolvimento a escolha só fica gravada); conferir ligar, reiniciar o
+  computador e ver o Mello só na bandeja.
 - Etapa 12: as notificações do Windows foram conferidas com o Notification do Electron trocado
   por uma anotação (script de capturas); conferir uma notificação de verdade no app instalado,
   inclusive o clique abrindo o card.

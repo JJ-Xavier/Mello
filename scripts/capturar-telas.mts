@@ -5,7 +5,9 @@
 // fictícios gerados na hora (as fotos são gradientes desenhados no canvas); a janela "Abrir" do
 // Windows é trocada por uma que devolve esses arquivos. As notificações do Windows (lembretes)
 // ficam anotadas em vez de aparecer na tela, e a lista sai no fim. Os lembretes perdidos e o aviso
-// da bandeja precisam de uma segunda abertura do app, com os mesmos dados.
+// da bandeja precisam de uma segunda abertura do app, com os mesmos dados. O Explorer e o programa
+// padrão do Windows também só ficam anotados. O tema muda pela configuração de verdade (etapa 10).
+// Restaurar e apagar tudo (etapa 10) saem do app; o script abre de novo com os mesmos dados.
 //
 // Uso: npm run capturas   (compila antes; roda com o Node 24, que entende TypeScript)
 import fs from 'node:fs'
@@ -14,7 +16,7 @@ import os from 'node:os'
 import path from 'node:path'
 import playwright, { type ElectronApplication, type Page } from 'playwright-core'
 
-const STAGE = 9
+const STAGE = 10
 const THEMES = ['escuro', 'claro']
 
 const root = path.resolve(import.meta.dirname, '..')
@@ -191,7 +193,7 @@ async function writeMountains(page: Page, name: string): Promise<string> {
   return file
 }
 
-// Troca a janela "Abrir" do Windows: a próxima escolha devolve estes arquivos.
+// Troca a janela "Abrir" do Windows (de arquivos ou de pasta): a próxima escolha devolve estes.
 async function chooseFiles(app: ElectronApplication, files: string[]) {
   await app.evaluate(({ dialog }, chosen) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: chosen })
@@ -541,20 +543,54 @@ async function launch(): Promise<{ app: ElectronApplication; page: Page }> {
       '--disable-frame-rate-limit'
     ],
     cwd: root,
+    // Sem a emulação do Playwright (que força o tema claro): o tema é o que o app escolhe.
+    colorScheme: null,
     env
   })
   const page = await app.firstWindow()
-  await app.evaluate(({ BrowserWindow, Notification }) => {
+  await app.evaluate(({ BrowserWindow, Notification, shell }) => {
     BrowserWindow.getAllWindows()[0]?.setContentSize(1440, 900)
     const shown: string[] = []
-    Object.assign(globalThis, { melloNotifications: shown })
+    const opened: string[] = []
+    Object.assign(globalThis, { melloNotifications: shown, melloOpened: opened })
     Notification.prototype.show = function show(this: Electron.Notification) {
       shown.push(`${this.title} — ${this.body}`)
+    }
+    shell.openPath = async (target) => {
+      opened.push(target)
+      return ''
+    }
+    shell.showItemInFolder = (target) => {
+      opened.push(target)
     }
   })
   await page.waitForSelector('header')
   await page.evaluate('document.fonts.ready.then(() => true)')
   return { app, page }
+}
+
+// Espera uma condição de fora da tela (arquivos, o main), por até 15 s.
+async function until(check: () => Promise<unknown> | unknown) {
+  for (let waited = 0; !(await check()); waited += 100) {
+    if (waited > 15_000) throw new Error('Tempo esgotado esperando o app.')
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+}
+
+// O que o app mandou abrir no Explorer ou no programa padrão.
+function opened(app: ElectronApplication): Promise<string[]> {
+  return app.evaluate(() => (globalThis as unknown as { melloOpened: string[] }).melloOpened)
+}
+
+// Restaurar e apagar tudo reiniciam o app: aqui só saem, e o script abre de novo.
+async function restartFrom(app: ElectronApplication, action: () => Promise<void>) {
+  await app.evaluate(({ app: electron }) => {
+    electron.relaunch = () => {}
+  })
+  const closed = app.waitForEvent('close')
+  await action()
+  await closed
+  return launch()
 }
 
 // Encerra como o "Sair" da bandeja: fechar a janela só a esconderia (P4).
@@ -571,8 +607,12 @@ try {
   if (!fs.existsSync(path.join(dataDir, 'mello.db'))) throw new Error('O banco não foi criado.')
   console.log(`Banco criado e IPC respondendo (${JSON.stringify(info)}).`)
 
-  const setTheme = (theme: string) =>
-    page.evaluate(`document.documentElement.className = 'tema-${theme}'`)
+  // O tema pela configuração de verdade (TEM-01): o main troca o tema do Chromium e a tela segue o
+  // prefers-color-scheme.
+  const setTheme = async (theme: string) => {
+    await mello(page, 'settings.set', { key: 'theme', value: theme === 'claro' ? 'light' : 'dark' })
+    await until(() => page.evaluate(`document.documentElement.classList.contains('tema-${theme}')`))
+  }
 
   // Tela 10: Início vazio (antes de criar qualquer coisa)
   await go(page, '#/')
@@ -815,10 +855,108 @@ try {
     await shot(page, '13-calendario-escolher-quadro', theme)
     await closePopovers(page)
     await calendarPopovers(page, theme, '13')
-
-    await go(page, '#/settings')
-    await shot(page, '07-configuracoes', theme)
   }
+
+  // Etapa 10: Configurações (telas 7 e 15). O tema muda pelo próprio rádio da tela. Os backups da
+  // lista são feitos agora, pelo canal de verdade.
+  await mello(page, 'data.backupNow', undefined)
+  await mello(page, 'data.backupNow', undefined)
+  // O setTheme muda o tema por fora da tela: recarregar traz a configuração atual para os rádios.
+  await go(page, '#/settings')
+  await page.evaluate('location.reload()')
+  await page.waitForSelector('header')
+  const settingsNav = page.getByRole('navigation', { name: 'Seções de configurações' })
+  // O rádio fica escondido dentro da prévia: o clique é no cartão do tema, como na tela.
+  const pickTheme = (label: string) =>
+    page.getByRole('radiogroup', { name: 'Tema' }).getByText(label, { exact: true }).click()
+  const backupsTable = page.getByRole('table', { name: 'Backups guardados' })
+  await backupsTable
+    .getByRole('button', { name: /^Restaurar/ })
+    .first()
+    .waitFor()
+  for (const theme of THEMES) {
+    await settingsNav.getByRole('button', { name: 'Aparência' }).click()
+    await pickTheme(theme === 'claro' ? 'Claro' : 'Escuro')
+    await until(() => page.evaluate(`document.documentElement.classList.contains('tema-${theme}')`))
+    await page.waitForTimeout(300)
+    await shot(page, '07-configuracoes', theme)
+    for (const [section, name] of [
+      ['Calendário', '07-configuracoes-calendario'],
+      ['Lembretes e bandeja', '15-lembretes-e-bandeja'],
+      ['Dados e backup', '15-dados-e-backup']
+    ]) {
+      await settingsNav.getByRole('button', { name: section }).click()
+      await page.waitForTimeout(250)
+      await shot(page, name!, theme)
+    }
+    await page.getByRole('button', { name: 'Apagar tudo…' }).click()
+    const deleteDialog = page.getByRole('alertdialog', { name: 'Apagar tudo?' })
+    await deleteDialog.waitFor()
+    await page.waitForTimeout(200)
+    await shot(page, '15-apagar-tudo', theme)
+    await deleteDialog.getByRole('button', { name: 'Cancelar' }).click()
+    await backupsTable
+      .getByRole('button', { name: /^Restaurar/ })
+      .first()
+      .click()
+    const restoreDialog = page.getByRole('alertdialog', { name: 'Restaurar este backup?' })
+    await restoreDialog.waitFor()
+    await page.waitForTimeout(200)
+    await shot(page, '15-restaurar', theme)
+    await restoreDialog.getByRole('button', { name: 'Cancelar' }).click()
+  }
+
+  // TEM-03: "Igual ao sistema" segue o Windows; a classe da tela e o Electron têm de concordar.
+  await settingsNav.getByRole('button', { name: 'Aparência' }).click()
+  await pickTheme('Igual ao sistema')
+  await page.waitForTimeout(300)
+  const windowsDark = await app.evaluate(({ nativeTheme }) => nativeTheme.shouldUseDarkColors)
+  const screenDark = await page.evaluate(
+    "document.documentElement.classList.contains('tema-escuro')"
+  )
+  console.log(
+    `"Igual ao sistema": Windows ${windowsDark ? 'escuro' : 'claro'}, tela ${screenDark ? 'escura' : 'clara'}.`
+  )
+  if (windowsDark !== screenDark) throw new Error('O tema da tela não seguiu o do Windows.')
+  await setTheme('escuro')
+
+  // DAD-07: exportar para uma pasta escolhida (a janela do Windows é trocada); o Explorer só fica
+  // anotado.
+  await chooseFiles(app, [userDir])
+  await page.getByRole('button', { name: 'Exportar dados' }).click()
+  await until(async () => (await opened(app)).some((target) => target.endsWith('dados.json')))
+  const exported = fs.readdirSync(userDir).find((name) => name.startsWith('Mello-exportacao-'))
+  if (!exported) throw new Error('A exportação não criou a pasta.')
+  const json = JSON.parse(fs.readFileSync(path.join(userDir, exported, 'dados.json'), 'utf8'))
+  const exportedFiles = fs.readdirSync(path.join(userDir, exported, 'arquivos')).length
+  console.log(
+    `Exportação: ${exported}, ${Object.keys(json.tabelas).length} tabelas, ${json.tabelas.card.length} cards, ${exportedFiles} arquivos; Explorer: ${(await opened(app)).join(', ')}`
+  )
+
+  // DAD-04: outra pasta de backup recebe um backup na hora; se ela some, o backup vai para a
+  // padrão e a tela avisa. Depois a pasta padrão volta.
+  const otherFolder = fs.mkdtempSync(path.join(os.tmpdir(), 'mello-capturas-hd-'))
+  await chooseFiles(app, [otherFolder])
+  await page.getByRole('button', { name: 'Escolher pasta' }).click()
+  await until(() =>
+    page.evaluate(
+      `document.querySelector('input[aria-label="Pasta de backup"]')?.value === ${JSON.stringify(otherFolder)}`
+    )
+  )
+  console.log(`Backup na pasta escolhida: ${fs.readdirSync(otherFolder).join(', ')}`)
+  fs.rmSync(otherFolder, { recursive: true, force: true })
+  await page.getByRole('button', { name: 'Fazer backup agora' }).click()
+  await page
+    .getByText('A pasta de backup escolhida não está disponível', { exact: false })
+    .first()
+    .waitFor()
+  await settingsNav.getByRole('button', { name: 'Dados e backup' }).click()
+  await page.waitForTimeout(300)
+  await shot(page, '15-pasta-indisponivel', 'escuro')
+  await chooseFiles(app, [path.join(dataDir, 'backups')])
+  await page.getByRole('button', { name: 'Escolher pasta' }).click()
+  await page.getByRole('status').filter({ hasText: 'no mesmo disco' }).waitFor()
+  await closePopovers(page)
 
   // Etapa 9: editor de fundo (tela 6). A janela "Abrir" (trocada) devolve a foto em retrato; a
   // tela lê os pixels pelo protocolo (com CORS) e calcula o ajuste automático (FUN-04).
@@ -988,6 +1126,56 @@ try {
   )
   if (visible) throw new Error('Depois do "Entendi", a janela devia estar escondida na bandeja.')
   console.log('Fechar a janela deixou o Mello na bandeja (janela escondida, app rodando).')
+
+  // Etapa 10 (DAD-06): restaurar no app de verdade. O backup guarda o estado de agora; o quadro
+  // criado depois dele some, e o estado de antes de restaurar vira um backup.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.show())
+  await setTheme('escuro')
+  await mello(page, 'data.backupNow', undefined)
+  await mello(page, 'boards.create', { title: 'Criado depois do backup' })
+  await go(page, '#/settings')
+  ;({ app, page } = await restartFrom(app, async () => {
+    await page
+      .getByRole('table', { name: 'Backups guardados' })
+      .getByRole('button', { name: /^Restaurar/ })
+      .first()
+      .click()
+    await page
+      .getByRole('alertdialog', { name: 'Restaurar este backup?' })
+      .getByRole('button', { name: 'Restaurar' })
+      .click()
+  }))
+  const restoredTitles = (await mello<{ title: string }[]>(page, 'boards.list', undefined)).map(
+    (board) => board.title
+  )
+  const afterRestore = await mello<{ backups: { kind: string }[] }>(page, 'data.backups', undefined)
+  console.log(
+    `Restaurado: quadros ${restoredTitles.join(', ')}; backups ${afterRestore.backups.map((b) => b.kind).join(', ')}`
+  )
+  if (restoredTitles.includes('Criado depois do backup')) {
+    throw new Error('A restauração não voltou ao estado do backup.')
+  }
+  if (afterRestore.backups[0]?.kind !== 'restore') {
+    throw new Error('Faltou o backup de antes de restaurar.')
+  }
+
+  // DAD-09: apagar tudo, sem os backups. O app abre vazio, sem arquivos, e os backups ficam.
+  await go(page, '#/settings')
+  await page.getByRole('button', { name: 'Apagar tudo…' }).click()
+  const deleteAll = page.getByRole('alertdialog', { name: 'Apagar tudo?' })
+  await deleteAll.getByRole('textbox', { name: 'Digite APAGAR para confirmar' }).fill('APAGAR')
+  await page.waitForTimeout(200)
+  await shot(page, '15-apagar-tudo-confirmado', 'escuro')
+  ;({ app, page } = await restartFrom(app, () =>
+    deleteAll.getByRole('button', { name: 'Apagar tudo' }).click()
+  ))
+  await page.getByText('Nenhum quadro ainda').waitFor()
+  const leftFiles = fs.readdirSync(path.join(dataDir, 'arquivos')).length
+  const leftBackups = fs.readdirSync(path.join(dataDir, 'backups')).filter((n) => n.endsWith('.db'))
+  console.log(
+    `Apagar tudo: app vazio, ${leftFiles} arquivos, ${leftBackups.length} backups guardados.`
+  )
+  if (leftFiles > 0 || leftBackups.length === 0) throw new Error('Apagar tudo não fez o que devia.')
 } finally {
   await quit(app)
   fs.rmSync(dataDir, { recursive: true, force: true })

@@ -108,8 +108,10 @@ attachment — anexos
   id TEXT PK | card_id → card ON DELETE CASCADE | file_id → file ON DELETE RESTRICT
   name TEXT NOT NULL (nome original) | created_at
   Copiar um card copia as linhas de attachment (apontando para os mesmos arquivos) e a capa. Card
-  excluído leva os anexos (CASCADE); a linha de file e o arquivo ficam até a limpeza (DAD-08,
-  etapa 10). (etapa 5)
+  excluído leva os anexos (CASCADE); a linha de file e o arquivo ficam até a limpeza (DAD-08).
+  (etapa 5) A limpeza é na abertura seguinte do app: sai a linha de file sem anexo, capa
+  (card.cover_value com cover_kind 'image') ou fundo (board.bg_value com bg_kind 'image') que
+  aponte para ela, e sai da pasta o arquivo sem linha. (etapa 10)
 
 recurrence — repetição de um card
   id TEXT PK | board_id → board ON DELETE CASCADE
@@ -144,14 +146,18 @@ recurrence_occurrence — cada vez que uma repetição venceu
 setting — configurações
   key TEXT PK | value TEXT NOT NULL (JSON)
   Chaves: theme, aging.enabled, calendar.showTasks, calendar.strikeDone, calendar.weekStart,
-  tray.keep, tray.noticeShown, app.autoStart, backup.folder, backup.lastAt.
+  tray.keep, tray.noticeShown, app.autoStart, backup.folder. (O backup.lastAt do plano não
+  existe: o horário do último backup sai do nome do arquivo mais recente da pasta, etapa 10.)
   Lidas desde a etapa 7 (src/main/modules/settings.ts): calendar.showTasks (true/false, padrão
   true), calendar.strikeDone (true/false, padrão true) e calendar.weekStart ("sunday" ou
   "monday", padrão "sunday"). Desde a etapa 6: aging.enabled (true/false, padrão true). Desde a
   etapa 8: tray.keep (true/false, padrão true) e tray.noticeShown (o aviso da bandeja já
-  apareceu; padrão false, gravado pelo próprio main no "Entendi"). Chave
-  ausente ou valor inválido vale o padrão (src/shared/ipc/settings.ts). A tela que grava entra
-  na etapa 10.
+  apareceu; padrão false, gravado pelo próprio main no "Entendi"). Desde a etapa 10: theme
+  ("dark", "light" ou "system", padrão "dark"), app.autoStart (true/false, padrão false) e
+  backup.folder (o caminho da pasta escolhida, ou null para a padrão). Chave ausente ou valor
+  inválido vale o padrão (src/shared/ipc/settings.ts). A tela de Configurações grava todas pelo
+  settings:set, menos tray.noticeShown e backup.folder, que só o main grava (a pasta vem da
+  janela do Windows).
 
 _migrations — controle das migrações (criada pelo app, fora do schema do Drizzle)
   tag TEXT PK (nome da migração) | applied_at INTEGER NOT NULL
@@ -182,6 +188,10 @@ Como funcionam
 - O app aplica as pendentes ao abrir (src/main/db/migrate.ts), em ordem, numa transação só, com as
   chaves estrangeiras desligadas durante a troca e conferidas antes do commit.
 - Se o banco já tem dados, é feito um backup antes de migrar (DAD-01).
+- Os backups (etapa 10) são cópias completas do banco, num arquivo só (journal_mode = DELETE),
+  com o tipo do backup no user_version do cabeçalho (1 ao abrir, 2 de hora em hora, 3 manual,
+  4 antes de migrar, 5 antes de restaurar; 0 nos de antes da etapa 10). O banco em uso não usa o
+  user_version para nada.
 - Um banco com migrações que o app não conhece (de uma versão mais nova) é recusado.
 - Uma migração já aplicada nunca é editada. Toda mudança vira uma migração nova, mesmo durante o
   desenvolvimento.

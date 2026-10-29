@@ -5,6 +5,10 @@ import './styles/base.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
+import { applyThemeClass } from './lib/theme'
+
+// O tema escolhido antes da primeira pintura (TEM-01).
+applyThemeClass()
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Elemento #root não encontrado.')

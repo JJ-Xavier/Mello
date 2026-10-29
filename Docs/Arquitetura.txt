@@ -75,11 +75,12 @@ Mello/
 │   ├── main/
 │   │   ├── index.ts         ciclo de vida, janela, instância única, inicialização
 │   │   ├── clock.ts         relógio do main, com o adiantamento do relógio de teste (etapa 6)
-│   │   ├── scheduler.ts     agendador: repetições e lembretes, ao abrir e a cada minuto
+│   │   ├── scheduler.ts     agendador: repetições, lembretes e o backup de hora em hora
 │   │   ├── tray.ts          bandeja do Windows e notificações dos lembretes
 │   │   ├── paths.ts         pastas de dados (banco, arquivos, backups, logs)
 │   │   ├── protocol.ts      protocolo mello-arquivo://
-│   │   ├── system.ts        janela "Abrir", programa padrão e Explorer (o SystemPort real)
+│   │   ├── system.ts        janelas "Abrir" e de escolher pasta, programa padrão e Explorer
+│   │   │                    (o SystemPort real)
 │   │   ├── db/
 │   │   │   ├── client.ts    conexão, pragmas, função unaccent
 │   │   │   ├── schema.ts    as 13 tabelas (Drizzle)
@@ -93,19 +94,22 @@ Mello/
 │   │   │   ├── cards.ts     cards: criar, editar (inclusive a nota), mover, copiar, etiquetas,
 │   │   │   │                arquivar, restaurar, excluir, face no quadro, atividade e filtro
 │   │   │   ├── attachments.ts anexos (ANX) e capa (CAP)
-│   │   │   ├── files.ts     arquivos guardados pelo hash e as fichas dos escolhidos ou soltos
+│   │   │   ├── files.ts     arquivos guardados pelo hash, as fichas dos escolhidos ou soltos e a
+│   │   │   │                limpeza dos arquivos sem uso (DAD-08)
 │   │   │   ├── test-files.ts pasta temporária e Windows falso (só os testes importam)
 │   │   │   ├── checklists.ts checklists e itens (CHK)
 │   │   │   ├── activity.ts  atividade do card e o "zerar o envelhecimento" (touch)
 │   │   │   ├── labels.ts    etiquetas: padrão, editor e recriação no outro quadro (LIS-05)
 │   │   │   ├── position.ts  posições de ordem manual (fractional indexing)
 │   │   │   ├── calendar.ts  calendário: cards e tarefas do mês, "Adicionar" num dia (CAL)
-│   │   │   ├── settings.ts  configurações gravadas, com os valores padrão (a tela grava na
-│   │   │   │                etapa 10; o main grava o aviso da bandeja)
+│   │   │   ├── settings.ts  configurações gravadas, com os valores padrão
 │   │   │   ├── recurrence.ts repetição: regra, agendador da seção 6.4 do PLANO.md, aviso de
 │   │   │   │                pulada e as fantasmas do calendário (REP)
 │   │   │   ├── reminders.ts lembretes que venceram, uma vez cada (LEM)
-│   │   │   └── backup.ts    backup pela API do SQLite (etapa 1: antes de migrar)
+│   │   │   ├── backup.ts    os arquivos de backup: criar, listar, rotação, espelho, conferir e
+│   │   │   │                restaurar (DAD-02 a DAD-06)
+│   │   │   └── data.ts      dados e backup: pasta escolhida, backup automático, restaurar,
+│   │   │                    exportar e apagar tudo (DAD, seção 14)
 │   │   └── ipc/
 │   │       ├── events.test.ts tabela de eventos do envelhecimento (ENV-05, ENV-06)
 │   │       ├── handler.ts   utilitário: Zod + Result (sem Electron, testável)
@@ -124,7 +128,8 @@ Mello/
 │   │   ├── ipc/labels.ts    etiquetas;  ipc/checklists.ts  checklists e itens
 │   │   ├── ipc/files.ts     anexos, arquivos escolhidos e soltos, capa enviada na hora
 │   │   ├── ipc/calendar.ts  o mês do calendário e o "Adicionar"
-│   │   ├── ipc/settings.ts  chaves das configurações, schemas e valores padrão
+│   │   ├── ipc/settings.ts  chaves das configurações, schemas, valores padrão e o settings:set
+│   │   ├── ipc/data.ts      backups, restaurar, exportar e apagar tudo (DAD)
 │   │   ├── ipc/dev.ts       relógio de teste do modo de desenvolvimento
 │   │   ├── ipc/recurrence.ts regra de repetição, aviso de pulada e lembretes perdidos
 │   │   └── rules/           aging.ts (nível do envelhecimento, ENV), background.ts (fundos
@@ -176,16 +181,21 @@ Antes de o app ficar pronto:
    mesmo escondida na bandeja.
 
 Quando o app fica pronto:
-3. Remove o menu da janela e liga o tema escuro do Windows (a escolha de tema entra na etapa 10).
+3. Remove o menu da janela.
 4. Cria as pastas de dados e o arquivo de log.
 5. Abre o banco (src/main/db/open.ts): se houver migração pendente num banco que já tem dados, faz
-   um backup antes (DAD-01) e então migra.
+   um backup antes (DAD-01), na pasta escolhida se ela estiver disponível, e então migra.
+   Aplica o tema escolhido (TEM-01) e o "Iniciar com o Windows" (P4), que pode ter mudado com
+   uma restauração ou com "Apagar tudo". Apaga os arquivos sem uso (DAD-08), antes de a tela
+   poder guardar outros.
 6. Recusa todas as permissões do navegador, registra o protocolo de arquivos e apaga as cópias de
    anexos abertos na sessão anterior (seção 8).
 7. Liga o agendador (seção 12), que roda a primeira vez agora, antes da janela, e registra os
    canais de IPC.
 8. Cria o ícone da bandeja e a janela (1440 × 900, ou menor se a tela for menor; mínimo
-   1024 × 640).
+   1024 × 640), com o fundo do tema, para não piscar outra cor. Aberto pelo Windows com
+   --na-bandeja ("Iniciar com o Windows"), a janela não aparece: o Mello fica só na bandeja.
+9. Faz o backup da abertura, se o último tiver mais de 1 hora (DAD-01), junto com a tela.
 
 Se algo falhar na abertura (por exemplo, um banco criado por uma versão mais nova do Mello), o erro
 vai para o log, aparece um aviso "Não foi possível abrir o Mello" e o app fecha sem mexer no banco.
@@ -223,9 +233,10 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   sort, archiveCards, restore; cards:get, create, update, move, copy, setLabels, archive,
   restore, delete, matching, setCover, uploadCover; labels:list, create, update, delete;
   checklists:create, update, move, delete; items:create, update, toggle, move, delete;
-  files:pick, dropped; attachments:add, open, delete; calendar:month, addCard; settings:get;
-  dev:clock, setClock; recurrence:save, remove, createAnyway, dismiss; reminders:missed;
-  app:hideToTray. O recurrence:preview do plano não existe: a prévia "Próximas:" usa na tela as
+  files:pick, dropped; attachments:add, open, delete; calendar:month, addCard; settings:get,
+  set; data:backups, backupNow, chooseBackupFolder, restore, export, openFolder, deleteAll,
+  notices; dev:clock, setClock; recurrence:save, remove, createAnyway, dismiss;
+  reminders:missed; app:hideToTray. O recurrence:preview do plano não existe: a prévia "Próximas:" usa na tela as
   mesmas contas do agendador (shared/rules/recurrence.ts).
 - Calendário (etapa 7): calendar:month recebe o ano, o mês e o quadro (ou null, todos os
   quadros) e devolve os cards com data de entrega no mês e as tarefas (itens de checklist com
@@ -234,7 +245,9 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   na primeira lista que não é de conclusão (CAL-12): quem escolhe a lista é o main. A tarefa é
   marcada pelo items:toggle de sempre.
 - Configurações (etapa 7): settings:get devolve todas as chaves conhecidas, com o padrão no lugar
-  do que não foi gravado ou está inválido (shared/ipc/settings.ts). Gravar entra na etapa 10.
+  do que não foi gravado ou está inválido (shared/ipc/settings.ts). settings:set (etapa 10) grava
+  só as chaves da tela (USER_SETTING_KEYS); tray.noticeShown e backup.folder só o main grava. O
+  tema e o "Iniciar com o Windows" também mudam o Windows na hora (DesktopPort, seção 14).
 - Relógio de teste (etapa 6): o main tem um relógio só (clock.ts), que as rotas usam para tudo o
   que gravam com "agora". dev:clock informa o adiantamento e dev:setClock o muda; no app instalado
   (app.dev falso), dev:setClock é recusado. A tela soma o mesmo adiantamento (lib/clock.ts).
@@ -430,7 +443,8 @@ script de capturas mostra se algo mudou.
 
 Estilo:
 - CSS Modules por componente, usando as variáveis das paletas do protótipo
-  (src/renderer/src/styles/themes.css). A classe tema-escuro ou tema-claro vai no <html>.
+  (src/renderer/src/styles/themes.css). A classe tema-escuro ou tema-claro vai no <html>, pelo
+  prefers-color-scheme do Chromium (lib/theme.ts, seção 14).
 - A paleta é a união das variáveis de todas as telas do protótipo, sem alterar nenhum valor
   (TEM-02). Onde o protótipo só mostra o tema escuro (Início, calendário), o tema claro usa a
   variável clara equivalente.
@@ -469,9 +483,9 @@ só leitura e com o nome original, para %TEMP%\Mello\<id do anexo>\ (no desenvol
 %TEMP%\Mello-dev) e abre essa cópia com o programa padrão. Programas (.exe, .bat, .msi, .ps1…) não
 são executados: o Explorer abre com a cópia selecionada. As cópias são apagadas ao abrir o app.
 
-Arquivos sem uso (anexo removido, card excluído) continuam na pasta até a limpeza da DAD-08, que
-entra na etapa 10 junto com o espelho do backup: apagar antes disso poderia deixar um backup sem
-os arquivos dele.
+Arquivos sem uso (anexo removido, card excluído, fundo enviado e não aplicado) saem na abertura
+seguinte do app (DAD-08, files.ts: cleanUnusedFiles). Os backups têm os deles no espelho da pasta
+de backup (seção 14).
 
 
 9. ONDE FICAM OS DADOS
@@ -483,8 +497,8 @@ os arquivos dele.
   capturas a usa com uma pasta temporária e dados fictícios.
 - Logs: <pasta de dados>\logs\main.log (electron-log), só eventos técnicos, nunca o conteúdo dos
   cards.
-- Backups: <pasta de dados>\backups\mello-AAAA-MM-DD_HHmm.db (DAD-02). Na etapa 1 só existe o
-  backup antes de migrar; o automático, a rotação e a restauração entram na etapa 10.
+- Backups: <pasta de dados>\backups\mello-AAAA-MM-DD_HHmm.db (DAD-02), ou a pasta escolhida nas
+  Configurações (DAD-04), com o espelho dos arquivos em <pasta>\arquivos (seção 14).
 
 
 10. SEGURANÇA
@@ -585,10 +599,57 @@ O nome do arquivo aparece no editor logo depois do envio; ao reabrir, ele mostra
 quadro" (o nome não é guardado, para não precisar de uma coluna nova).
 
 
-14. PRÓXIMAS PARTES
+14. CONFIGURAÇÕES, TEMA E DADOS (etapa 10)
 
-- O backup de hora em hora entra no agendador na etapa 10. O envelhecimento não precisa dele: a
-  tela recalcula o nível sozinha (etapa 6).
+Tela (features/settings/): uma página com as cinco seções das telas 7 e 15 (Aparência,
+Envelhecimento dos cards, Calendário, Lembretes e bandeja, Dados e backup) numa coluna que rola;
+o menu da esquerda leva à seção e marca a que está à vista. Cada opção grava na hora
+(settings:set), com o valor novo já na tela. A prévia dos níveis usa o mesmo useFog/fog() do
+quadro; as listas que não envelhecem vêm do boards:get de cada quadro aberto e mudam pelo
+lists:update. O aviso da bandeja abre a página na seção "Lembretes e bandeja" (estado section da
+rota).
+
+Tema (TEM): o main é o único que decide. settings:set com theme passa a escolha para o Chromium
+(nativeTheme.themeSource = dark, light ou system), o que também muda a barra de título do
+Windows. A tela não lê a configuração para pintar: lib/theme.ts põe a classe pelo
+prefers-color-scheme, que o Chromium responde com o tema escolhido, ou com o do Windows em
+"Igual ao sistema", e avisa quando muda. Assim a troca é imediata, o TEM-03 sai de graça e a
+primeira pintura já usa o tema certo (main.tsx aplica a classe antes de montar o React).
+
+Início com o Windows (P4): app.setLoginItemSettings com o argumento --na-bandeja, só no app
+instalado (no desenvolvimento a escolha só fica gravada). O main reaplica a configuração ao abrir.
+O tema e o início chegam às rotas por DesktopPort (routes.ts), para os testes usarem um falso.
+
+Backups (modules/backup.ts): sqlite.backup grava a cópia num nome provisório (.parcial); a cópia
+passa para journal_mode = DELETE (um arquivo só, sem -wal) e guarda o tipo no user_version do
+cabeçalho (1 ao abrir, 2 de hora em hora, 3 manual, 4 antes de migrar, 5 antes de restaurar; os
+backups de antes desta etapa têm 0 e são "antes de migrar"). Os arquivos que a cópia conhece
+(tabela file) vão para <pasta>\arquivos, só os que faltam, e só então o backup ganha o nome
+final. Depois vêm a rotação dos 10 e a limpeza do espelho (um arquivo sai quando nenhum backup
+guardado o usa; se algum backup não puder ser lido, nada sai). A lista lê só o cabeçalho de cada
+arquivo e ordena pela data de gravação (com o relógio de teste ou o do Windows voltando, o nome
+mente; a ordem de gravação não).
+
+Serviço de dados (modules/data.ts, createData): resolve a pasta (a escolhida ou, indisponível, a
+padrão, com um aviso por sessão), faz um backup por vez, guarda os avisos até a tela pedir
+(data:notices; o evento backup:notice diz que chegou um) e conta as alterações do banco pelo
+total_changes() do SQLite, para o backup de hora em hora (DAD-01), que o agendador chama a cada
+rodada depois da abertura. Restaurar: confere o arquivo (cabeçalho, quick_check, migrações
+conhecidas), faz o backup "antes de restaurar" (sem rotação), para o agendador, fecha o banco,
+traz do espelho os arquivos que faltam, troca o banco (apagando um -wal que tenha sobrado) e
+reinicia (app.relaunch + app.exit). Apagar tudo: fecha, apaga o banco e a pasta de arquivos e,
+com a opção, só os backups e o espelho das pastas de backup, e reinicia. Exportar: a janela do
+Windows escolhe onde; o dados.json tem cada tabela (menos _migrations) como está no banco.
+
+A tela nunca manda um caminho: as pastas vêm da janela do Windows (SystemPort.chooseFolder), e
+restaurar recebe só o nome de um backup da pasta atual. Os caminhos que a tela mostra trocam o
+começo por %APPDATA%.
+
+
+15. PRÓXIMAS PARTES
+
+- Busca e modelos (etapa 11); polimento e instalador (etapa 12). O "Iniciar com o Windows" só é
+  conferido de verdade com o app instalado, na etapa 12.
 
 
 HISTÓRICO
@@ -623,3 +684,7 @@ HISTÓRICO
              boards:uploadBackground e boards:setBackground, BoardSummary.background no lugar
              de bgKind e bgValue, ajuste automático puro (backgroundAuto.ts) com a leitura dos
              pixels na tela, protocolo de arquivos com CORS.
+29/10/2026 — etapa 10: Configurações, tema e dados (seção 14): settings:set, canais data:*,
+             serviço de dados (data.ts), backups num arquivo só com o tipo no cabeçalho e o
+             espelho dos arquivos, limpeza dos arquivos sem uso na abertura, tema pelo
+             prefers-color-scheme (lib/theme.ts), DesktopPort e a janela de escolher pasta.

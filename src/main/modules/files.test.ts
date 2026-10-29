@@ -4,7 +4,10 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createTestDb } from '../db/test-db'
 import { file } from '../db/schema'
-import { createPicks, extensionOf, sniffImage, storeFile } from './files'
+import * as attachments from './attachments'
+import * as boards from './boards'
+import * as cards from './cards'
+import { cleanUnusedFiles, createPicks, extensionOf, sniffImage, storeFile } from './files'
 import { createTestFiles, jpegHeader, PNG_1X1 } from './test-files'
 
 const NOW = 1_800_000_000_000
@@ -116,5 +119,50 @@ describe('arquivos escolhidos ou soltos', () => {
     const [a] = await picks.register([files.sample('a.txt', 'a')])
     await picks.register([files.sample('b.txt', 'b'), files.sample('c.txt', 'c')])
     expect(() => picks.take([a!.token])).toThrow(/Escolha o arquivo de novo/)
+  })
+})
+
+describe('arquivos sem uso (DAD-08)', () => {
+  it('na abertura, sai o que nada usa; ficam os de anexo, capa e fundo, e o que não é do Mello', async () => {
+    const boardId = boards.create(t.db, 'Casa', NOW).id
+    const listId = boards.get(t.db, boardId).lists[0]!.id
+    const cardId = cards.create(t.db, listId, 'Viagem', NOW).id
+    await attachments.add(
+      t.db,
+      files.store,
+      cardId,
+      [{ path: files.sample('a.pdf', 'anexo'), name: 'a.pdf' }],
+      NOW
+    )
+    await attachments.uploadCover(t.db, files.store, cardId, files.sample('capa.png', PNG_1X1), NOW)
+    const background = await storeFile(
+      t.db,
+      files.store,
+      files.sample('fundo.jpg', jpegHeader(1600, 1000, 1)),
+      NOW
+    )
+    t.sqlite
+      .prepare("UPDATE board SET bg_kind = 'image', bg_value = ? WHERE id = ?")
+      .run(background.id, boardId)
+    // Anexo removido e imagem enviada no editor de fundo sem aplicar: ficaram sem uso.
+    await attachments.add(
+      t.db,
+      files.store,
+      cardId,
+      [{ path: files.sample('b.txt', 'removido'), name: 'b.txt' }],
+      NOW
+    )
+    const removed = cards.get(t.db, cardId).attachments.find((item) => item.name === 'b.txt')!
+    attachments.remove(t.db, removed.id, NOW)
+    await storeFile(t.db, files.store, files.sample('outro.png', 'nao aplicada'), NOW)
+    fs.writeFileSync(path.join(files.dir, `${'e'.repeat(64)}.png`), 'sem registro')
+    fs.writeFileSync(path.join(files.dir, '6f1c2b2e.tmp'), 'cópia que caiu no meio')
+    fs.writeFileSync(path.join(files.dir, 'leia-me.txt'), 'não é do Mello')
+
+    expect(cleanUnusedFiles(t.db, files.dir)).toEqual({ removed: 4 })
+    expect(files.stored().sort()).toEqual(
+      [`${sha('anexo')}.pdf`, `${sha(PNG_1X1)}.png`, `${background.id}.jpg`, 'leia-me.txt'].sort()
+    )
+    expect(t.db.select({ id: file.id }).from(file).all()).toHaveLength(3)
   })
 })

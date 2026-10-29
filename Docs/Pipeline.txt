@@ -1,6 +1,7 @@
 Pipeline — Mello
 
-Status: atualizado na etapa 9 (29/10/2026, capturas do editor de fundo com uma foto gerada).
+Status: atualizado na etapa 10 (29/10/2026, capturas das Configurações com o tema de verdade e
+os fluxos de dados conferidos no app).
 Os comandos da seção 4 existem e foram conferidos.
 
 
@@ -108,7 +109,11 @@ npm run capturas ....... compila, abre o app com uma pasta de dados temporária,
                          o aviso da bandeja) e lista as notificações em vez de mostrá-las.
                          Desde a etapa 9, desenha uma foto em retrato (o céu e as montanhas
                          do protótipo, 1080 × 1920), envia pelo editor de fundo, mostra no
-                         terminal o ajuste automático calculado e aplica no quadro "Casa"
+                         terminal o ajuste automático calculado e aplica no quadro "Casa".
+                         Desde a etapa 10, troca o tema pela configuração de verdade (sem a
+                         emulação de tema do Playwright), exporta, troca a pasta de backup,
+                         restaura e apaga tudo no app real (a reabertura do app é trocada por
+                         só sair, e o script abre de novo); o Explorer só fica anotado
 npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit)
 node scripts/gerar-icones.mts
                          gera os PNGs do logo em resources/ (bandeja e notificações). Precisa do

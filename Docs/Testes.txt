@@ -1,6 +1,6 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 9 (529 testes, em 29/10/2026).
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 10 (570 testes, em 29/10/2026).
 Atualizado a cada etapa.
 
 
@@ -31,7 +31,8 @@ structuredClone, como no IPC. Assim um teste de tela também confere o contrato 
 
 Arquivos (desde a etapa 5): src/main/modules/test-files.ts cria uma pasta temporária com a pasta
 de arquivos e um SystemPort falso: a janela "Abrir" devolve os caminhos que o teste combinou, e
-abrir ou mostrar na pasta só ficam anotados. O realApi.ts usa o mesmo, e um File "solto" no modal
+abrir ou mostrar na pasta só ficam anotados; a janela de escolher pasta (etapa 10) devolve o que o
+teste pôs em folders. O realApi.ts usa o mesmo, e um File "solto" no modal
 só tem caminho se o teste o registrar (dropPath), como o webUtils do preload faria. Para digitar
 na nota, os testes usam o editor que o TipTap pendura no elemento do texto.
 
@@ -580,6 +581,74 @@ trocada por uma foto clara sintética, porque o jsdom não tem canvas)
 - Reabrir com a imagem mostra os ajustes salvos e "Imagem do quadro".
 - FUN-08: a miniatura do Início com a imagem.
 
+Etapa 10 — 41 testes novos
+
+O realApi.ts ganhou o serviço de dados de verdade (createData), com a pasta de dados dentro da
+pasta temporária; fechar o banco e reiniciar o app só ficam contados (lifecycle). O tema: o
+matchMedia falso responde o prefers-color-scheme com o tema que o main passou ao "Chromium" e,
+em "Igual ao sistema", com o do "Windows" (setWindowsDark).
+
+src/main/modules/backup.test.ts (DAD-02, DAD-03, DAD-05, DAD-06, DAD-08; 8 novos, 11 no total)
+- O backup é um arquivo só (journal_mode delete, sem -wal), consistente com o banco aberto.
+- A lista: do mais recente para o mais antigo, com o tipo e o tamanho; arquivo com o nome certo
+  que não é banco e os outros arquivos da pasta ficam de fora.
+- DAD-05: os arquivos que o backup usa vão para o espelho, só os que faltam.
+- DAD-03: ficam os 10 mais recentes; a cópia provisória de um backup que caiu no meio sai. O
+  mais recente é o último gravado, mesmo com o relógio voltando (o novo não sai na rotação).
+- DAD-08: no espelho, um arquivo só sai quando nenhum backup guardado o usa.
+- Um backup de antes da etapa 10 (modo WAL) é lido sem deixar -wal e -shm na pasta.
+- DAD-06: arquivo danificado, de outro programa ou de uma versão mais nova é recusado; restaurar
+  troca o banco, apaga o -wal que sobrou e traz do espelho os arquivos que faltam.
+
+src/main/modules/data.test.ts (DAD-01, DAD-04, DAD-06, DAD-07, DAD-09; 12 novos)
+- DAD-01: ao abrir, só se o último tiver mais de 1 hora e houver quadro; de hora em hora, só com
+  alteração e no máximo um por hora; a falha vira um aviso.
+- DAD-04: a pasta escolhida recebe um backup na hora; indisponível, o backup vai para a padrão
+  e avisa uma vez; a pasta de dados do Mello é recusada; escolher a padrão volta para a padrão;
+  o aviso de "mesmo disco" e o %APPDATA% no caminho mostrado.
+- DAD-06: restaurar guarda o estado atual, fecha, troca, traz os arquivos e reinicia; com 10
+  backups, o mais antigo pode ser restaurado; backup sumido ou estragado não mexe em nada.
+- DAD-07: a pasta Mello-exportacao-AAAA-MM-DD com o dados.json de todas as tabelas, legível, e os
+  arquivos; a segunda do dia ganha " (2)".
+- DAD-09: apaga o banco e os arquivos; nas pastas de backup, só com a opção e só os nomes do
+  Mello, na pasta padrão e na escolhida.
+
+src/main/modules/files.test.ts (DAD-08, 1 novo)
+- Na abertura, sai o que nada usa (anexo removido, imagem enviada e não aplicada, arquivo sem
+  registro, cópia provisória); ficam os de anexo, capa e fundo e o que não é do Mello.
+
+src/main/db/db.test.ts (DAD-01, DAD-04; 1 novo e 1 alterado)
+- O backup antes de migrar tem o tipo "antes de atualizar o banco" e vai para a pasta escolhida,
+  com o espelho dos arquivos.
+
+src/main/modules/settings.test.ts (2 novos e 1 alterado)
+- Os padrões novos (tema escuro, sem iniciar com o Windows, pasta de backup padrão).
+- settings:set grava e devolve todas; o tema e o "Iniciar com o Windows" vão para o Windows; a
+  pasta de backup, o aviso da bandeja e valores errados são recusados.
+
+src/main/scheduler.test.ts (DAD-01, 1 novo)
+- Depois da abertura, cada rodada confere o backup de hora em hora.
+
+src/main/ipc/events.test.ts (1 alterado)
+- Os canais novos de configurações e dados classificados (não mexem em card).
+
+src/renderer/src/features/settings/SettingsPage.test.tsx (telas 7 e 15; 14 novos)
+- TEM-01: escuro por padrão; trocar o tema muda a tela na hora e fica gravado.
+- TEM-03: "Igual ao sistema" acompanha o Windows sem reiniciar.
+- TEM-04: o fundo do quadro não muda com o tema.
+- ENV-03: a prévia dos 6 níveis com o fog(); desligado, todos ficam como novos. As listas que não
+  envelhecem, agrupadas por quadro, mudam a opção da lista.
+- CAL-03, CAL-07 e CAL-09 gravados; P4: manter na bandeja e iniciar com o Windows; o menu leva à
+  seção e a marca.
+- DAD: "Fazer backup agora" e a lista (quando, tipo, tamanho) com o aviso de mesmo disco; outra
+  pasta e o aviso de indisponível; "Restaurar" com confirmação e reinício; exportar (cancelar
+  não exporta; o Explorer abre no dados.json); "Abrir pasta de dados"; "Apagar tudo" só depois
+  de digitar APAGAR, com os backups.
+
+src/renderer/src/app/AppEvents.test.tsx (2 novos e 1 alterado)
+- P4: "Mudar nas Configurações" abre "Lembretes e bandeja" com a janela aberta.
+- DAD-04: o aviso do backup automático aparece no canto, uma vez só.
+
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
 
@@ -606,7 +675,13 @@ temporária (MELLO_DATA_DIR) e:
    editor (gradiente, cor, imagem com o ajuste automático e o ajuste à mão), aplica a foto no
    quadro "Casa" e captura o quadro, o calendário do quadro e o Início. A leitura dos pixels passa
    pelo protocolo de verdade (com CORS); o script mostra no terminal o ajuste calculado;
-8. apaga a pasta temporária.
+8. desde a etapa 10, troca o tema pela configuração de verdade em todas as telas (o Playwright
+   abre o Electron sem a emulação de tema, que forçaria o claro) e captura as Configurações
+   (telas 7 e 15) nos dois temas, com o rádio da própria tela; confere que "Igual ao sistema"
+   segue o Windows, exporta para uma pasta (a janela é trocada; o Explorer só fica anotado),
+   troca a pasta de backup e a apaga para ver o aviso; no fim, restaura um backup e apaga tudo
+   de verdade (a reabertura do app vira só sair, e o script abre de novo e confere o resultado);
+9. apaga a pasta temporária.
 
 O Electron do script abre com opções do Chromium que mantêm a janela desenhando mesmo coberta ou
 com o monitor desligado pelo Windows; sem elas, a captura podia esperar um quadro que não chegava
@@ -734,5 +809,26 @@ Etapa 9 (conferido em 29/10/2026, no app real pelo Playwright)
     e o calendário com a foto; a miniatura do Início.
 [ ] No seu computador: arrastar uma foto do Explorer para o "Enviar imagem" e aplicar; trocar
     para uma cor e voltar.
+
+Etapa 10 (conferido em 29/10/2026, no app real pelo Playwright)
+[x] O tema muda pela configuração de verdade em todas as telas da captura, nos dois temas.
+    "Igual ao sistema" seguiu o Windows (escuro nesta máquina): a classe da tela e o Electron
+    concordaram. Sem a emulação do Playwright, a primeira pintura já saiu no tema escolhido.
+[x] Exportar criou Mello-exportacao-AAAA-MM-DD com as 13 tabelas, os 15 cards e os 4 arquivos,
+    e mandou o Explorer abrir no dados.json.
+[x] Escolher outra pasta fez um backup nela (com o espelho); apagar essa pasta e fazer backup
+    mostrou o aviso no canto e o aviso amarelo, com o backup na pasta padrão.
+[x] Restaurar um backup reabriu o app sem o quadro criado depois dele, com o backup "antes de
+    restaurar" no topo da lista. Com o relógio de teste adiantado 14 dias, os backups de hora
+    em hora saíram (9); com o relógio de volta, o backup novo continuou sendo o mais recente.
+[x] "Apagar tudo" (sem os backups) reabriu o app vazio, sem arquivos e com os backups guardados.
+[x] Capturas da etapa 10 conferidas com as telas 7, 8 e 15 nos dois temas: as prévias do tema,
+    os 6 níveis, as listas por quadro, o calendário, a bandeja, a pasta com os avisos, a tabela,
+    os diálogos de restaurar e de apagar tudo.
+[ ] No seu computador: trocar o tema do Windows com "Igual ao sistema" ligado e ver o Mello
+    mudar junto; escolher um HD externo ou pendrive como pasta de backup, desligar e fazer um
+    backup (o aviso), e ligar de novo.
+[ ] Etapa 12, com o app instalado: "Iniciar com o Windows" (reiniciar e ver o Mello só na
+    bandeja) e uma restauração de verdade, com o app reabrindo sozinho.
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

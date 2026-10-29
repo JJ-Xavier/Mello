@@ -1,18 +1,21 @@
 // Avisos do main (etapa 8): o agendador mudou dados (o cache é recarregado), a notificação de um
 // lembrete foi clicada (abre o card, LEM-03) e a janela foi fechada pela primeira vez com o Mello
 // na bandeja (P4). Ao abrir, os lembretes perdidos com o app fechado viram um aviso só (LEM-06).
-// Os dois avisos seguem NovosEstados.dc.html, num <dialog> modal.
+// Os dois avisos seguem NovosEstados.dc.html, num <dialog> modal. Os avisos do backup automático
+// (DAD-04, etapa 10) aparecem no canto, como os de erro.
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router'
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import { EVENTS } from '../../../shared/ipc/api'
 import type { MissedReminder } from '../../../shared/ipc/recurrence'
 import { dueText } from '../../../shared/rules/reminders'
 import { Icon } from '../components/Icon'
 import ui from '../components/ui.module.css'
+import { useNotify } from '../components/useNotify'
 import { api, unwrap } from '../lib/api'
 import { clockNow } from '../lib/clock'
 import { cx } from '../lib/cx'
+import type { SettingsLocationState } from './AppHeader'
 import styles from './AppEvents.module.css'
 
 // Um <dialog> modal aberto enquanto o aviso existe. Esc fecha.
@@ -36,11 +39,21 @@ function Notice({
   )
 }
 
-// "O Mello continua na bandeja" (P4): "Entendi" esconde a janela e o aviso não volta.
+// "O Mello continua na bandeja" (P4): "Entendi" esconde a janela e o aviso não volta. "Mudar nas
+// Configurações" abre a seção "Lembretes e bandeja", com a janela aberta.
 function TrayNotice({ onClose }: { onClose: () => void }) {
   const titleId = useId()
+  const navigate = useNavigate()
+  const location = useLocation()
   const hide = () => {
     void api().app.hideToTray()
+    onClose()
+  }
+  const change = () => {
+    const from = location.pathname.startsWith('/settings') ? undefined : location.pathname
+    navigate('/settings', {
+      state: { from, section: 'lembretes' } satisfies SettingsLocationState
+    })
     onClose()
   }
   return (
@@ -61,7 +74,7 @@ function TrayNotice({ onClose }: { onClose: () => void }) {
         <button type="button" className={ui.pri} onClick={hide} autoFocus>
           Entendi
         </button>
-        <button type="button" className={ui.sec} disabled title="Chega na etapa 10">
+        <button type="button" className={ui.sec} onClick={change}>
           Mudar nas Configurações
         </button>
       </div>
@@ -124,8 +137,20 @@ function MissedReminders({
 export function AppEvents() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const notify = useNotify()
   const [trayNotice, setTrayNotice] = useState(false)
   const [missed, setMissed] = useState<MissedReminder[]>([])
+
+  // DAD-04: os avisos do backup ficam no main até a tela pedir, cada um uma vez só.
+  const showNotices = useCallback(
+    () =>
+      void unwrap(api().data.notices())
+        .then((notices) => {
+          if (notices.length > 0) notify(notices.join(' '))
+        })
+        .catch(() => {}),
+    [notify]
+  )
 
   useEffect(() => {
     const off = [
@@ -133,19 +158,22 @@ export function AppEvents() {
       api().events.on(EVENTS.openCard, ({ cardId, boardId }) =>
         navigate(`/boards/${boardId}?card=${cardId}`)
       ),
-      api().events.on(EVENTS.trayNotice, () => setTrayNotice(true))
+      api().events.on(EVENTS.trayNotice, () => setTrayNotice(true)),
+      api().events.on(EVENTS.backupNotice, showNotices)
     ]
     return () => off.forEach((stop) => stop())
-  }, [queryClient, navigate])
+  }, [queryClient, navigate, showNotices])
 
-  // Cada lista vem uma vez só do main.
+  // Cada lista vem uma vez só do main. Os avisos do backup da abertura podem ter chegado antes de
+  // a tela ouvir o evento.
   useEffect(() => {
     void unwrap(api().reminders.missed())
       .then((list) => {
         if (list.length > 0) setMissed(list)
       })
       .catch(() => {})
-  }, [])
+    showNotices()
+  }, [showNotices])
 
   return (
     <>

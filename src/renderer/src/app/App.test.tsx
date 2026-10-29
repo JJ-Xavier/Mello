@@ -58,7 +58,7 @@ describe('casca do app', () => {
 
   it('as Configurações mostram a versão vinda do main pelo IPC', async () => {
     renderAt('#/settings')
-    expect(await screen.findByText(/Mello 0\.9\.0 \(desenvolvimento\)/)).toBeTruthy()
+    expect(await screen.findByText(/Mello 0\.10\.0 \(desenvolvimento\)/)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Voltar ao início' })).toBeTruthy()
   })
 

@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 e etapa 9 em 29/10/2026**; a etapa 9 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026 e etapa 10 em 29/10/2026**; a etapa 10 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -193,8 +193,8 @@ Tela (React)  →  window.mello (preload)  →  ipc/ (Zod)  →  modules/  →  
 | Modelos | `templates:setCard`, `templates:listCards`, `templates:createCard`, `templates:setBoard`, `templates:createBoard` |
 | Configurações | `settings:get`, `settings:set` |
 | App | `app:info` (versão, pasta de dados, se é desenvolvimento; criado na etapa 1); `dev:clock` e `dev:setClock` (relógio de teste do modo de desenvolvimento, etapa 6) |
-| Dados | `data:backupNow`, `data:listBackups`, `data:restore`, `data:export`, `data:openFolder`, `data:chooseBackupFolder`, `data:deleteAll` |
-| Eventos (main → tela) | `data:changed`, `app:openCard` (clique na notificação), `theme:changed`, `reminders:missed` |
+| Dados | `data:backupNow`, `data:backups` (era `data:listBackups`), `data:restore`, `data:export`, `data:openFolder`, `data:chooseBackupFolder`, `data:deleteAll`, `data:notices` (etapa 10) |
+| Eventos (main → tela) | `data:changed`, `app:openCard` (clique na notificação), `tray:notice`, `backup:notice` (etapa 10; o `theme:changed` não foi preciso: a tela segue o `prefers-color-scheme`) |
 
 ---
 
@@ -479,7 +479,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** uma foto clara recebe escurecimento automático e fica legível; mexer num controle desliga o "Auto"; restaurar volta aos valores automáticos.
 - **Testes:** FUN-01..09; a análise automática sobre imagens sintéticas (clara, escura, com detalhe concentrado num canto); contraste WCAG; persistência dos ajustes.
 
-### Etapa 10 — Configurações, tema, backup e dados
+### Etapa 10 — Configurações, tema, backup e dados ✅ concluída em 29/10/2026
+
+- **Resultado:** tudo da entrega abaixo foi feito; 570 testes no total (41 novos), lint e tipos limpos; capturas conferidas com as telas 7, 8 e 15 nos dois temas, com o tema trocado pela configuração de verdade em todas as telas; no app real, "Igual ao sistema" seguiu o Windows, e exportar, trocar a pasta de backup, restaurar e apagar tudo foram feitos de verdade. Canais novos `settings:set` e `data:backups`, `backupNow`, `chooseBackupFolder`, `restore`, `export`, `openFolder`, `deleteAll` e `notices`, e o evento `backup:notice` (o `theme:changed` do plano não foi preciso). O serviço de dados fica em `src/main/modules/data.ts` e os arquivos de backup em `backup.ts`. Decisões da etapa: o tema é decidido só pelo main (`nativeTheme`) e a tela segue o `prefers-color-scheme`; o tipo de cada backup fica no cabeçalho do próprio arquivo; o backup de hora em hora sai quando passou 1 hora do último e o banco mudou; a pasta de dados do Mello não serve de pasta de backup; o aviso de "mesmo disco" não aparece em pastas do OneDrive, Google Drive ou Dropbox; restaurar confere o arquivo antes. Versão 0.10.0. Detalhes no `Changelog.txt`.
 
 - **Entrega:** tela de Configurações com as seções do protótipo e duas novas no mesmo visual:
   - Aparência: Escuro, Claro ou Sistema, com prévias;

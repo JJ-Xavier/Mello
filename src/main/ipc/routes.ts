@@ -1,6 +1,7 @@
 // Tabela de canais: cada canal liga um schema Zod a uma função de módulo (valida → chama →
 // Result). Não importa o Electron: o index.ts registra as rotas no ipcMain e os testes da tela as
 // usam direto, com um banco em memória.
+import path from 'node:path'
 import { z } from 'zod'
 import { CHANNELS, type AppInfo } from '../../shared/ipc/api'
 import {
@@ -48,7 +49,9 @@ import {
 } from '../../shared/ipc/files'
 import { setClockInput } from '../../shared/ipc/dev'
 import { createLabelInput, labelIdInput, updateLabelInput } from '../../shared/ipc/labels'
+import { deleteAllInput, restoreBackupInput } from '../../shared/ipc/data'
 import { occurrenceIdInput, saveRecurrenceInput } from '../../shared/ipc/recurrence'
+import { setSettingInput, type Theme } from '../../shared/ipc/settings'
 import { AppError } from '../../shared/result'
 import type { Clock } from '../clock'
 import type { Db } from '../db/client'
@@ -58,6 +61,7 @@ import * as boards from '../modules/boards'
 import * as calendar from '../modules/calendar'
 import * as cards from '../modules/cards'
 import * as checklists from '../modules/checklists'
+import type { DataService } from '../modules/data'
 import { createPicks, type FileStore } from '../modules/files'
 import * as labels from '../modules/labels'
 import * as lists from '../modules/lists'
@@ -77,7 +81,17 @@ export interface RouteContext {
   scheduler?: Pick<Scheduler, 'tick' | 'takeMissed'>
   // Esconder a janela na bandeja ("Entendi" no aviso da bandeja, P4).
   hideToTray?: () => void
+  // Dados e backup (DAD). Sem ele, os canais data:* recusam.
+  data?: DataService
+  // O que muda no Windows junto com a configuração: o tema da janela (TEM-01, TEM-03) e o
+  // "Iniciar com o Windows" (P4).
+  desktop?: DesktopPort
   onUnexpectedError?: (channel: string, error: unknown) => void
+}
+
+export interface DesktopPort {
+  applyTheme(theme: Theme): void
+  setAutoStart(enabled: boolean): void
 }
 
 export type Routes = Map<string, Handler<unknown>>
@@ -89,6 +103,8 @@ export function createRoutes({
   files,
   scheduler,
   hideToTray,
+  data,
+  desktop,
   onUnexpectedError
 }: RouteContext): Routes {
   const routes: Routes = new Map()
@@ -255,6 +271,55 @@ export function createRoutes({
   )
 
   route(CHANNELS.settingsGet, none, () => settings.get(db))
+  route(CHANNELS.settingsSet, setSettingInput, (input) => {
+    settings.set(db, input.key, input.value as never)
+    if (input.key === 'theme') desktop?.applyTheme(input.value)
+    if (input.key === 'app.autoStart') desktop?.setAutoStart(input.value)
+    return settings.get(db)
+  })
+
+  // Dados e backup (DAD). As pastas vêm da janela do Windows; a tela só manda o nome de um
+  // backup da pasta atual.
+  const dataService = (): DataService => {
+    if (!data) throw new AppError('CONFLICT', 'Dados e backup não estão disponíveis aqui.')
+    return data
+  }
+  route(CHANNELS.dataBackups, none, () => dataService().overview())
+  route(CHANNELS.dataBackupNow, none, () => dataService().backupNow())
+  route(CHANNELS.dataChooseBackupFolder, none, async () => {
+    const service = dataService()
+    const chosen = await files.system.chooseFolder({
+      title: 'Escolher a pasta de backup',
+      defaultPath: service.folder()
+    })
+    if (!chosen) return null
+    await service.setFolder(chosen)
+    return service.overview()
+  })
+  route(CHANNELS.dataRestore, restoreBackupInput, async ({ name }) => {
+    await dataService().restore(name)
+    return null
+  })
+  route(CHANNELS.dataExport, none, async () => {
+    const service = dataService()
+    const parent = await files.system.chooseFolder({
+      title: 'Escolher onde salvar a exportação',
+      defaultPath: service.exportsDefault
+    })
+    if (!parent) return null
+    const exported = await service.exportTo(parent)
+    files.system.showInFolder(exported.json)
+    return { folder: path.basename(exported.folder) }
+  })
+  route(CHANNELS.dataOpenFolder, none, async () => {
+    const error = await files.system.openPath(app.dataDir)
+    if (error) throw new AppError('CONFLICT', `Não foi possível abrir a pasta: ${error}`)
+    return null
+  })
+  route(CHANNELS.dataDeleteAll, deleteAllInput, ({ alsoBackups }) =>
+    done(() => dataService().deleteAll(alsoBackups))
+  )
+  route(CHANNELS.dataNotices, none, () => data?.takeNotices() ?? [])
 
   // Relógio de teste (decidido em 24/10/2026). O app instalado só informa que não está adiantado.
   route(CHANNELS.devClock, none, () => ({ offset: clock.offset() }))

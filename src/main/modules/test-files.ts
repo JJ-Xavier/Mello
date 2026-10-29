@@ -1,6 +1,7 @@
 // Pasta de arquivos temporária e um SystemPort falso, para os testes. Só os testes importam este
-// arquivo. A janela "Abrir" devolve o que o teste pôs em `chosen`; abrir e mostrar na pasta só
-// ficam anotados.
+// arquivo. A janela "Abrir" devolve o que o teste pôs em `chosen`, e a de escolher pasta, o que pôs
+// em `folders` (null é cancelar); abrir e mostrar na pasta só ficam anotados. A pasta do app (root)
+// tem a pasta de arquivos (dir); os testes de dados criam o banco e os backups nela.
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -13,6 +14,7 @@ export function createTestFiles() {
   fs.mkdirSync(dir)
   fs.mkdirSync(outside)
   const chosen: string[][] = []
+  const folders: (string | null)[] = []
   const opened: string[] = []
   const shown: string[] = []
   const store: FileStore = {
@@ -20,6 +22,7 @@ export function createTestFiles() {
     system: {
       tempDir: path.join(root, 'abertos'),
       chooseFiles: async () => chosen.shift() ?? [],
+      chooseFolder: async () => folders.shift() ?? null,
       openPath: async (target) => {
         opened.push(target)
         return ''
@@ -31,8 +34,10 @@ export function createTestFiles() {
   }
   return {
     store,
+    root,
     dir,
     chosen,
+    folders,
     opened,
     shown,
     // Cria um arquivo "do usuário", fora da pasta do Mello, e devolve o caminho.
