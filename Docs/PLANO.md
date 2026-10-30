@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026 e etapa 10 em 29/10/2026**; a etapa 10 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026, etapa 10 em 29/10/2026 e etapa 11 em 30/10/2026**; a etapa 11 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -190,7 +190,7 @@ Tela (React)  →  window.mello (preload)  →  ipc/ (Zod)  →  modules/  →  
 | Repetição | `recurrence:get`, `recurrence:save`, `recurrence:remove`, `recurrence:preview`, `recurrence:createAnyway`, `recurrence:dismiss` |
 | Calendário | `calendar:month` |
 | Busca | `search:query` |
-| Modelos | `templates:setCard`, `templates:listCards`, `templates:createCard`, `templates:setBoard`, `templates:createBoard` |
+| Modelos | `templates:setCard`, `templates:createCard`, `templates:listBoards`, `templates:setBoard`, `templates:createBoard` (etapa 11; o `templates:listCards` não foi preciso: os cards-modelo vêm no `boards:get`) |
 | Configurações | `settings:get`, `settings:set` |
 | App | `app:info` (versão, pasta de dados, se é desenvolvimento; criado na etapa 1); `dev:clock` e `dev:setClock` (relógio de teste do modo de desenvolvimento, etapa 6) |
 | Dados | `data:backupNow`, `data:backups` (era `data:listBackups`), `data:restore`, `data:export`, `data:openFolder`, `data:chooseBackupFolder`, `data:deleteAll`, `data:notices` (etapa 10) |
@@ -495,7 +495,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** trocar o tema muda todas as telas na hora; "Sistema" acompanha o Windows; restaurar um backup devolve o estado anterior; a exportação abre num editor de texto.
 - **Testes:** TEM-01..04; DAD-01..10 (backup consistente com o banco em uso, rotação de 10, restauração com backup prévio, exportação completa, limpeza de arquivos órfãos, apagar tudo).
 
-### Etapa 11 — Busca e modelos
+### Etapa 11 — Busca e modelos ✅ concluída em 30/10/2026
+
+- **Resultado:** tudo da entrega abaixo foi feito; 606 testes no total (36 novos), lint e tipos limpos; capturas conferidas com as telas 9, 11 e 12 nos dois temas; no app real, um card e um quadro foram criados a partir dos modelos pela tela. Canais novos `search:query` e `templates:setCard`, `createCard`, `listBoards`, `setBoard` e `createBoard` (o `templates:listCards` do plano não foi preciso: os cards-modelo vêm no `boards:get`). Decisões da etapa: o menu "Criar" mostra os quadros-modelo e, dentro de um quadro, os cards-modelo dele; o "Abrir o modelo" do diálogo abre o quadro-modelo para editar ou desfazer; virar modelo tira o ✓, e um card com repetição não vira modelo; os cards-modelo de um quadro-modelo vêm só com "Manter cards". Versão 0.11.0. Detalhes no `Changelog.txt`.
 
 - **Entrega:** busca do topo (cards, tarefas e quadros, sem diferenciar acento e maiúscula, resultados agrupados, navegação por teclado); cards-modelo e quadros-modelo (P6), com "Criar a partir de modelo" na lista e no menu "Criar".
 - **Telas:** 9 (busca e menu "Criar"); 11 (modelos de quadro); 12 (modelos de card).

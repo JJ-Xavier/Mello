@@ -88,6 +88,8 @@ export interface BoardSummary {
   title: string
   position: string
   isFavorite: boolean
+  // Quadro-modelo (MOD-04): fica na seção "Modelos" do Início.
+  isTemplate: boolean
   closedAt: number | null
   background: BoardBackground
 }

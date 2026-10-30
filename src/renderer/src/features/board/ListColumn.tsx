@@ -21,11 +21,12 @@ import { agingOf, type Aging } from '../../../../shared/rules/aging'
 import { isFinished } from '../../../../shared/rules/finished'
 import { EditableTitle } from '../../components/EditableTitle'
 import { Icon } from '../../components/Icon'
-import { Popover } from '../../components/Popover'
+import { Popover, PopoverHeader } from '../../components/Popover'
 import { api, unwrap } from '../../lib/api'
 import { cx } from '../../lib/cx'
 import { useAction } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
+import { CardTemplateOptions } from '../templates/CardTemplates'
 import { AddCard } from './AddCard'
 import cardStyles from './CardFace.module.css'
 import { CardFace } from './CardFace'
@@ -142,8 +143,11 @@ function ColumnBody({
   interactive
 }: ColumnBodyProps) {
   const menuId = useId()
+  const templatesId = useId()
   const run = useAction()
   const [adding, setAdding] = useState(false)
+  // O "Criar a partir de modelo" aberto: o ícone fica destacado (NovoModelosCard.dc.html).
+  const [picking, setPicking] = useState(false)
   const cardsRef = useRef<HTMLDivElement>(null)
   const items = listItems(list.cards, list.id, drag)
   // Como no protótipo, a lista de destino já conta o card que está chegando.
@@ -242,13 +246,23 @@ function ColumnBody({
           </button>
           <button
             type="button"
-            className={styles.template}
+            className={cx(styles.template, picking && styles.templateOpen)}
             aria-label="Criar a partir de modelo"
-            disabled
-            title="Chega na etapa 11"
+            aria-expanded={picking}
+            popoverTarget={interactive ? templatesId : undefined}
           >
             <Icon name="template" />
           </button>
+          {interactive && (
+            <Popover id={templatesId} label="Criar a partir de modelo" onToggle={setPicking}>
+              {(close) => (
+                <>
+                  <PopoverHeader title="Criar a partir de modelo" onClose={close} />
+                  <CardTemplateOptions board={board} listId={list.id} close={close} />
+                </>
+              )}
+            </Popover>
+          )}
         </div>
       )}
     </>

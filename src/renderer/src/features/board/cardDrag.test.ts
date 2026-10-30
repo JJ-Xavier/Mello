@@ -167,6 +167,7 @@ describe('o quadro depois de soltar', () => {
     title: 'Casa',
     position: 'a0',
     isFavorite: false,
+    isTemplate: false,
     closedAt: null,
     background: {
       kind: 'gradient',

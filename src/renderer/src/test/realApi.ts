@@ -56,7 +56,7 @@ export function installRealApi(options: { now?: () => number; dev?: boolean } = 
     db,
     paths,
     now: () => clock.now(),
-    version: '0.10.0',
+    version: '0.11.0',
     exportsDefault: path.join(files.root, 'documentos'),
     appData: files.root,
     shutdown: () => lifecycle.shutdowns++,
@@ -65,7 +65,7 @@ export function installRealApi(options: { now?: () => number; dev?: boolean } = 
   })
   const routes = createRoutes({
     db,
-    app: { version: '0.10.0', dataDir: paths.root, dev: options.dev ?? true },
+    app: { version: '0.11.0', dataDir: paths.root, dev: options.dev ?? true },
     clock,
     files: files.store,
     scheduler: { tick: () => {}, takeMissed: () => missed.splice(0) },

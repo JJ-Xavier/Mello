@@ -1,7 +1,7 @@
 Pipeline — Mello
 
-Status: atualizado na etapa 10 (29/10/2026, capturas das Configurações com o tema de verdade e
-os fluxos de dados conferidos no app).
+Status: atualizado na etapa 11 (30/10/2026, capturas da busca e dos modelos, com um card e um
+quadro criados a partir dos modelos no app).
 Os comandos da seção 4 existem e foram conferidos.
 
 
@@ -113,7 +113,9 @@ npm run capturas ....... compila, abre o app com uma pasta de dados temporária,
                          Desde a etapa 10, troca o tema pela configuração de verdade (sem a
                          emulação de tema do Playwright), exporta, troca a pasta de backup,
                          restaura e apaga tudo no app real (a reabertura do app é trocada por
-                         só sair, e o script abre de novo); o Explorer só fica anotado
+                         só sair, e o script abre de novo); o Explorer só fica anotado.
+                         Desde a etapa 11, busca, cria modelos e cria um card e um quadro a
+                         partir deles pela tela, e apaga o que criou
 npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit)
 node scripts/gerar-icones.mts
                          gera os PNGs do logo em resources/ (bandeja e notificações). Precisa do

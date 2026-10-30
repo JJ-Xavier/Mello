@@ -1,6 +1,6 @@
 // Menu "…" do card (NovoCardCapaAnexos.dc.html) com "Mover" e "Copiar" (NovosEstados.dc.html):
-// mover (CAR-06), copiar (CAR-07), arquivar e excluir (CAR-05). "Transformar em modelo" entra na
-// etapa 11.
+// mover (CAR-06), copiar (CAR-07), transformar em modelo e deixar de ser (MOD-01), arquivar e
+// excluir (CAR-05).
 import { useState, type FormEvent } from 'react'
 import type { CardDetail } from '../../../../shared/ipc/cards'
 import { CARD_TITLE_MAX } from '../../../../shared/limits'
@@ -198,6 +198,15 @@ export function CardMenu({ card, close, onDeleted }: MenuProps & { onDeleted: ()
   if (view === 'move') return <MoveCard card={card} close={close} onBack={() => setView('menu')} />
   if (view === 'copy') return <CopyCard card={card} close={close} onBack={() => setView('menu')} />
 
+  // MOD-01: virar modelo tira o ✓; com repetição, fica apagado (tirar a repetição é com você).
+  const toggleTemplate = () => {
+    close()
+    void run(
+      () => unwrap(api().templates.setCard({ cardId: card.id, isTemplate: !card.isTemplate })),
+      [queryKeys.card(card.id), queryKeys.board(card.boardId)]
+    )
+  }
+
   const archive = () => {
     close()
     void run(
@@ -217,9 +226,19 @@ export function CardMenu({ card, close, onDeleted }: MenuProps & { onDeleted: ()
         <Icon name="copy" />
         Copiar
       </button>
-      <button type="button" className={ui.mi} disabled title="Chega na etapa 11">
+      <button
+        type="button"
+        className={ui.mi}
+        onClick={toggleTemplate}
+        disabled={!card.isTemplate && card.recurrence !== null}
+        title={
+          !card.isTemplate && card.recurrence !== null
+            ? 'Tire a repetição antes de transformar em modelo'
+            : undefined
+        }
+      >
         <Icon name="template" />
-        Transformar em modelo
+        {card.isTemplate ? 'Deixar de ser modelo' : 'Transformar em modelo'}
       </button>
       <div className={ui.sep} />
       {card.archivedAt === null && (

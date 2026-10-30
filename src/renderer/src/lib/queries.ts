@@ -1,7 +1,8 @@
 // Consultas e ações da tela. As consultas ficam no cache do TanStack Query; as ações chamam o main,
 // invalidam o que mudou e, se falharem, mostram o aviso de erro.
-import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { useCallback } from 'react'
+import { SEARCH_MIN } from '../../../shared/ipc/search'
 import { useNotify } from '../components/useNotify'
 import { api, unwrap } from './api'
 import { queryKeys } from './queryKeys'
@@ -18,6 +19,14 @@ export function useClosedBoards() {
   return useQuery({
     queryKey: queryKeys.closedBoards,
     queryFn: () => unwrap(api().boards.listClosed())
+  })
+}
+
+// Os quadros-modelo da seção "Modelos" do Início (MOD-04).
+export function useBoardTemplates() {
+  return useQuery({
+    queryKey: queryKeys.boardTemplates,
+    queryFn: () => unwrap(api().templates.listBoards())
   })
 }
 
@@ -67,6 +76,19 @@ export function useCalendar(boardId: string | null, year: number, month: number)
   return useQuery({
     queryKey: queryKeys.calendar(boardId ?? 'all', year, month),
     queryFn: () => unwrap(api().calendar.month({ year, month, boardId }))
+  })
+}
+
+// Busca do topo (BUS-01): a partir de 2 caracteres. Sempre consulta de novo (staleTime 0): a busca
+// junta tudo, e nenhuma ação a invalida. Enquanto a nova não chega, fica a anterior na tela.
+export function useSearch(text: string) {
+  const trimmed = text.trim()
+  return useQuery({
+    queryKey: queryKeys.search(trimmed),
+    queryFn: () => unwrap(api().search.query({ text: trimmed })),
+    enabled: trimmed.length >= SEARCH_MIN,
+    staleTime: 0,
+    placeholderData: keepPreviousData
   })
 }
 

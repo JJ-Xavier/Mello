@@ -1,6 +1,6 @@
 // O que o card mostra no quadro (CAR-04): capa, etiquetas, ✓, título, data de entrega, os ícones
-// de descrição, checklist, nota e anexos, a repetição (REP-13) e a prioridade. "Modelo" entra na
-// etapa 11.
+// de descrição, checklist, nota e anexos, a repetição (REP-13), a prioridade e o selo "Modelo"
+// (MOD-02).
 import type { CardSummary } from '../../../../shared/ipc/cards'
 import { isOverdue } from '../../../../shared/rules/dates'
 import { priorityLevel } from '../../../../shared/rules/priority'
@@ -66,6 +66,12 @@ export function CardFace({ card, finished, now, idleDays = null }: CardFaceProps
     <>
       {card.cover && <Cover cover={card.cover} className={styles.cover} />}
       <div className={styles.in}>
+        {card.isTemplate && (
+          <span className={styles.template}>
+            <Icon name="template" size={12} />
+            Modelo
+          </span>
+        )}
         {card.labels.length > 0 && (
           <div className={styles.labels}>
             {card.labels.map((label) => (

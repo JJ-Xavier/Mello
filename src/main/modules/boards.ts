@@ -38,6 +38,7 @@ const summaryColumns = {
   title: board.title,
   position: board.position,
   isFavorite: board.isFavorite,
+  isTemplate: board.isTemplate,
   closedAt: board.closedAt,
   bgKind: board.bgKind,
   bgValue: board.bgValue,
@@ -68,6 +69,7 @@ function toSummary(row: SummaryRow): BoardSummary {
     title: row.title,
     position: row.position,
     isFavorite: row.isFavorite,
+    isTemplate: row.isTemplate,
     closedAt: row.closedAt,
     background: {
       kind: row.bgKind,
@@ -84,7 +86,7 @@ function toSummary(row: SummaryRow): BoardSummary {
   }
 }
 
-function summaryOf(db: DbOrTx, boardId: string): BoardSummary {
+export function summaryOf(db: DbOrTx, boardId: string): BoardSummary {
   return toSummary(selectSummaries(db).where(eq(board.id, boardId)).get()!)
 }
 
@@ -95,11 +97,20 @@ function requireBoard(db: DbOrTx, boardId: string) {
 }
 
 // Quadros abertos do Início e de "Mudar de quadros": favoritos primeiro e, dentro de cada grupo,
-// a ordem manual (QUA-06). Modelos ficam de fora (seção própria na etapa 11).
+// a ordem manual (QUA-06). Modelos ficam de fora (listTemplates).
 export function listOpen(db: DbOrTx): BoardSummary[] {
   return selectSummaries(db)
     .where(and(isNull(board.closedAt), eq(board.isTemplate, false)))
     .orderBy(desc(board.isFavorite), asc(board.position))
+    .all()
+    .map(toSummary)
+}
+
+// MOD-04: os quadros-modelo abertos, para a seção "Modelos" do Início, na ordem manual.
+export function listTemplates(db: DbOrTx): BoardSummary[] {
+  return selectSummaries(db)
+    .where(and(isNull(board.closedAt), eq(board.isTemplate, true)))
+    .orderBy(asc(board.position))
     .all()
     .map(toSummary)
 }

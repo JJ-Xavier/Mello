@@ -2,7 +2,20 @@
 // arquivar, restaurar, excluir, a face no quadro e a busca do filtro do quadro. Anexos e capa ficam
 // em attachments.ts.
 import { randomUUID } from 'node:crypto'
-import { and, asc, count, desc, eq, inArray, isNull, max, or, sql, type SQL } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  max,
+  or,
+  sql,
+  type SQL,
+  type SQLWrapper
+} from 'drizzle-orm'
 import type {
   ActivityEntry,
   CardDetail,
@@ -38,12 +51,14 @@ import { forCard, seriesState } from './recurrence'
 // checklists com o estado dos itens e anexos. Não copia a atividade nem a repetição. A cópia
 // nasce com nível 0 e com a atividade "Copiado de <título>" (ENV-07, ATV-02). Capa e anexos
 // apontam para os mesmos arquivos guardados (ANX-02): nada é copiado no disco.
-// labelMap troca as etiquetas quando a cópia vai para outro quadro (LIS-05).
+// labelMap troca as etiquetas quando a cópia vai para outro quadro (LIS-05). origin muda o registro
+// da atividade: a cópia de um modelo é "Criado a partir do modelo <título>" (MOD-03, MOD-05).
 export function copyCard(
   tx: Tx,
   sourceId: string,
   target: { listId: string; position: string; labelMap?: Map<string, string> },
-  now: number
+  now: number,
+  origin?: { kind: 'from_template'; from: string }
 ): string {
   const source = tx.select().from(card).where(eq(card.id, sourceId)).get()
   if (!source) throw new AppError('NOT_FOUND', 'Card não encontrado.')
@@ -100,7 +115,7 @@ export function copyCard(
       .run()
   }
 
-  addActivity(tx, id, 'copied', { from: source.title }, now)
+  addActivity(tx, id, origin?.kind ?? 'copied', { from: origin?.from ?? source.title }, now)
   return id
 }
 
@@ -147,7 +162,7 @@ function requireCard(db: DbOrTx, cardId: string) {
 }
 
 // A lista que recebe um card precisa estar ativa, num quadro aberto.
-function requireTargetList(db: DbOrTx, listId: string) {
+export function requireTargetList(db: DbOrTx, listId: string) {
   const found = db
     .select({
       id: list.id,
@@ -386,6 +401,9 @@ export function update(db: Db, input: UpdateCardInput, now: number): void {
     const current = requireCard(tx, input.cardId)
     const changes: Partial<typeof card.$inferInsert> = {}
     if (input.title !== undefined && input.title !== current.title) changes.title = input.title
+    if (input.isDone && current.isTemplate) {
+      throw new AppError('CONFLICT', 'Um modelo não tem ✓.')
+    }
     if (input.isDone !== undefined && input.isDone !== current.isDone) {
       changes.isDone = input.isDone
       changes.doneAt = input.isDone ? now : null
@@ -483,12 +501,17 @@ function likePattern(keyword: string): string {
   return `%${plain.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
 }
 
+// "A coluna contém a palavra-chave", sem diferenciar acento nem maiúscula (função unaccent do
+// SQLite): o filtro do quadro (FLT-01) e a busca do topo (BUS-01).
+export function containsText(keyword: string): (column: SQLWrapper) => SQL {
+  const pattern = likePattern(keyword)
+  return (column) => sql`lower(unaccent(${column})) like ${pattern} escape '\\'`
+}
+
 // FLT-01: os cards ativos do quadro com a palavra-chave no título, na descrição, na nota ou no
 // nome de uma etiqueta, sem diferenciar acento nem maiúscula (função unaccent do SQLite).
 export function matching(db: DbOrTx, boardId: string, keyword: string): string[] {
-  const pattern = likePattern(keyword)
-  const has = (column: SQL | typeof card.title) =>
-    sql`lower(unaccent(${column})) like ${pattern} escape '\\'`
+  const has = containsText(keyword)
   return db
     .selectDistinct({ id: card.id })
     .from(card)
@@ -620,7 +643,8 @@ export function move(db: Db, cardId: string, listId: string, index: number, now:
     if (sameList && visibleIndex(siblingsOf(tx, listId, ''), cardId) === index) return
     const from = sameList ? to : requireTargetList(tx, moving.listId)
 
-    const isDone = doneAfterMove(moving.isDone, from, to)
+    // Um modelo nunca ganha o ✓ automático (MOD-02).
+    const isDone = moving.isTemplate ? false : doneAfterMove(moving.isDone, from, to)
     const doneAt = isDone === moving.isDone ? moving.doneAt : isDone ? now : null
     const position = positionInList(tx, listId, cardId, index)
     tx.update(card).set({ listId, position, isDone, doneAt }).where(eq(card.id, cardId)).run()

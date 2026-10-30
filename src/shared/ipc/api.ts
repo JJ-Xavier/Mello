@@ -69,7 +69,15 @@ import type {
   OpenCardEvent,
   SaveRecurrenceInput
 } from './recurrence'
+import type { SearchInput, SearchResults } from './search'
 import type { SetSettingInput, Settings } from './settings'
+import type {
+  BoardTemplate,
+  CreateBoardFromTemplateInput,
+  CreateCardFromTemplateInput,
+  SetTemplateBoardInput,
+  SetTemplateCardInput
+} from './templates'
 
 export const CHANNELS = {
   appInfo: 'app:info',
@@ -143,7 +151,13 @@ export const CHANNELS = {
   recurrenceCreateAnyway: 'recurrence:createAnyway',
   recurrenceDismiss: 'recurrence:dismiss',
   remindersMissed: 'reminders:missed',
-  appHideToTray: 'app:hideToTray'
+  appHideToTray: 'app:hideToTray',
+  searchQuery: 'search:query',
+  templatesSetCard: 'templates:setCard',
+  templatesCreateCard: 'templates:createCard',
+  templatesListBoards: 'templates:listBoards',
+  templatesSetBoard: 'templates:setBoard',
+  templatesCreateBoard: 'templates:createBoard'
 } as const
 
 // Avisos do main para a tela (sem resposta): o agendador mudou dados (o cache é recarregado), a
@@ -289,6 +303,18 @@ export interface MelloApi {
     // Os lembretes perdidos com o app fechado (LEM-06). Cada lista vem uma vez só.
     missed(): Promise<Result<MissedReminder[]>>
   }
+  // Busca do topo (BUS).
+  search: {
+    query(input: SearchInput): Promise<Result<SearchResults>>
+  }
+  // Modelos (MOD). Os cards-modelo de um quadro vêm no próprio boards:get (isTemplate).
+  templates: {
+    setCard(input: SetTemplateCardInput): Promise<Result<null>>
+    createCard(input: CreateCardFromTemplateInput): Promise<Result<CardSummary>>
+    listBoards(): Promise<Result<BoardTemplate[]>>
+    setBoard(input: SetTemplateBoardInput): Promise<Result<null>>
+    createBoard(input: CreateBoardFromTemplateInput): Promise<Result<BoardSummary>>
+  }
   events: {
     // Devolve a função que para de ouvir.
     on<E extends MelloEvent>(event: E, listener: (payload: EventPayloads[E]) => void): () => void
@@ -418,6 +444,16 @@ export function createApi(
     },
     reminders: {
       missed: call(CHANNELS.remindersMissed)
+    },
+    search: {
+      query: call(CHANNELS.searchQuery)
+    },
+    templates: {
+      setCard: call(CHANNELS.templatesSetCard),
+      createCard: call(CHANNELS.templatesCreateCard),
+      listBoards: call(CHANNELS.templatesListBoards),
+      setBoard: call(CHANNELS.templatesSetBoard),
+      createBoard: call(CHANNELS.templatesCreateBoard)
     },
     events: {
       on: (event, listener) => {

@@ -5,6 +5,7 @@ export const queryKeys = {
   appInfo: ['app', 'info'] as const,
   boards: ['boards'] as const,
   closedBoards: ['boards', 'closed'] as const,
+  boardTemplates: ['boards', 'templates'] as const,
   board: (boardId: string) => ['board', boardId] as const,
   archived: (boardId: string) => ['board', boardId, 'archived'] as const,
   labels: (boardId: string) => ['board', boardId, 'labels'] as const,
@@ -16,5 +17,6 @@ export const queryKeys = {
     ['calendar', scope, year, month] as const,
   settings: ['settings'] as const,
   // Os backups da pasta atual e os avisos dela (Dados e backup).
-  backups: ['data', 'backups'] as const
+  backups: ['data', 'backups'] as const,
+  search: (text: string) => ['search', text] as const
 }

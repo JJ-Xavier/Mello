@@ -8,6 +8,7 @@
 // da bandeja precisam de uma segunda abertura do app, com os mesmos dados. O Explorer e o programa
 // padrão do Windows também só ficam anotados. O tema muda pela configuração de verdade (etapa 10).
 // Restaurar e apagar tudo (etapa 10) saem do app; o script abre de novo com os mesmos dados.
+// A busca e os modelos (etapa 11) usam a tela de verdade; o que eles criam sai no fim do bloco.
 //
 // Uso: npm run capturas   (compila antes; roda com o Node 24, que entende TypeScript)
 import fs from 'node:fs'
@@ -16,7 +17,7 @@ import os from 'node:os'
 import path from 'node:path'
 import playwright, { type ElectronApplication, type Page } from 'playwright-core'
 
-const STAGE = 10
+const STAGE = 11
 const THEMES = ['escuro', 'claro']
 
 const root = path.resolve(import.meta.dirname, '..')
@@ -78,6 +79,14 @@ function day(offset: number): string {
   date.setDate(date.getDate() + offset)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+// N dias à frente, ou para trás se passar do mês: o calendário abre no mês de hoje (no dia 30,
+// hoje + 2 já é o mês seguinte).
+function inMonth(offset: number): number {
+  const date = new Date()
+  date.setDate(date.getDate() + offset)
+  return date.getMonth() === new Date().getMonth() ? offset : -offset
 }
 
 // Nome de um dia no calendário, como a tela o lê: "qua., 21 de outubro".
@@ -474,10 +483,10 @@ async function seed(app: ElectronApplication, page: Page): Promise<Seeded> {
   ).map((l) => l.id)
   const prova = await card(estudosLists[0]!.id, 'Prova de inglês')
   await mello(page, 'cards.setLabels', { cardId: prova, labelIds: [estudosLabels[1]] })
-  await update(prova, { priority: 1, due: { dueAt: day(2), reminder: 'none' } })
+  await update(prova, { priority: 1, due: { dueAt: day(inMonth(2)), reminder: 'none' } })
   const trabalho = await card(estudosLists[0]!.id, 'Entregar trabalho')
   await mello(page, 'cards.setLabels', { cardId: trabalho, labelIds: [estudosLabels[3]] })
-  await update(trabalho, { priority: 3, due: { dueAt: day(4), reminder: 'none' } })
+  await update(trabalho, { priority: 3, due: { dueAt: day(inMonth(4)), reminder: 'none' } })
   const curso = await card(estudosLists[1]!.id, 'Curso de inglês')
   await addChecklist(page, curso, 'Capítulos', [
     { text: 'Ler o capítulo 3', date: -3 },
@@ -856,6 +865,153 @@ try {
     await closePopovers(page)
     await calendarPopovers(page, theme, '13')
   }
+
+  // Etapa 11: busca (tela 9) e modelos (telas 11 e 12). Um card-modelo no "Casa", um quadro-modelo
+  // e uma tarefa com "viagem", para a busca ter os três grupos. No fim, tudo o que o bloco criou
+  // sai, e as capturas seguintes continuam como antes.
+  const casaLists = (
+    await mello<{ lists: { id: string; title: string }[] }>(page, 'boards.get', {
+      boardId: casa.id
+    })
+  ).lists
+  const casaList = (title: string) => casaLists.find((l) => l.title === title)!.id
+  const reservas = await mello<{ id: string }>(page, 'checklists.create', {
+    cardId: cards.viagem,
+    title: 'Reservas'
+  })
+  const reserva = await mello<{ id: string }>(page, 'items.create', {
+    checklistId: reservas.id,
+    text: 'Reservar a viagem de ida'
+  })
+  await mello(page, 'items.update', {
+    itemId: reserva.id,
+    due: { dueDate: day(5), showInCalendar: true }
+  })
+  const cardTemplate = await mello<{ id: string }>(page, 'cards.create', {
+    listId: casaList('A fazer'),
+    title: 'Checklist de viagem'
+  })
+  const green = (
+    await mello<{ id: string; color: string }[]>(page, 'labels.list', { boardId: casa.id })
+  ).find((l) => l.color === '#216e4e')!
+  await mello(page, 'cards.setLabels', { cardId: cardTemplate.id, labelIds: [green.id] })
+  await addChecklist(page, cardTemplate.id, 'Levar', [
+    { text: 'Documentos' },
+    { text: 'Carregador' },
+    { text: 'Remédios' },
+    { text: 'Roupas' }
+  ])
+  await mello(page, 'templates.setCard', { cardId: cardTemplate.id, isTemplate: true })
+  const rotina = await mello<Board>(page, 'boards.create', { title: 'Rotina semanal' })
+  await mello(page, 'boards.setBackground', {
+    boardId: rotina.id,
+    background: { kind: 'gradient', value: 'oceano' }
+  })
+  const rotinaFirst = (
+    await mello<{ lists: { id: string }[] }>(page, 'boards.get', { boardId: rotina.id })
+  ).lists[0]!.id
+  for (const title of ['Planejar a semana', 'Revisar as finanças', 'Limpar a casa']) {
+    await mello(page, 'cards.create', { listId: rotinaFirst, title })
+  }
+  await mello(page, 'templates.setBoard', { boardId: rotina.id, isTemplate: true })
+  await page.evaluate('location.reload()')
+  await page.waitForSelector('header')
+  const templatesSection = page.getByRole('region', { name: 'MODELOS' })
+  for (const theme of THEMES) {
+    await setTheme(theme)
+    await go(page, '#/')
+    const searchBox = page.getByRole('combobox', { name: 'Pesquisar' })
+    await searchBox.fill('viagem')
+    await page
+      .getByRole('listbox', { name: 'Resultados da busca' })
+      .getByRole('option', { name: /Reservar a viagem/ })
+      .waitFor()
+    await searchBox.press('ArrowDown')
+    await page.waitForTimeout(200)
+    await shot(page, '09-busca', theme)
+    await searchBox.press('Escape')
+    await searchBox.fill('')
+    await page.mouse.move(2, 600)
+    await templatesSection.waitFor()
+    await page.waitForTimeout(200)
+    await shot(page, '11-modelos-de-quadro', theme)
+    await templatesSection.getByRole('button', { name: 'Usar o modelo Rotina semanal' }).click()
+    const templateDialog = page.getByRole('dialog', { name: 'Criar quadro a partir de modelo' })
+    await templateDialog.waitFor()
+    await page.waitForTimeout(200)
+    await shot(page, '11-criar-quadro-de-modelo', theme)
+    await templateDialog.getByRole('button', { name: 'Cancelar' }).click()
+
+    await go(page, `#/boards/${casa.id}`)
+    await page.getByRole('heading', { name: 'Casa' }).waitFor()
+    await page
+      .getByRole('region', { name: 'A fazer' })
+      .getByRole('button', { name: 'Criar a partir de modelo' })
+      .click()
+    await page.getByRole('dialog', { name: 'Criar a partir de modelo' }).waitFor()
+    await page.waitForTimeout(200)
+    await shot(page, '12-modelos-de-card', theme)
+    await closePopovers(page)
+    await page.getByRole('button', { name: 'Criar', exact: true }).click()
+    await page
+      .getByRole('dialog', { name: 'Criar' })
+      .getByRole('button', { name: /Criar a partir de modelo/ })
+      .click()
+    await page.waitForTimeout(200)
+    await shot(page, '09-criar-a-partir-de-modelo', theme)
+    await closePopovers(page)
+  }
+
+  // MOD-03: o modelo escolhido no ícone da lista vira um card no fim daquela lista.
+  await setTheme('escuro')
+  const inProgress = page.getByRole('region', { name: 'Em andamento' })
+  await inProgress.getByRole('button', { name: 'Criar a partir de modelo' }).click()
+  await page
+    .getByRole('dialog', { name: 'Criar a partir de modelo' })
+    .getByRole('button', { name: /Checklist de viagem/ })
+    .click()
+  await inProgress.getByRole('link', { name: /Checklist de viagem/ }).waitFor()
+  // MOD-05: o quadro novo a partir do modelo, com os cards.
+  await go(page, '#/')
+  await templatesSection.getByRole('button', { name: 'Usar o modelo Rotina semanal' }).click()
+  const fromTemplate = page.getByRole('dialog', { name: 'Criar quadro a partir de modelo' })
+  await fromTemplate.getByLabel('Título do quadro').fill('Rotina de novembro')
+  await fromTemplate.getByRole('button', { name: 'Criar quadro' }).click()
+  await page.getByRole('heading', { name: 'Rotina de novembro' }).waitFor()
+  await page.getByRole('link', { name: 'Limpar a casa' }).waitFor()
+  await page.waitForTimeout(300)
+  await shot(page, '11-quadro-criado', 'escuro')
+  const novembro = (await mello<Board[]>(page, 'boards.list', undefined)).find(
+    (b) => b.title === 'Rotina de novembro'
+  )!
+  const created = await mello<{ lists: { title: string; cards: unknown[] }[] }>(
+    page,
+    'boards.get',
+    { boardId: novembro.id }
+  )
+  console.log(
+    `Quadro a partir de modelo: ${created.lists.map((l) => `${l.title} (${l.cards.length})`).join(', ')}`
+  )
+  const copies = (
+    await mello<{ lists: { cards: { id: string; title: string; isTemplate: boolean }[] }[] }>(
+      page,
+      'boards.get',
+      { boardId: casa.id }
+    )
+  ).lists.flatMap((l) => l.cards.filter((c) => c.title === 'Checklist de viagem'))
+  console.log(
+    `Card a partir de modelo: ${copies.length - 1} cópia, modelo ${copies.some((c) => c.isTemplate) ? 'mantido' : 'perdido'}.`
+  )
+  if (copies.length !== 2) throw new Error('A cópia do card-modelo não foi criada.')
+  for (const copy of copies) await mello(page, 'cards.delete', { cardId: copy.id })
+  await mello(page, 'checklists.delete', { checklistId: reservas.id })
+  await mello(page, 'templates.setBoard', { boardId: rotina.id, isTemplate: false })
+  for (const id of [novembro.id, rotina.id]) {
+    await mello(page, 'boards.close', { boardId: id })
+    await mello(page, 'boards.delete', { boardId: id })
+  }
+  await page.evaluate('location.reload()')
+  await page.waitForSelector('header')
 
   // Etapa 10: Configurações (telas 7 e 15). O tema muda pelo próprio rádio da tela. Os backups da
   // lista são feitos agora, pelo canal de verdade.

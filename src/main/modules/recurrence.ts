@@ -213,12 +213,17 @@ function createFromSeries(tx: Tx, row: RecurrenceRow, occurrence: string, now: n
 export function save(db: Db, cardId: string, input: RecurrenceRuleInput, now: number): void {
   db.transaction((tx) => {
     const found = tx
-      .select({ recurrenceId: card.recurrenceId, boardId: list.boardId })
+      .select({
+        recurrenceId: card.recurrenceId,
+        boardId: list.boardId,
+        isTemplate: card.isTemplate
+      })
       .from(card)
       .innerJoin(list, eq(card.listId, list.id))
       .where(eq(card.id, cardId))
       .get()
     if (!found) throw new AppError('NOT_FOUND', 'Card não encontrado.')
+    if (found.isTemplate) throw new AppError('CONFLICT', 'Um modelo não pode ter repetição.')
     const target = tx.select().from(list).where(eq(list.id, input.targetListId)).get()
     if (!target || target.boardId !== found.boardId || target.archivedAt !== null) {
       throw new AppError('CONFLICT', 'A lista de destino precisa ser uma lista ativa do quadro.')

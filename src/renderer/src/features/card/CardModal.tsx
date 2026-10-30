@@ -420,6 +420,8 @@ function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => v
                 card.isDone ? 'Marcar card como não concluído' : 'Marcar card como concluído'
               }
               aria-pressed={card.isDone}
+              disabled={card.isTemplate}
+              title={card.isTemplate ? 'Um modelo não tem ✓' : undefined}
               onClick={() =>
                 act(() => unwrap(api().cards.update({ cardId: card.id, isDone: !card.isDone })))
               }
@@ -471,6 +473,8 @@ function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => v
               className={cx(styles.outline, repeating && styles.outlineOpen)}
               aria-expanded={repeating}
               popoverTarget={repeatId}
+              disabled={card.isTemplate}
+              title={card.isTemplate ? 'Um modelo não tem repetição' : undefined}
             >
               <Icon name="repeat" />
               Repetir

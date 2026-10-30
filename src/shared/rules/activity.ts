@@ -1,6 +1,5 @@
 // O texto de cada registro da atividade do card (ATV-02), como aparece no modal. Os nomes de lista,
 // quadro e card vêm guardados no registro, então renomear depois não muda o histórico.
-// Modelo (etapa 11) ganha o texto completo, com o título, na etapa dele.
 import type { ActivityEntry } from '../ipc/cards'
 import { occurrenceDayText } from './recurrence'
 
@@ -28,8 +27,9 @@ export function activityText({ kind, data }: ActivityEntry): string {
       return 'Restaurado'
     case 'copied':
       return `Copiado de “${text(data['from'])}”`
+    // MOD-03 e MOD-05: o título do card-modelo ou do quadro-modelo.
     case 'from_template':
-      return 'Criado a partir de um modelo'
+      return `Criado a partir do modelo “${text(data['from'])}”`
     // REP-12
     case 'from_recurrence':
       return `Criado pela repetição${day(data['date'])}`

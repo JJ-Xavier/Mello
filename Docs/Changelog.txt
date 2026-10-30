@@ -4,6 +4,50 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+0.11.0 — Etapa 11: busca e modelos (30/10/2026)
+
+Adicionado
+- Busca do topo (tela 9): a partir de 2 caracteres, sem diferenciar acento nem maiúscula
+  (BUS-01), procura nos cards (título, descrição e nota), nos itens de checklist e nos quadros
+  (BUS-02). Os resultados abrem embaixo do campo, nos grupos Cards, Tarefas e Quadros, até 8 em
+  cada (BUS-03), sem arquivados, modelos e quadros fechados (BUS-04). Setas, Enter e Esc
+  funcionam; abrir leva ao card no quadro dele ou ao quadro (BUS-05).
+- Cards-modelo (tela 12): "Transformar em modelo" e "Deixar de ser modelo" no menu do card
+  (MOD-01), o selo "Modelo" na face, o ✓ e o "Repetir" apagados no modal (MOD-02). O ícone ao
+  lado de "Adicionar um cartão" lista os modelos do quadro e cria a cópia no fim da lista, com o
+  registro "Criado a partir do modelo <título>" (MOD-03).
+- Quadros-modelo (tela 11): "Transformar em modelo" e "Deixar de ser modelo" no menu do quadro;
+  a seção "Modelos" no Início (MOD-04); o diálogo "Criar quadro a partir de modelo", com as
+  contagens, o título e "Manter os cards do modelo" (MOD-05).
+- "Criar a partir de modelo" no menu "Criar": os quadros-modelo e, dentro de um quadro, os
+  cards-modelo dele.
+
+Mudou
+- Canais novos: search:query e templates:setCard, createCard, listBoards, setBoard e
+  createBoard. O templates:listCards do plano não foi preciso: os cards-modelo vêm no boards:get.
+- O BoardSummary ganhou isTemplate. O texto do registro from_template passou a ter o título.
+- O filtro do quadro e a busca usam a mesma condição de texto (cards.containsText).
+
+Decisões da etapa
+- O menu "Criar" mostra os quadros-modelo e, dentro de um quadro, os cards-modelo dele; ali a
+  cópia do card entra na lista do próprio modelo.
+- O "Abrir o modelo" do diálogo abre o quadro-modelo para editar; o menu "…" dele troca para
+  "Deixar de ser modelo".
+- Virar modelo tira o ✓. Com repetição, "Transformar em modelo" fica apagado: tirar a repetição
+  é com você.
+- Os cards-modelo de dentro de um quadro-modelo vêm só com "Manter cards" e continuam modelos.
+- Entrar e sair de modelo não zera o envelhecimento (congelar não zera o tempo, ENV-04).
+- A busca abre embaixo do campo do cabeçalho, com o foco de 2 px do protótipo; os cards com a
+  palavra no título vêm primeiro.
+
+Testes
+- 36 novos (606 no total): a busca no main (acento, campos, grupos, o que fica de fora) e na
+  tela (grupos, teclado, abrir), os modelos no main (virar, criar a partir de card e de quadro,
+  recusas) e na tela (menus, selo, ícone da lista, seção do Início, diálogo, menu "Criar").
+  Capturas das telas 9, 11 e 12 conferidas no app real, com um card e um quadro criados a partir
+  dos modelos.
+
+
 0.10.0 — Etapa 10: Configurações, tema, backup e dados (29/10/2026)
 
 Adicionado

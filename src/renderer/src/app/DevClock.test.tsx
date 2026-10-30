@@ -48,7 +48,7 @@ describe('relógio de teste', () => {
     keys('ArrowRight')
     keys('ArrowRight')
     expect(await screen.findByText('Relógio +2 dias')).toBeTruthy()
-    const search = screen.getByRole('textbox', { name: 'Pesquisar' })
+    const search = screen.getByRole('combobox', { name: 'Pesquisar' })
     keys('Digit0', false, search)
     expect(await offsetIn(api)).toBe(2 * DAY_MS)
     keys('Digit0')

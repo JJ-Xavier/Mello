@@ -1,6 +1,6 @@
 Arquitetura — Mello
 
-Status: atualizado na etapa 8 (26/10/2026), com o que já existe no código. As partes que ainda vão
+Status: atualizado na etapa 11 (30/10/2026), com o que já existe no código. As partes que ainda vão
 ser construídas estão marcadas com a etapa em que entram. A etapa 7 (calendário) veio antes da 6
 (envelhecimento), por decisão de 24/10/2026.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
@@ -61,7 +61,7 @@ Dentro do main, a direção é uma só: ipc/ → modules/ → db/.
 
 3. PASTAS DO PROJETO
 
-Estado na etapa 8. A estrutura completa prevista está no PLANO.md, seção 3.
+Estado na etapa 11. A estrutura completa prevista está no PLANO.md, seção 3.
 
 Mello/
 ├── Assets/                  identidade visual e imagens de referência
@@ -106,6 +106,8 @@ Mello/
 │   │   │   ├── recurrence.ts repetição: regra, agendador da seção 6.4 do PLANO.md, aviso de
 │   │   │   │                pulada e as fantasmas do calendário (REP)
 │   │   │   ├── reminders.ts lembretes que venceram, uma vez cada (LEM)
+│   │   │   ├── search.ts    busca do topo: cards, tarefas e quadros (BUS, seção 15)
+│   │   │   ├── templates.ts cards-modelo e quadros-modelo (MOD, seção 15)
 │   │   │   ├── backup.ts    os arquivos de backup: criar, listar, rotação, espelho, conferir e
 │   │   │   │                restaurar (DAD-02 a DAD-06)
 │   │   │   └── data.ts      dados e backup: pasta escolhida, backup automático, restaurar,
@@ -130,6 +132,7 @@ Mello/
 │   │   ├── ipc/calendar.ts  o mês do calendário e o "Adicionar"
 │   │   ├── ipc/settings.ts  chaves das configurações, schemas, valores padrão e o settings:set
 │   │   ├── ipc/data.ts      backups, restaurar, exportar e apagar tudo (DAD)
+│   │   ├── ipc/search.ts    a busca do topo (BUS);  ipc/templates.ts  os modelos (MOD)
 │   │   ├── ipc/dev.ts       relógio de teste do modo de desenvolvimento
 │   │   ├── ipc/recurrence.ts regra de repetição, aviso de pulada e lembretes perdidos
 │   │   └── rules/           aging.ts (nível do envelhecimento, ENV), background.ts (fundos
@@ -156,7 +159,9 @@ Mello/
 │           │                seletores, checklists, descrição, nota, atividade, anexos,
 │           │                capa, menu do card, criar card), calendar/ (página, dia,
 │           │                itens), recurrence/ (diálogo Repetir e aviso de pulada),
-│           │                background/ (editor de fundo e "Alterar fundo"), settings/
+│           │                background/ (editor de fundo e "Alterar fundo"), settings/,
+│           │                search/ (busca do topo), templates/ (modelos de card e de
+│           │                quadro)
 │           ├── components/  Popover, Confirm, Notify, EditableTitle, dnd, DoneMark,
 │           │                PriorityIcon, RichEditor (TipTap), Cover (capa), BoardBackdrop
 │           │                (fundo do quadro), BoardThumb (miniatura), Icon, Logo…
@@ -236,7 +241,9 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   files:pick, dropped; attachments:add, open, delete; calendar:month, addCard; settings:get,
   set; data:backups, backupNow, chooseBackupFolder, restore, export, openFolder, deleteAll,
   notices; dev:clock, setClock; recurrence:save, remove, createAnyway, dismiss;
-  reminders:missed; app:hideToTray. O recurrence:preview do plano não existe: a prévia "Próximas:" usa na tela as
+  reminders:missed; app:hideToTray; search:query; templates:setCard, createCard, listBoards,
+  setBoard, createBoard. O templates:listCards do plano não existe: os cards-modelo de um quadro
+  já vêm no boards:get (isTemplate da face). O recurrence:preview do plano não existe: a prévia "Próximas:" usa na tela as
   mesmas contas do agendador (shared/rules/recurrence.ts).
 - Calendário (etapa 7): calendar:month recebe o ano, o mês e o quadro (ou null, todos os
   quadros) e devolve os cards com data de entrega no mês e as tarefas (itens de checklist com
@@ -346,8 +353,8 @@ Cabeçalho de 56 px, em três variações, como no protótipo:
   mais clara, e a engrenagem cheia;
 - board (quadro e calendário do quadro): busca "Pesquisar" e a engrenagem de raios;
 - settings: só o logo e o "Voltar".
-O botão "Criar" abre o menu (Criar quadro, Criar card; modelo na etapa 11). A busca ganha
-função na etapa 11.
+O botão "Criar" abre o menu (Criar quadro, Criar card, Criar a partir de modelo). A busca abre
+os resultados num painel embaixo do campo (seção 15).
 
 Estado:
 - Dados do banco: TanStack Query, com staleTime infinito e sem recarregar ao focar a janela. Os
@@ -355,7 +362,8 @@ Estado:
   Chaves (lib/queryKeys.ts): ['boards'] (abertos), ['boards', 'closed'], ['board', id] (quadro
   com as listas e os cards), ['board', id, 'archived'], ['board', id, 'labels'], ['board', id,
   'matching', palavra] (filtro), ['card', id] (o card aberto no modal), ['calendar', quadro ou
-  'all', ano, mês] (etapa 7) e ['settings']. As ações do modal recarregam o card e o quadro
+  'all', ano, mês] (etapa 7), ['settings'], ['boards', 'templates'] (os quadros-modelo, etapa
+  11) e ['search', texto] (a busca do topo, que sempre consulta de novo: staleTime 0). As ações do modal recarregam o card e o quadro
   (features/card/useCardAction.ts).
 - Ações (lib/queries.ts, useAction): chamam o main, invalidam as chaves afetadas (mesmo se
   falharem, para a tela voltar ao estado real) e, em caso de erro, mostram o aviso no canto da
@@ -646,9 +654,31 @@ restaurar recebe só o nome de um backup da pasta atual. Os caminhos que a tela 
 começo por %APPDATA%.
 
 
-15. PRÓXIMAS PARTES
+15. BUSCA E MODELOS (etapa 11)
 
-- Busca e modelos (etapa 11); polimento e instalador (etapa 12). O "Iniciar com o Windows" só é
+Busca (modules/search.ts, search:query): uma consulta por grupo, com a função unaccent do
+SQLite (a mesma do filtro do quadro, cards.containsText). "À vista" quer dizer card ativo, numa
+lista ativa de um quadro aberto, e nem o card nem o quadro são modelos (BUS-04); as tarefas são
+os itens de checklist desses cards. Os quadros saem do boards:list, filtrados pelo título. A tela
+(features/search/SearchBox.tsx) é um combobox: o campo do cabeçalho com o painel embaixo, as
+setas mudando o aria-activedescendant e o Enter abrindo a rota do resultado. A consulta nunca
+fica velha: staleTime 0, e enquanto a nova não chega, fica a anterior.
+
+Modelos (modules/templates.ts): card.is_template e board.is_template já existiam desde a
+migração inicial; o calendário, os lembretes, o envelhecimento e o boards:list já os
+deixavam de fora. Criar a partir de um card-modelo é o copyCard da CAR-07 com outro registro
+na atividade (from_template) e sem a marca de modelo. Criar um quadro a partir de modelo copia,
+numa transação só, a linha do quadro (o fundo vem junto), as etiquetas (com um mapa da antiga
+para a nova), as listas ativas e, com "Manter cards", os cards ativos pelo mesmo copyCard, com o
+mapa das etiquetas. Os cards-modelo de um quadro vêm do boards:get, que a tela já tem; os
+quadros-modelo vêm de templates:listBoards, com as contagens do diálogo. O diálogo do quadro
+(features/templates/BoardTemplateDialog.tsx) é um <dialog> modal, aberto pelo Início ou pelo
+menu "Criar" (fora do popover, que se fecha ao escolher).
+
+
+16. PRÓXIMAS PARTES
+
+- Polimento e instalador (etapa 12). O "Iniciar com o Windows" só é
   conferido de verdade com o app instalado, na etapa 12.
 
 
@@ -688,3 +718,6 @@ HISTÓRICO
              serviço de dados (data.ts), backups num arquivo só com o tipo no cabeçalho e o
              espelho dos arquivos, limpeza dos arquivos sem uso na abertura, tema pelo
              prefers-color-scheme (lib/theme.ts), DesktopPort e a janela de escolher pasta.
+30/10/2026 — etapa 11: busca e modelos (seção 15): search:query e os canais templates:*,
+             SearchBox no cabeçalho, isTemplate no BoardSummary, cards.containsText para o
+             filtro e a busca, copyCard com o registro from_template.

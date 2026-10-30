@@ -1,5 +1,6 @@
 // Início (tela 1) e Início vazio (tela 10). Os quadros abertos aparecem com os favoritos primeiro e
-// podem ser arrastados para mudar a ordem dentro do grupo (QUA-06).
+// podem ser arrastados para mudar a ordem dentro do grupo (QUA-06). Os quadros-modelo ficam numa
+// seção "Modelos" à parte (MOD-04, tela 11).
 import {
   closestCenter,
   DndContext,
@@ -13,14 +14,17 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useId, useState } from 'react'
 import { Link } from 'react-router'
 import type { BoardSummary } from '../../../../shared/ipc/boards'
+import type { BoardTemplate } from '../../../../shared/ipc/templates'
 import { backgroundCss } from '../../../../shared/rules/background'
 import { announcements, screenReaderInstructions, useDragSensors } from '../../components/dnd'
 import { Icon } from '../../components/Icon'
 import { Popover, PopoverHeader } from '../../components/Popover'
 import { api, unwrap } from '../../lib/api'
 import { cx } from '../../lib/cx'
-import { useAction, useBoards, useClosedBoards } from '../../lib/queries'
+import { useAction, useBoards, useBoardTemplates, useClosedBoards } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
+import { BoardTemplateDialog } from '../templates/BoardTemplateDialog'
+import tpl from '../templates/Templates.module.css'
 import { ClosedBoards } from './ClosedBoards'
 import { CreateBoardForm } from './CreateBoardForm'
 import styles from './HomePage.module.css'
@@ -134,6 +138,48 @@ function BoardGrid({ boards }: { boards: BoardSummary[] }) {
   )
 }
 
+// Clicar num modelo abre o "Criar quadro a partir de modelo" (NovoModelosQuadro.dc.html).
+function TemplatesSection({ templates }: { templates: BoardTemplate[] }) {
+  const id = useId()
+  const [chosen, setChosen] = useState<BoardTemplate | null>(null)
+  return (
+    <section aria-labelledby={id} className={styles.templates}>
+      <div className={styles.templatesHead}>
+        <h2 id={id} className={styles.heading}>
+          MODELOS
+        </h2>
+        <p className={styles.templatesText}>
+          Quadros salvos como modelo. Use um para começar um quadro novo com as mesmas listas,
+          etiquetas e fundo.
+        </p>
+      </div>
+      <div className={styles.grid}>
+        {templates.map((template) => (
+          <button
+            key={template.id}
+            type="button"
+            className={cx(styles.tile, styles.templateTile)}
+            aria-label={`Usar o modelo ${template.title}`}
+            onClick={() => setChosen(template)}
+          >
+            <span
+              className={cx(styles.tileBg, styles.templateBg)}
+              style={{ background: backgroundCss(template.background) }}
+            >
+              <span className={tpl.pill}>
+                <Icon name="template" size={13} />
+                Modelo
+              </span>
+            </span>
+            <span className={styles.tileTitle}>{template.title}</span>
+          </button>
+        ))}
+      </div>
+      {chosen && <BoardTemplateDialog template={chosen} onClose={() => setChosen(null)} />}
+    </section>
+  )
+}
+
 function EmptyInvite() {
   const id = useId()
   return (
@@ -183,10 +229,12 @@ function EmptyInvite() {
 export function HomePage() {
   const boards = useBoards()
   const closed = useClosedBoards()
+  const templates = useBoardTemplates()
   const closedPopoverId = useId()
 
-  if (!boards.data || !closed.data) return null
-  const firstOpening = boards.data.length === 0 && closed.data.length === 0
+  if (!boards.data || !closed.data || !templates.data) return null
+  const firstOpening =
+    boards.data.length === 0 && closed.data.length === 0 && templates.data.length === 0
 
   return (
     <div className={styles.page}>
@@ -217,6 +265,7 @@ export function HomePage() {
       ) : (
         <>
           <BoardGrid boards={boards.data} />
+          {templates.data.length > 0 && <TemplatesSection templates={templates.data} />}
           {closed.data.length > 0 && (
             <div>
               <button type="button" className={styles.closedButton} popoverTarget={closedPopoverId}>

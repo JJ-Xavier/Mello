@@ -1,0 +1,123 @@
+/* Busca do topo: o campo do cabeçalho (Main.dc.html) e o painel de resultados (Estados.dc.html,
+   "BUSCA"), com as peças dos menus (.cap e .mi). */
+.box {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* No Início o campo tem a borda mais clara (Main.dc.html). */
+.searchHome {
+  border-color: var(--field-line);
+}
+
+/* Com o foco, a borda de 2 px do protótipo (o padding compensa, para o texto não pular). */
+.search:focus-within {
+  border: 2px solid var(--accent);
+  padding: 0 11px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--strong);
+  font: inherit;
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: min(100%, 560px);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 6px 12px 12px;
+  border-radius: 10px;
+  background: var(--pop);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cap {
+  margin: 8px 10px 2px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: var(--txt);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.optionActive {
+  background: var(--pop-hover);
+}
+
+/* A cor da primeira etiqueta do card; sem etiqueta, a cor das linhas. */
+.bar {
+  flex: none;
+  width: 8px;
+  height: 24px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.texts {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  color: var(--strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 8px 10px 4px;
+  font-size: 14px;
+  color: var(--muted);
+}

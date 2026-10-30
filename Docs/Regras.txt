@@ -8,7 +8,8 @@ ENV-05, ENV-06, ETQ-04, FLT-03 e NOT-05). A etapa 7 (calendário) veio antes da 
 ENV-08 e a ENV-10 (26/10/2026). A etapa 8 (repetição e lembretes) esclareceu as regras REP e
 LEM (26/10/2026), e ganhou a hora na tarefa e o DAT-05 (28/10/2026). A etapa 9 (fundo do
 quadro) esclareceu as regras FUN (29/10/2026). A etapa 10 (Configurações, tema e dados)
-esclareceu as regras TEM e DAD e fechou a LEM-07 e a ANX-04 (29/10/2026).
+esclareceu as regras TEM e DAD e fechou a LEM-07 e a ANX-04 (29/10/2026). A etapa 11 (busca e
+modelos) esclareceu as regras BUS e MOD (30/10/2026).
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -630,31 +631,64 @@ TEM-04  O fundo dos quadros não muda com o tema.
 
 
 19. BUSCA (BUS)
+Testes (etapa 11): src/main/modules/search.test.ts e
+src/renderer/src/features/search/SearchBox.test.tsx.
 
 BUS-01  O campo do topo busca a partir de 2 caracteres, sem diferenciar maiúsculas e acentos.
+        Os espaços das pontas não contam. Os resultados abrem num painel embaixo do campo, em
+        toda tela que tem o campo (Início, quadro e calendários). (etapa 11)
 BUS-02  Procura no título, na descrição e na nota dos cards; no texto dos itens de checklist; e
         no título dos quadros.
 BUS-03  Os resultados vêm em grupos: Cards (título + "Quadro · Lista"), Tarefas (texto +
         "Card · data") e Quadros, com até 8 resultados por grupo.
+        Dentro de cada grupo: os cards com a palavra no título vêm primeiro, depois os mexidos
+        mais recentemente; as tarefas por fazer vêm antes das marcadas; os quadros seguem a
+        ordem do Início. O card mostra a cor da primeira etiqueta; a tarefa sem data mostra só o
+        card. Sem nenhum resultado, o painel avisa "Nada encontrado". (etapa 11)
 BUS-04  Ficam de fora: arquivados, modelos e quadros fechados.
+        Também ficam de fora os cards de listas arquivadas e tudo o que está num quadro-modelo,
+        com as tarefas desses cards. (etapa 11)
 BUS-05  Clicar ou dar Enter abre o resultado: card abre o modal no quadro dele, tarefa abre o modal
         do card e quadro abre o quadro.
+        As setas escolhem o resultado; o Enter abre o escolhido ou, sem escolha, o primeiro; Esc
+        fecha o painel. Abrir um resultado limpa o campo. (etapa 11)
 
 
 20. MODELOS (MOD)
+Testes (etapa 11): src/main/modules/templates.test.ts e
+src/renderer/src/features/templates/Templates.test.tsx.
 
 MOD-01  Um card vira modelo pelo menu "…" do modal ("Transformar em modelo"), e deixa de ser pelo
         mesmo menu.
+        Virar modelo tira o ✓. Um card com repetição não vira modelo: o item fica apagado, com a
+        dica "Tire a repetição antes de transformar em modelo" (tirar a repetição é com você).
+        Entrar e sair de modelo não zera o envelhecimento (ENV-04). (decidido em 30/10/2026)
 MOD-02  Card-modelo: mostra o selo "Modelo" na face; não envelhece; não aparece no calendário nem
         na busca; não dispara lembrete; não pode ter ✓ nem repetição.
+        No modal do modelo, o ✓ e o "Repetir" ficam apagados. Arrastado para uma lista de
+        conclusão, o modelo não ganha o ✓ automático. (etapa 11)
 MOD-03  "Criar a partir de modelo" (ícone ao lado de "Adicionar um cartão" e no menu "Criar")
         lista os cards-modelo do quadro. Escolher um cria uma cópia na lista (como CAR-07, mas sem
         a marca de modelo), com a atividade "Criado a partir do modelo <título>".
+        A cópia vai para o fim da lista, que precisa ser do mesmo quadro do modelo. Pelo ícone da
+        lista, entra naquela lista. O menu "Criar" mostra os quadros-modelo e, dentro de um
+        quadro, os cards-modelo dele; ali a cópia entra na lista do próprio modelo. Fora de um
+        quadro, o menu mostra só os quadros-modelo. (decidido em 30/10/2026)
 MOD-04  Um quadro vira modelo pelo menu "…" do quadro. Quadros-modelo aparecem numa seção
         "Modelos" no Início, separados dos quadros comuns.
+        Clicar num modelo do Início abre o "Criar quadro a partir de modelo". O "Abrir o modelo"
+        do diálogo abre o quadro-modelo para editar, e o menu "…" dele troca para "Deixar de ser
+        modelo". Um quadro-modelo fica fora de "Mudar de quadros" e dos destinos de mover e
+        copiar; fechado, sai da seção, como os outros quadros. (decidido em 30/10/2026)
 MOD-05  Criar um quadro a partir de modelo copia as listas (com as opções delas), as etiquetas e o
         fundo. Com "Manter cards" marcado, copia também os cards, com ✓ desmarcado, nível 0 e sem
         atividade anterior.
+        Só as listas e os cards ativos vêm. O quadro novo vai para o fim do Início, sem favorito,
+        e abre em seguida; a imagem de fundo é a mesma guardada (nada é copiado no disco). Os
+        cards copiados mantêm o resto, como na CAR-07 (etiquetas, checklists com os itens como
+        estão, data, anexos e capa), e ganham só o registro "Criado a partir do modelo
+        <quadro>". Os cards-modelo de dentro do quadro-modelo vêm só com "Manter cards" e
+        continuam modelos no quadro novo. (decidido em 30/10/2026)
 
 
 21. DADOS, BACKUP E EXPORTAÇÃO (DAD)

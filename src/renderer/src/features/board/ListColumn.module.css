@@ -216,3 +216,13 @@
   align-items: center;
   justify-content: center;
 }
+
+.template:hover {
+  background: var(--btn);
+}
+
+.templateOpen,
+.templateOpen:hover {
+  background: var(--nav-active);
+  color: var(--accent);
+}

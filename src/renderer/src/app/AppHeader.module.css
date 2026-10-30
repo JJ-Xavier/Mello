@@ -21,42 +21,6 @@
   font-size: 18px;
 }
 
-.search {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-/* No Início o campo tem a borda mais clara (Main.dc.html). */
-.searchHome {
-  border-color: var(--field-line);
-}
-
-.searchInput {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 0;
-  outline: none;
-  color: var(--strong);
-  font: inherit;
-}
-
-.searchInput::placeholder {
-  color: var(--muted);
-}
-
-.search:focus-within {
-  border-color: var(--accent);
-}
-
 .create {
   height: 36px;
   padding: 0 16px;

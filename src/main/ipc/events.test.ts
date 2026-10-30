@@ -261,6 +261,11 @@ const KEEPS: Scenario[] = [
   },
   { name: 'arquivar', channel: CHANNELS.cardsArchive, input: (f) => ({ cardId: f.cardId }) },
   {
+    name: 'transformar em modelo (congelar não zera, ENV-04)',
+    channel: CHANNELS.templatesSetCard,
+    input: (f) => ({ cardId: f.cardId, isTemplate: true })
+  },
+  {
     name: 'copiar (a cópia nasce nova; o original não muda)',
     channel: CHANNELS.cardsCopy,
     input: (f) => ({ cardId: f.cardId, title: 'Cópia', listId: f.lists['A fazer'], index: 0 })
@@ -428,7 +433,12 @@ const NOT_APPLICABLE = [
   CHANNELS.devClock,
   CHANNELS.devSetClock,
   CHANNELS.remindersMissed,
-  CHANNELS.appHideToTray
+  CHANNELS.appHideToTray,
+  CHANNELS.searchQuery,
+  CHANNELS.templatesCreateCard,
+  CHANNELS.templatesListBoards,
+  CHANNELS.templatesSetBoard,
+  CHANNELS.templatesCreateBoard
 ]
 const OWN_TEST = [
   CHANNELS.cardsRestore,

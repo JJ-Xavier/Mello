@@ -1,5 +1,6 @@
 // Barra do quadro (Quadro.dc.html): título editável, filtro (FLT), favoritar, "Alterar fundo"
-// (o editor de fundo, FUN) e o menu "…" com itens arquivados e fechar quadro (NovosEstados.dc.html).
+// (o editor de fundo, FUN) e o menu "…" com itens arquivados, transformar em modelo (MOD-04) e
+// fechar quadro (NovosEstados.dc.html).
 import { useId, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { BoardDetail } from '../../../../shared/ipc/boards'
@@ -38,6 +39,15 @@ function BoardMenu({ board, close }: { board: BoardDetail; close: () => void }) 
     navigate('/')
   }
 
+  // MOD-04: o modelo sai do Início e vai para a seção "Modelos"; o quadro continua aberto.
+  const toggleTemplate = () => {
+    close()
+    void run(
+      () => unwrap(api().templates.setBoard({ boardId: board.id, isTemplate: !board.isTemplate })),
+      [queryKeys.boards, queryKeys.board(board.id)]
+    )
+  }
+
   return (
     <>
       <PopoverHeader title="Opções do quadro" onClose={close} />
@@ -45,9 +55,9 @@ function BoardMenu({ board, close }: { board: BoardDetail; close: () => void }) 
         <Icon name="archive" />
         Itens arquivados
       </button>
-      <button type="button" className={ui.mi} disabled title="Chega na etapa 11">
+      <button type="button" className={ui.mi} onClick={toggleTemplate}>
         <Icon name="template" />
-        Transformar em modelo
+        {board.isTemplate ? 'Deixar de ser modelo' : 'Transformar em modelo'}
       </button>
       <div className={ui.sep} />
       <button type="button" className={`${ui.mi} ${ui.danger}`} onClick={closeBoard}>

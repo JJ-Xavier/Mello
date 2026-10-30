@@ -1,8 +1,8 @@
 To-do list — Mello
 
 Atualizado em: 29/10/2026
-Situação: etapa 10 concluída em 29/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
-          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 11.
+Situação: etapa 11 concluída em 30/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
+          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 12.
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -126,9 +126,9 @@ ETAPA 10 — CONFIGURAÇÕES, TEMA, BACKUP E DADOS
 [x] Testes (570 no total), conferência visual, documentos (LGPD), aviso de pronto para commit
 
 ETAPA 11 — BUSCA E MODELOS
-[ ] Busca do topo (BUS)
-[ ] Cards-modelo e quadros-modelo (MOD)
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+[x] Busca do topo (BUS), com o painel de resultados e o teclado
+[x] Cards-modelo e quadros-modelo (MOD), com o "Criar a partir de modelo" na lista e no "Criar"
+[x] Testes (606 no total), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 12 — POLIMENTO, REVISÃO GERAL E INSTALADOR
 [ ] Conferência de todas as telas nos dois temas; estados vazios; acessibilidade

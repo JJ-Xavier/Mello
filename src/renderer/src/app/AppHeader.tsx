@@ -2,7 +2,7 @@ import { useId } from 'react'
 import { Link, useLocation } from 'react-router'
 import { Icon } from '../components/Icon'
 import { Logo } from '../components/Logo'
-import { cx } from '../lib/cx'
+import { SearchBox } from '../features/search/SearchBox'
 import styles from './AppHeader.module.css'
 import { CreateMenu } from './CreateMenu'
 
@@ -54,14 +54,7 @@ export function AppHeader({ variant }: { variant: HeaderVariant }) {
         </>
       ) : (
         <>
-          <label className={cx(styles.search, home && styles.searchHome)}>
-            <Icon name="search" />
-            <input
-              className={styles.searchInput}
-              placeholder={home ? 'Pesquisar cards, tarefas e quadros' : 'Pesquisar'}
-              aria-label="Pesquisar"
-            />
-          </label>
+          <SearchBox home={home} />
           <button type="button" className={styles.create} popoverTarget={createMenuId}>
             Criar
           </button>

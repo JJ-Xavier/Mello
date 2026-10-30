@@ -51,7 +51,14 @@ import { setClockInput } from '../../shared/ipc/dev'
 import { createLabelInput, labelIdInput, updateLabelInput } from '../../shared/ipc/labels'
 import { deleteAllInput, restoreBackupInput } from '../../shared/ipc/data'
 import { occurrenceIdInput, saveRecurrenceInput } from '../../shared/ipc/recurrence'
+import { searchInput } from '../../shared/ipc/search'
 import { setSettingInput, type Theme } from '../../shared/ipc/settings'
+import {
+  createBoardFromTemplateInput,
+  createCardFromTemplateInput,
+  setTemplateBoardInput,
+  setTemplateCardInput
+} from '../../shared/ipc/templates'
 import { AppError } from '../../shared/result'
 import type { Clock } from '../clock'
 import type { Db } from '../db/client'
@@ -66,7 +73,9 @@ import { createPicks, type FileStore } from '../modules/files'
 import * as labels from '../modules/labels'
 import * as lists from '../modules/lists'
 import * as recurrence from '../modules/recurrence'
+import { search } from '../modules/search'
 import * as settings from '../modules/settings'
+import * as templates from '../modules/templates'
 import { createHandler, type Handler } from './handler'
 
 export interface RouteContext {
@@ -354,6 +363,23 @@ export function createRoutes({
       settings.set(db, 'tray.noticeShown', true)
       hideToTray?.()
     })
+  )
+
+  route(CHANNELS.searchQuery, searchInput, ({ text }) => search(db, text))
+
+  // Modelos (MOD).
+  route(CHANNELS.templatesSetCard, setTemplateCardInput, ({ cardId, isTemplate }) =>
+    done(() => templates.setCard(db, cardId, isTemplate, now()))
+  )
+  route(CHANNELS.templatesCreateCard, createCardFromTemplateInput, (input) =>
+    templates.createCard(db, input, now())
+  )
+  route(CHANNELS.templatesListBoards, none, () => templates.listBoards(db))
+  route(CHANNELS.templatesSetBoard, setTemplateBoardInput, ({ boardId, isTemplate }) =>
+    done(() => templates.setBoard(db, boardId, isTemplate, now()))
+  )
+  route(CHANNELS.templatesCreateBoard, createBoardFromTemplateInput, (input) =>
+    templates.createBoard(db, input, now())
   )
 
   return routes

@@ -3,7 +3,8 @@ Modelo de dados — Mello
 Status: criado na etapa 1 (21/10/2026); a etapa 3 (22/10/2026) registrou o conteúdo de
 activity.data, a etapa 4 (23/10/2026) a origem de description_html, a etapa 5 (24/10/2026)
 os anexos e a capa, a etapa 7 (24/10/2026) as configurações do calendário e a etapa 8
-(26/10/2026) o uso da repetição e dos lembretes, sem migração nova.
+(26/10/2026) o uso da repetição e dos lembretes, sem migração nova. A etapa 11 (30/10/2026)
+registrou o activity.data do from_template, também sem migração.
 Fonte no código: src/main/db/schema.ts.
 Qualquer migração nova atualiza este documento (seções 3 e 4).
 
@@ -89,6 +90,8 @@ activity — histórico do card
     done, undone ... {}                             (etapa 3: ✓ automático ao mover)
     archived, restored {}                           (etapa 2)
     copied ......... { from: título do card de origem } (etapa 2)
+    from_template .. { from: título do card-modelo (MOD-03) ou do quadro-modelo (MOD-05) }
+                                                    (etapa 11)
     from_recurrence  { date: a ocorrência, "AAAA-MM-DDTHH:mm" } (etapa 8)
     recurrence_skipped { date } — no anterior em aberto (etapa 8)
     recurrence_missed { from, to, count } — as perdidas de uma rodada, no anterior (etapa 8)

@@ -1,6 +1,6 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 10 (570 testes, em 29/10/2026).
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 11 (606 testes, em 30/10/2026).
 Atualizado a cada etapa.
 
 
@@ -649,6 +649,54 @@ src/renderer/src/app/AppEvents.test.tsx (2 novos e 1 alterado)
 - P4: "Mudar nas Configurações" abre "Lembretes e bandeja" com a janela aberta.
 - DAD-04: o aviso do backup automático aparece no canto, uma vez só.
 
+Etapa 11 — 36 testes novos
+
+src/main/modules/search.test.ts (BUS-01 a BUS-04; 9 novos)
+- "acao" encontra "Ação", sem diferenciar acento nem maiúscula; os espaços das pontas não contam.
+- Cards pelo título, pela descrição e pela nota, com o título primeiro; "Quadro · Lista" e a cor
+  da primeira etiqueta.
+- Tarefas pelo texto do item, com o card e a data, as por fazer antes; quadros pelo título.
+- % e _ procurados como texto; a entrada pede de 2 a 100 caracteres.
+- BUS-03: até 8 por grupo. BUS-04: arquivados, modelos, listas arquivadas, quadros fechados e
+  quadros-modelo ficam de fora, com as tarefas dos cards deles.
+
+src/main/modules/templates.test.ts (MOD-01 a MOD-05; 11 novos)
+- MOD-01: virar modelo tira o ✓, e entrar e sair não zeram o tempo; card com repetição é
+  recusado.
+- MOD-02: o modelo recusa repetição e ✓, não ganha o ✓ automático numa lista de conclusão, não
+  envelhece e fica fora do calendário.
+- MOD-03: a cópia vai para o fim da lista, sem a marca de modelo, com as etiquetas, o checklist
+  e o registro "Criado a partir do modelo"; recusa card que não é modelo, lista de outro quadro
+  e lista arquivada.
+- MOD-04: o quadro sai do Início e vai para os modelos (com as contagens) e volta; fechado, sai
+  dos modelos.
+- MOD-05: copia as listas ativas com as opções, as etiquetas e o fundo; com "Manter cards", os
+  cards ativos sem o ✓, com nível 0, as etiquetas novas e só o registro do modelo (os
+  cards-modelo continuam modelos); recusa quadro que não é modelo e título vazio.
+
+src/main/ipc/events.test.ts (1 novo)
+- Transformar em modelo não zera o envelhecimento (ENV-04); os canais novos classificados.
+
+src/renderer/src/features/search/SearchBox.test.tsx (tela 9; 6 novos)
+- BUS-01: a partir de 2 caracteres; "acao" encontra "Plano de ação", com "Casa · A fazer".
+- BUS-03: os grupos Cards, Tarefas e Quadros, com o card e a data da tarefa ("Pintar · 15 set.").
+- BUS-05: as setas escolhem (aria-activedescendant, dando a volta) e o Enter abre o card no
+  quadro dele e limpa o campo; a tarefa abre o modal do card e o quadro abre o quadro.
+- Esc fecha o painel; sem resultado, "Nada encontrado"; modelos ficam de fora.
+
+src/renderer/src/features/templates/Templates.test.tsx (telas 11 e 12; 9 novos)
+- MOD-01 e MOD-02: "Transformar em modelo" põe o selo na face e apaga o ✓ e o Repetir; "Deixar
+  de ser modelo" desfaz; com repetição, o item fica apagado com a dica.
+- MOD-03: o ícone da lista mostra os modelos do quadro e cria no fim daquela lista; sem
+  modelos, explica como criar; no menu "Criar", dentro do quadro, a cópia entra na lista do
+  modelo.
+- MOD-04 e MOD-05: o menu do quadro leva o quadro para a seção "Modelos" do Início; o diálogo
+  mostra as contagens e cria o quadro com ou sem os cards; o menu "Criar" também abre o
+  diálogo; "Abrir o modelo" abre o quadro-modelo, e o menu dele desfaz o modelo.
+
+Também mudaram: DevClock.test.tsx (a busca agora é um combobox), cardDrag.test.ts (isTemplate
+no quadro) e App.test.tsx (versão 0.11.0).
+
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
 
@@ -681,7 +729,12 @@ temporária (MELLO_DATA_DIR) e:
    segue o Windows, exporta para uma pasta (a janela é trocada; o Explorer só fica anotado),
    troca a pasta de backup e a apaga para ver o aviso; no fim, restaura um backup e apaga tudo
    de verdade (a reabertura do app vira só sair, e o script abre de novo e confere o resultado);
-9. apaga a pasta temporária.
+9. desde a etapa 11, antes das Configurações, cria um card-modelo, um quadro-modelo e uma tarefa
+   com "viagem"; captura a busca com os três grupos, a seção "Modelos" do Início, o diálogo do
+   quadro-modelo, o popover da lista e o menu "Criar" nos dois temas; cria um card e um quadro
+   a partir dos modelos pela tela e confere no banco; no fim, apaga o que criou, para as
+   capturas seguintes continuarem como antes;
+10. apaga a pasta temporária.
 
 O Electron do script abre com opções do Chromium que mantêm a janela desenhando mesmo coberta ou
 com o monitor desligado pelo Windows; sem elas, a captura podia esperar um quadro que não chegava
@@ -830,5 +883,22 @@ Etapa 10 (conferido em 29/10/2026, no app real pelo Playwright)
     backup (o aviso), e ligar de novo.
 [ ] Etapa 12, com o app instalado: "Iniciar com o Windows" (reiniciar e ver o Mello só na
     bandeja) e uma restauração de verdade, com o app reabrindo sozinho.
+
+Etapa 11 (conferido em 30/10/2026, no app real pelo Playwright)
+[x] A busca por "viagem" mostrou os três grupos (o card com "Casa · Ideias" e a cor da etiqueta,
+    a tarefa com "Viagem de férias · 4 nov." e o quadro com a miniatura); a seta marcou o
+    primeiro resultado.
+[x] O ícone ao lado de "Adicionar um cartão" de "Em andamento" criou a cópia do card-modelo no
+    fim da lista; o modelo continuou modelo.
+[x] O diálogo do quadro-modelo mostrou "4 listas · 6 etiquetas · 3 cards" e criou "Rotina de
+    novembro" com as 4 listas, os 3 cards e o fundo do modelo.
+[x] Capturas da etapa 11 conferidas com as telas 9, 11 e 12 nos dois temas: o painel da busca,
+    a seção "Modelos" com o selo, o diálogo, o popover da lista com o selo na face e o menu
+    "Criar" com os quadros-modelo e os cards-modelo do quadro.
+[x] O roteiro de capturas passou a pôr as datas do quadro "Estudos" dentro do mês (no dia 30,
+    hoje + 2 já era novembro, e o calendário de todos os quadros não mostrava o card).
+[ ] No seu computador: transformar um card seu em modelo e criar dois a partir dele; transformar
+    um quadro em modelo, criar um a partir dele com e sem "Manter cards" e desfazer o modelo
+    pelo "Abrir o modelo".
 
 O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.

@@ -8,4 +8,5 @@ export const ITEM_TEXT_MAX = 500 // CHK-01
 export const DESCRIPTION_TEXT_MAX = 20_000 // NOT-07
 export const NOTE_TEXT_MAX = 20_000 // NOT-01
 export const FILTER_KEYWORD_MAX = 100 // FLT-01
+export const SEARCH_TEXT_MAX = 100 // BUS-01
 export const FILE_NAME_MAX = 255 // ANX-01: o nome original do anexo
