@@ -4,6 +4,43 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+1.0.0 — Etapa 12: polimento, revisão geral e instalador (30/10/2026)
+
+A primeira versão completa: as 12 etapas do PLANO.md estão prontas.
+
+Adicionado
+- Ícone do app e do instalador (build/icon.ico), gerado do logo do protótipo, de 16 a 256 px
+  (P14). O scripts/gerar-icones.mts gera também o .ico.
+- Instalador conferido: npm run build:win gera o Mello-Setup-1.0.0.exe; instalação limpa,
+  atualização por cima e desinstalação conferidas nesta máquina, com os dados preservados.
+- Teste de acessibilidade (todo controle das telas principais tem nome) e teste de desempenho com
+  500 cards, no main e no app real (pelo script de capturas).
+
+Corrigido
+- O app instalado ia sem os ícones da bandeja e das notificações: a pasta resources/ não estava
+  no pacote. Agora vai, fora do .asar.
+- A etiqueta sem nome, no modal do card, não tinha nome para o leitor de tela; agora é lida como
+  "Etiqueta <cor>".
+- A cópia de um card (Copiar, copiar lista e os modelos) disparava na hora um lembrete cujo
+  horário já tinha passado (CAR-07).
+- Um quadro-modelo continuava criando os cards das repetições dele; agora a repetição fica
+  pausada, como num quadro fechado (REP-16).
+- O script de capturas falhava perto do fim do mês: os cards do quadro "Estudos" caíam no mês
+  seguinte e sumiam do calendário.
+
+Mudou
+- O instalador leva só o binário do better-sqlite3 do Windows x64, sem o código-fonte do SQLite
+  e sem os binários das outras plataformas.
+
+Revisão geral
+- Uma revisão do código (código-fonte inteiro) achou 8 pontos: 2 foram corrigidos (o
+  comentário da pausa e a folga do teste de desempenho) e 6 ficaram como estão, com o motivo
+  registrado no aviso da etapa.
+
+Testes
+- 9 novos (615 no total). Capturas de todas as telas conferidas de novo, nos dois temas.
+
+
 0.11.0 — Etapa 11: busca e modelos (30/10/2026)
 
 Adicionado

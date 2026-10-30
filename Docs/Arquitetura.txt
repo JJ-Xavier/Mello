@@ -1,6 +1,6 @@
 Arquitetura — Mello
 
-Status: atualizado na etapa 11 (30/10/2026), com o que já existe no código. As partes que ainda vão
+Status: atualizado na etapa 12 (30/10/2026, versão 1.0.0), com o que já existe no código. As partes que ainda vão
 ser construídas estão marcadas com a etapa em que entram. A etapa 7 (calendário) veio antes da 6
 (envelhecimento), por decisão de 24/10/2026.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
@@ -676,9 +676,13 @@ quadros-modelo vêm de templates:listBoards, com as contagens do diálogo. O di�
 menu "Criar" (fora do popover, que se fecha ao escolher).
 
 
-16. PRÓXIMAS PARTES
+16. INSTALADOR E DEPOIS DA 1.0.0
 
-- Polimento e instalador (etapa 12). O "Iniciar com o Windows" só é
+- O instalador (electron-builder, NSIS por usuário) leva out/, resources/ (fora do .asar: a
+  bandeja e as notificações do Windows leem o ícone do disco) e o binário do better-sqlite3 do
+  Windows x64. O ícone é o build/icon.ico (Pipeline.txt, seção 6).
+- Depois da 1.0.0, as mudanças seguem o mesmo fluxo (regras, testes, capturas, aviso de pronto),
+  com a versão pelo versionamento semântico (Pipeline.txt, seção 7). O "Iniciar com o Windows" só é
   conferido de verdade com o app instalado, na etapa 12.
 
 
@@ -721,3 +725,5 @@ HISTÓRICO
 30/10/2026 — etapa 11: busca e modelos (seção 15): search:query e os canais templates:*,
              SearchBox no cabeçalho, isTemplate no BoardSummary, cards.containsText para o
              filtro e a busca, copyCard com o registro from_template.
+30/10/2026 — etapa 12 (1.0.0): instalador conferido (resources/ no pacote, ícone do logo),
+             repetição pausada em quadro-modelo, lembrete vencido não dispara na cópia.

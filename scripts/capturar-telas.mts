@@ -9,6 +9,7 @@
 // padrão do Windows também só ficam anotados. O tema muda pela configuração de verdade (etapa 10).
 // Restaurar e apagar tudo (etapa 10) saem do app; o script abre de novo com os mesmos dados.
 // A busca e os modelos (etapa 11) usam a tela de verdade; o que eles criam sai no fim do bloco.
+// O desempenho com 500 cards (etapa 12) é medido num quadro próprio, que sai no fim.
 //
 // Uso: npm run capturas   (compila antes; roda com o Node 24, que entende TypeScript)
 import fs from 'node:fs'
@@ -17,7 +18,7 @@ import os from 'node:os'
 import path from 'node:path'
 import playwright, { type ElectronApplication, type Page } from 'playwright-core'
 
-const STAGE = 11
+const STAGE = 12
 const THEMES = ['escuro', 'claro']
 
 const root = path.resolve(import.meta.dirname, '..')
@@ -1332,6 +1333,41 @@ try {
     `Apagar tudo: app vazio, ${leftFiles} arquivos, ${leftBackups.length} backups guardados.`
   )
   if (leftFiles > 0 || leftBackups.length === 0) throw new Error('Apagar tudo não fez o que devia.')
+
+  // Etapa 12: desempenho com 500 cards (125 em cada lista). Mede o tempo de recarregar a tela até
+  // o último card aparecer, com os cards novos e depois com todos envelhecidos (relógio +14 dias,
+  // o fog() em todos). Fica no fim, depois do "Apagar tudo": o relógio adiantado mexeria nas
+  // repetições e nos lembretes das capturas de antes.
+  const perf = await mello<Board>(page, 'boards.create', { title: 'Desempenho' })
+  const perfLists = (
+    await mello<{ lists: { id: string }[] }>(page, 'boards.get', { boardId: perf.id })
+  ).lists.map((l) => l.id)
+  await page.evaluate(`(async () => {
+    const lists = ${JSON.stringify(perfLists)}
+    for (let i = 0; i < 500; i++) {
+      await window.mello.cards.create({ listId: lists[i % lists.length], title: 'Card ' + (i + 1) })
+    }
+  })()`)
+  const timeBoard = async (label: string) => {
+    await go(page, `#/boards/${perf.id}`)
+    const started = Date.now()
+    await page.evaluate('location.reload()')
+    await page.getByRole('link', { name: /^Card 500\b/ }).waitFor({ timeout: 60_000 })
+    const ms = Date.now() - started
+    console.log(`Desempenho, ${label}: ${ms} ms do recarregar ao card 500`)
+    return ms
+  }
+  await setTheme('escuro')
+  const fresh = await timeBoard('500 cards novos')
+  await mello(page, 'dev.setClock', { offset: 14 * 86_400_000 })
+  const aged = await timeBoard('500 cards envelhecidos (nível 5)')
+  await page.addStyleTag({ content: '[data-dev-clock] { display: none }' })
+  await page.waitForTimeout(300)
+  await shot(page, '02-desempenho-500-cards', 'escuro')
+  await mello(page, 'dev.setClock', { offset: 0 })
+  await mello(page, 'boards.close', { boardId: perf.id })
+  await mello(page, 'boards.delete', { boardId: perf.id })
+  if (Math.max(fresh, aged) > 10_000) throw new Error('O quadro com 500 cards demorou demais.')
 } finally {
   await quit(app)
   fs.rmSync(dataDir, { recursive: true, force: true })

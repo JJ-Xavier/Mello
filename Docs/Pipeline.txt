@@ -1,7 +1,7 @@
 Pipeline — Mello
 
-Status: atualizado na etapa 11 (30/10/2026, capturas da busca e dos modelos, com um card e um
-quadro criados a partir dos modelos no app).
+Status: atualizado na etapa 12 (30/10/2026, versão 1.0.0: instalador conferido, ícone do logo
+do protótipo e a medição com 500 cards nas capturas).
 Os comandos da seção 4 existem e foram conferidos.
 
 
@@ -115,7 +115,8 @@ npm run capturas ....... compila, abre o app com uma pasta de dados temporária,
                          restaura e apaga tudo no app real (a reabertura do app é trocada por
                          só sair, e o script abre de novo); o Explorer só fica anotado.
                          Desde a etapa 11, busca, cria modelos e cria um card e um quadro a
-                         partir deles pela tela, e apaga o que criou
+                         partir deles pela tela, e apaga o que criou.
+                         Desde a etapa 12, no fim, mede o quadro com 500 cards
 npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit)
 node scripts/gerar-icones.mts
                          gera os PNGs do logo em resources/ (bandeja e notificações). Precisa do
@@ -139,7 +140,13 @@ npm run build:win ...... confere os tipos, compila e gera o instalador do Window
 
 6. INSTALADOR
 
-- npm run build:win gera dist/Mello-Setup-<versão>.exe (NSIS, Windows x64), com o ícone de build/.
+- npm run build:win gera dist/Mello-Setup-<versão>.exe (NSIS, Windows x64), com o ícone de
+  build/icon.ico (gerado do logo do protótipo por node scripts/gerar-icones.mts; rodar de novo só
+  se o logo mudar). O pacote leva out/, resources/ (ícones da bandeja e das notificações, fora do
+  .asar) e, do better-sqlite3, só o binário do Windows x64.
+- O instalador é por usuário: instala em %LOCALAPPDATA%\Programs\mello, sem pedir
+  administrador, com atalhos no menu Iniciar e na área de trabalho. Conferido em 30/10/2026:
+  instalação limpa, atualização por cima e desinstalação (Testes.txt, roteiro da etapa 12).
 - Instalar: abrir o .exe. Como o instalador não é assinado, o Windows SmartScreen avisa na
   primeira vez: "Mais informações" → "Executar assim mesmo".
 - Atualizar: gerar o instalador da versão nova e instalar por cima. Os dados ficam em

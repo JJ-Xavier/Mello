@@ -1,8 +1,9 @@
 To-do list — Mello
 
 Atualizado em: 29/10/2026
-Situação: etapa 11 concluída em 30/10/2026, aguardando o commit do Jackson. A 7 veio antes da 6
-          (decisão de 24/10/2026: uma etapa de cada vez, a 7 primeiro). Próxima: etapa 12.
+Situação: as 12 etapas concluídas em 30/10/2026 (versão 1.0.0); a etapa 12 aguarda o commit do
+          Jackson. A 7 veio antes da 6 (decisão de 24/10/2026: uma etapa de cada vez, a 7
+          primeiro).
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -131,30 +132,27 @@ ETAPA 11 — BUSCA E MODELOS
 [x] Testes (606 no total), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 12 — POLIMENTO, REVISÃO GERAL E INSTALADOR
-[ ] Conferência de todas as telas nos dois temas; estados vazios; acessibilidade
-[ ] Desempenho com 500 cards
-[ ] Ícone do instalador; npm run build:win; instalar e atualizar sem perder dados
-[ ] Revisão geral do código; suíte completa de novo
-[ ] Todos os documentos conferidos contra o estado final; resumo da entrega
+[x] Conferência de todas as telas nos dois temas; estados vazios; acessibilidade (teste novo)
+[x] Desempenho com 500 cards (main e app real)
+[x] Ícone do instalador; npm run build:win; instalar e atualizar sem perder dados
+[x] Revisão geral do código; suíte completa de novo (615 testes)
+[x] Todos os documentos conferidos contra o estado final; resumo da entrega
 
 
 PENDÊNCIAS E OBSERVAÇÕES
 
 - As telas de modelos, capa e lembretes não existem no protótipo; foram desenhadas nas telas novas
   10 a 16 (aprovadas em 21/10/2026).
-- Etapa 12 (desempenho): a capa de imagem é mostrada a partir do arquivo inteiro; com muitas
-  fotos grandes no quadro, avaliar gerar miniaturas.
-- Etapa 12: no electron-builder.yml, deixar fora do instalador os binários do better-sqlite3 de
-  outras plataformas e o código-fonte do SQLite que vêm no pacote.
+- Desempenho (avaliado na etapa 12): a capa de imagem é mostrada a partir do arquivo inteiro.
+  Com 500 cards, o quadro abriu em 1476 ms; as miniaturas ficam para quando muitas fotos grandes
+  num quadro pesarem de verdade.
 - O post-it azul do calendário no canvas ainda diz "riscado = ✓ ou Concluído/Entregue"; a regra
   que vale é a FIN-01 (lista de conclusão E ✓), registrada no post-it verde "Telas novas".
 - Versão: a etapa 7 é a 0.7.0 e a 6, feita depois, é a 0.7.1 (decisão de 25/10/2026). As
   próximas seguem "0.N.0 na etapa N" (a 8 é a 0.8.0).
-- Etapa 12: "Iniciar com o Windows" só registra o Mello na inicialização do Windows no app
-  instalado (no desenvolvimento a escolha só fica gravada); conferir ligar, reiniciar o
-  computador e ver o Mello só na bandeja.
-- Etapa 12: as notificações do Windows foram conferidas com o Notification do Electron trocado
-  por uma anotação (script de capturas); conferir uma notificação de verdade no app instalado,
-  inclusive o clique abrindo o card.
+- Com o app instalado, no seu computador (Testes.txt, roteiro da etapa 12): "Iniciar com o
+  Windows" (ligar, reiniciar e ver o Mello só na bandeja) e uma notificação de lembrete de
+  verdade, com o clique abrindo o card. O script de capturas confere as notificações com o
+  Notification do Electron trocado por uma anotação.
 - Relógio de teste: se Ctrl+Alt+seta girar a tela (atalho de alguns drivers Intel), trocar o
   atalho.

@@ -15,6 +15,7 @@ import * as cards from './cards'
 import * as checklists from './checklists'
 import * as lists from './lists'
 import * as recurrence from './recurrence'
+import * as templates from './templates'
 
 // Quarta, 21 de outubro de 2026, 10:00. A repetição semanal de segunda às 08:00 cai em 26/10,
 // 02/11, 09/11…
@@ -376,6 +377,15 @@ describe('agendador: app fechado e pausa (REP-10, REP-16)', () => {
     t.db.update(recurrenceTable).set({ targetListId: null }).run()
     expect(recurrence.processDue(t.db, at(10, 26, 9))).toBe(false)
     expect(face(compras)).toMatchObject({ recurring: true, nextRepeat: null })
+  })
+
+  it('REP-16: quadro-modelo também pausa (MOD-04)', () => {
+    recurrence.save(t.db, compras, rule({ ifPreviousOpen: 'create' }), SAVE)
+    templates.setBoard(t.db, boardId, true, SAVE)
+    expect(recurrence.processDue(t.db, at(10, 26, 9))).toBe(false)
+    expect(cards.get(t.db, compras).recurrence).toMatchObject({ paused: true })
+    templates.setBoard(t.db, boardId, false, SAVE)
+    expect(recurrence.processDue(t.db, at(10, 26, 9))).toBe(true)
   })
 
   it('REP-06: depois de N vezes, para (as perdidas contam) e o ↻ some', () => {

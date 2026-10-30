@@ -575,6 +575,19 @@ describe('copiar, arquivar e filtrar', () => {
     expect(activities(copied.id)).toEqual([{ kind: 'copied', data: { from: 'Compras' } }])
   })
 
+  it('CAR-07: a cópia não dispara um lembrete que já passou; um futuro dispara (LEM-04)', () => {
+    const todo = listId('A fazer')
+    const [past, future] = ['2026-10-20T08:00', '2030-01-01T08:00'].map((dueAt, i) => {
+      const id = insertCard(t.db, todo, { title: `Card ${i}`, position: `a${i}` })
+      t.db.update(card).set({ dueAt, reminder: 'at_time' }).where(eq(card.id, id)).run()
+      return id
+    })
+    const copy = (cardId: string) =>
+      cards.copy(t.db, { cardId, title: 'Cópia', listId: todo, index: 0 }, LATER).id
+    expect(row(copy(past!)).reminderFiredAt).toBe(LATER)
+    expect(row(copy(future!)).reminderFiredAt).toBeNull()
+  })
+
   it('CAR-07: cópia em outro quadro recria as etiquetas lá', () => {
     const roxo = t.db.select().from(label).where(eq(label.boardId, boardId)).all()[0]!
     const source = insertCard(t.db, listId('A fazer'), { title: 'Compras', labelIds: [roxo.id] })

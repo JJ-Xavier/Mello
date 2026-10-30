@@ -2,8 +2,9 @@ Referente as boas praticas da LGPD e aplicacões em desenvolvimentos de softwere
 
 Status: aprovado em 21/10/2026; revisado na etapa 1 (pasta do modo de desenvolvimento), na
 etapa 5 (anexos, 24/10/2026), na etapa 8 (notificações dos lembretes, 26/10/2026), na etapa 9
-(imagens de fundo, 29/10/2026) e na etapa 10 (backup, exportação e apagar tudo, 29/10/2026).
-Será revisado também na etapa 12 (versão final).
+(imagens de fundo, 29/10/2026), na etapa 10 (backup, exportação e apagar tudo, 29/10/2026) e na
+etapa 12 (versão final 1.0.0, 30/10/2026): nada mudou no que é guardado; conferido no app
+instalado que desinstalar deixa os dados em %APPDATA%\Mello.
 
 
 1. RESUMO

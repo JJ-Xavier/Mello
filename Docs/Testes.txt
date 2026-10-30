@@ -1,6 +1,7 @@
 Testes — Mello
 
-Status: criado na etapa 1 (21/10/2026), atualizado na etapa 11 (606 testes, em 30/10/2026).
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 12 (615 testes, versão 1.0.0, em
+30/10/2026).
 Atualizado a cada etapa.
 
 
@@ -697,6 +698,26 @@ src/renderer/src/features/templates/Templates.test.tsx (telas 11 e 12; 9 novos)
 Também mudaram: DevClock.test.tsx (a busca agora é um combobox), cardDrag.test.ts (isTemplate
 no quadro) e App.test.tsx (versão 0.11.0).
 
+Etapa 12 — 9 testes novos
+
+src/renderer/src/app/Accessibility.test.tsx (acessibilidade; 5 novos)
+- No Início, no quadro, no modal do card, no calendário de todos os quadros e nas
+  Configurações, todo botão, link, campo, caixa de marcar, rádio, controle deslizante, lista,
+  aba, diálogo e imagem tem nome para o leitor de tela. Achou a etiqueta sem nome do modal, que
+  passou a ser lida como "Etiqueta <cor>".
+
+src/main/modules/performance.test.ts (desempenho; 2 novos)
+- Um quadro com 500 cards, cada um com etiqueta e checklist: o boards:get e a busca medem o
+  tempo no terminal e precisam ficar abaixo de 2 s (nesta máquina, 76 ms e 34 ms).
+
+src/main/modules/cards.test.ts (CAR-07, LEM-04; 1 novo)
+- A cópia não dispara um lembrete que já passou; um futuro dispara.
+
+src/main/modules/recurrence.test.ts (REP-16, MOD-04; 1 novo)
+- Um quadro-modelo pausa a repetição; ao deixar de ser modelo, ela volta.
+
+Também mudou: App.test.tsx (versão 1.0.0).
+
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
 
@@ -734,7 +755,10 @@ temporária (MELLO_DATA_DIR) e:
    quadro-modelo, o popover da lista e o menu "Criar" nos dois temas; cria um card e um quadro
    a partir dos modelos pela tela e confere no banco; no fim, apaga o que criou, para as
    capturas seguintes continuarem como antes;
-10. apaga a pasta temporária.
+10. desde a etapa 12, depois do "Apagar tudo", cria um quadro com 500 cards e mede o tempo de
+    recarregar a tela até o último card aparecer, com os cards novos e com todos envelhecidos
+    (relógio +14 dias); falha acima de 10 s (nesta máquina: 1476 ms e 2862 ms);
+11. apaga a pasta temporária.
 
 O Electron do script abre com opções do Chromium que mantêm a janela desenhando mesmo coberta ou
 com o monitor desligado pelo Windows; sem elas, a captura podia esperar um quadro que não chegava
@@ -901,4 +925,29 @@ Etapa 11 (conferido em 30/10/2026, no app real pelo Playwright)
     um quadro em modelo, criar um a partir dele com e sem "Manter cards" e desfazer o modelo
     pelo "Abrir o modelo".
 
-O roteiro do instalador (instalar, atualizar por cima, dados preservados) entra na etapa 12.
+Etapa 12 (conferido em 30/10/2026)
+[x] npm run build:win gerou dist/Mello-Setup-1.0.0.exe (115 MB), com o ícone do logo do
+    protótipo. Do better-sqlite3, só o binário do Windows x64 foi junto.
+[x] Instalação limpa (silenciosa, /S): 55 s, em %LOCALAPPDATA%\Programs\mello, sem pedir
+    administrador, com o atalho no menu Iniciar.
+[x] O app instalado abriu na versão 1.0.0, fora do modo de desenvolvimento, com os dados em
+    %APPDATA%\Mello e os ícones da bandeja e das notificações carregando.
+[x] Atualização por cima (o mesmo instalador de novo): 52 s; o quadro e o card criados antes
+    continuaram lá.
+[x] Desinstalar removeu o programa e os atalhos e deixou o banco em %APPDATA%\Mello. A pasta
+    de dados do teste foi apagada à mão no fim (ela não existia antes do teste).
+[x] Com 500 cards, a tela do quadro abriu em 1476 ms; com todos envelhecidos, em 2862 ms.
+[x] Capturas da etapa 12 conferidas nos dois temas: todas as telas de novo, contra o protótipo.
+
+Roteiro do instalador (a cada versão nova)
+1. npm run build:win (confere os tipos, compila e gera dist/Mello-Setup-<versão>.exe).
+2. Instalar a versão anterior, se quiser conferir a atualização, e criar um quadro de teste.
+3. Abrir o instalador novo. Na primeira vez, o SmartScreen avisa: "Mais informações" →
+   "Executar assim mesmo".
+4. Abrir o Mello: a versão nova aparece no rodapé das Configurações, e o quadro de teste
+   continua lá.
+5. Excluir o quadro de teste.
+
+[ ] No seu computador, com o app instalado: "Iniciar com o Windows" (ligar, reiniciar e ver o
+    Mello só na bandeja); uma notificação de lembrete de verdade, com o clique abrindo o card;
+    uma restauração de backup com o app reabrindo sozinho.

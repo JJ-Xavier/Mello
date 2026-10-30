@@ -9,6 +9,9 @@ com todos os dados salvos localmente em um banco SQLite — sem depender de serv
 O código-fonte é público no GitHub, mas o banco de dados e as informações registradas permanecem apenas
 na máquina de quem usa o app.
 
+Situação: versão 1.0.0 (30/10/2026), com as 12 etapas do plano prontas e o instalador do
+Windows conferido. Como instalar: README.md e Docs/Pipeline.txt.
+
 
 PARA QUEM É
 

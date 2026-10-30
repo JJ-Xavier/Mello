@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026, etapa 10 em 29/10/2026 e etapa 11 em 30/10/2026**; a etapa 11 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026, etapa 10 em 29/10/2026, etapa 11 em 30/10/2026 e etapa 12 em 30/10/2026 (versão 1.0.0)**; a etapa 12 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -504,7 +504,9 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** buscar "acao" encontra "Ação"; criar um card e um quadro a partir de modelo copia o que a regra diz.
 - **Testes:** BUS-01..05, MOD-01..05.
 
-### Etapa 12 — Polimento, revisão geral e instalador
+### Etapa 12 — Polimento, revisão geral e instalador ✅ concluída em 30/10/2026
+
+- **Resultado:** tudo da entrega abaixo foi feito; 615 testes no total (9 novos), lint e tipos limpos; capturas de todas as telas conferidas de novo nos dois temas. Ícone do instalador gerado do logo do protótipo (`build/icon.ico`, P14). `npm run build:win` gerou o `Mello-Setup-1.0.0.exe`; instalação limpa, atualização por cima e desinstalação conferidas nesta máquina, com os dados preservados. Com 500 cards, o quadro abriu em 1476 ms (2862 ms com todos envelhecidos). Corrigidos no caminho: os ícones da bandeja que não iam no pacote, a etiqueta sem nome no modal, o lembrete vencido disparando na cópia e a repetição rodando dentro de quadro-modelo. Versão 1.0.0. Detalhes no `Changelog.txt`.
 
 - **Entrega:** conferência de todas as telas contra o protótipo nos dois temas; estados vazios; foco visível e rótulos de acessibilidade; teste de desempenho com 500 cards; ícone do instalador (P14); `npm run build:win` gerando o instalador NSIS; instalação limpa e atualização por cima conferidas, com os dados preservados; revisão geral do código procurando erros; documentação final.
 - **Aceite:** o instalador instala, o app abre, os dados sobrevivem à reinstalação e todos os testes passam.

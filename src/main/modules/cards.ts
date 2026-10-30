@@ -26,6 +26,7 @@ import { DESCRIPTION_TEXT_MAX, NOTE_TEXT_MAX } from '../../shared/limits'
 import { AppError } from '../../shared/result'
 import { doneAfterMove } from '../../shared/rules/finished'
 import { clean, textLength, toHtml, toText } from '../../shared/rules/richText'
+import { reminderAt } from '../../shared/rules/reminders'
 import { removeAccents } from '../../shared/text'
 import type { Db, DbOrTx, Tx } from '../db/client'
 import {
@@ -50,7 +51,8 @@ import { forCard, seriesState } from './recurrence'
 // Copia um card (CAR-07): título, descrição, nota, ✓, etiquetas, prioridade, data, lembrete, capa,
 // checklists com o estado dos itens e anexos. Não copia a atividade nem a repetição. A cópia
 // nasce com nível 0 e com a atividade "Copiado de <título>" (ENV-07, ATV-02). Capa e anexos
-// apontam para os mesmos arquivos guardados (ANX-02): nada é copiado no disco.
+// apontam para os mesmos arquivos guardados (ANX-02): nada é copiado no disco. Um lembrete cujo
+// horário já passou não dispara na cópia; um futuro dispara nela também (LEM-04).
 // labelMap troca as etiquetas quando a cópia vai para outro quadro (LIS-05). origin muda o registro
 // da atividade: a cópia de um modelo é "Criado a partir do modelo <título>" (MOD-03, MOD-05).
 export function copyCard(
@@ -63,13 +65,14 @@ export function copyCard(
   const source = tx.select().from(card).where(eq(card.id, sourceId)).get()
   if (!source) throw new AppError('NOT_FOUND', 'Card não encontrado.')
   const id = randomUUID()
+  const remindAt = reminderAt(source.dueAt, source.reminder)
   tx.insert(card)
     .values({
       ...source,
       id,
       listId: target.listId,
       position: target.position,
-      reminderFiredAt: null,
+      reminderFiredAt: remindAt !== null && remindAt <= now ? now : null,
       recurrenceId: null,
       occurrenceDate: null,
       lastActivityAt: now,

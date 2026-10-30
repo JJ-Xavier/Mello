@@ -51,16 +51,17 @@ function ruleOf(row: RecurrenceRow): RecurrenceRule {
 }
 
 // REP-16: pausada quando a lista de destino foi excluída (NULL) ou arquivada, ou o quadro está
-// fechado. Pausada, não processa nada; ao voltar, vale a REP-10 para o período parado.
+// fechado ou é um modelo (etapa 12). Pausada, não processa nada; ao voltar, vale a REP-10 para o
+// período parado.
 function isPaused(db: DbOrTx, row: RecurrenceRow): boolean {
   if (row.targetListId === null) return true
   const target = db
-    .select({ archivedAt: list.archivedAt, closedAt: board.closedAt })
+    .select({ archivedAt: list.archivedAt, closedAt: board.closedAt, isTemplate: board.isTemplate })
     .from(list)
     .innerJoin(board, eq(list.boardId, board.id))
     .where(eq(list.id, row.targetListId))
     .get()
-  return !target || target.archivedAt !== null || target.closedAt !== null
+  return !target || target.archivedAt !== null || target.closedAt !== null || target.isTemplate
 }
 
 // A próxima ocorrência depois da última processada (o agendador roda a cada minuto, então é a

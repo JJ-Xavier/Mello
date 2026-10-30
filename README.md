@@ -3,14 +3,14 @@
 Planejador pessoal para Windows, inspirado no Trello: quadros Kanban e um calendário mensal com os
 mesmos cards. Roda 100% no computador, sem conta, sem nuvem e sem internet.
 
-> **Status:** em desenvolvimento. As etapas 1 a 11 de 12 estão prontas: a base do app, o banco
+> **Status:** versão 1.0.0 (30/10/2026). As 12 etapas do plano estão prontas: a base do app, o banco
 > de dados, os quadros, as listas, os cards com arrastar e soltar, o modal do card com etiquetas,
 > prioridade, datas, descrição, checklists, nota, atividade, anexos e capa, o envelhecimento dos
 > cards parados, o calendário mensal (de um quadro ou de todos), os cards que se repetem, os
 > lembretes do Windows, a bandeja, o fundo de cada quadro (cor, gradiente ou foto, com ajuste
 > automático), as Configurações (tema escuro, claro ou do sistema, backups automáticos,
-> restaurar, exportar e apagar tudo), a busca e os modelos de card e de quadro.
-> O andamento está em [Docs/PLANO.md](Docs/PLANO.md) e [Docs/To-do-list.txt](Docs/To-do-list.txt).
+> restaurar, exportar e apagar tudo), a busca, os modelos de card e de quadro e o instalador.
+> O histórico está em [Docs/PLANO.md](Docs/PLANO.md) e [Docs/Changelog.txt](Docs/Changelog.txt).
 
 ## O que o Mello faz (versão 1.0)
 
@@ -31,6 +31,16 @@ npm test         # roda os testes
 ```
 
 Os outros comandos estão em [Docs/Pipeline.txt](Docs/Pipeline.txt).
+
+## Como instalar
+
+```bash
+npm run build:win   # gera dist/Mello-Setup-<versão>.exe
+```
+
+Abra o instalador. Ele não é assinado, então o Windows SmartScreen avisa na primeira vez: clique em
+"Mais informações" e depois em "Executar assim mesmo". Para atualizar, instale a versão nova por
+cima; os dados continuam onde estão.
 
 ## Onde ficam os dados
 

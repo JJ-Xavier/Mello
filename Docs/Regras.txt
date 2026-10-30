@@ -9,7 +9,8 @@ ENV-08 e a ENV-10 (26/10/2026). A etapa 8 (repetição e lembretes) esclareceu a
 LEM (26/10/2026), e ganhou a hora na tarefa e o DAT-05 (28/10/2026). A etapa 9 (fundo do
 quadro) esclareceu as regras FUN (29/10/2026). A etapa 10 (Configurações, tema e dados)
 esclareceu as regras TEM e DAD e fechou a LEM-07 e a ANX-04 (29/10/2026). A etapa 11 (busca e
-modelos) esclareceu as regras BUS e MOD (30/10/2026).
+modelos) esclareceu as regras BUS e MOD (30/10/2026). A etapa 12 (polimento e instalador)
+esclareceu a CAR-07 (lembrete da cópia) e a REP-16 (quadro-modelo) em 30/10/2026.
 Fontes: protótipo (https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9), briefing do projeto e
 decisões tomadas em 21/10/2026. Onde o protótipo e uma decisão posterior divergem, vale a decisão
 (as divergências estão marcadas com "Decisão 21/10").
@@ -94,6 +95,8 @@ CAR-07  "Copiar" cria uma cópia logo abaixo, ou na lista escolhida, com título
         "Copiado de <título>". O título da cópia pode ser mudado no menu (começa com
         "<título> (cópia)"); o ✓ vem como está no original, também em outra lista. (etapa 4)
         Capa e anexos apontam para os mesmos arquivos guardados: nada é copiado no disco. (etapa 5)
+        Um lembrete cujo horário já passou não dispara na cópia; um futuro dispara nela também.
+        Vale para tudo o que copia cards: Copiar, copiar lista e os modelos. (etapa 12)
 CAR-08  "Acompanhar card" (o ícone de olho do protótipo) não existe no Mello: sem outras pessoas,
         ele não teria função. (aprovada 21/10)
 CAR-09  No modal, Etiquetas, Prioridade e Data de entrega só aparecem quando preenchidas; o botão
@@ -488,6 +491,7 @@ REP-15  "Remover repetição": os cards já criados ficam; somem o ↻ e as ocor
 REP-16  Quadro fechado, ou lista de destino arquivada ou excluída: a repetição fica pausada e não
         processa nada. Ao voltar, vale REP-10 para o período parado. No modal, a repetição
         pausada mostra o selo "Pausada". (etapa 8)
+        Um quadro-modelo (MOD-04) também pausa: o modelo não cria cards sozinho. (etapa 12)
 REP-17  Resumo da regra: "Todo dia, 08:00", "Toda segunda, 08:00", "Toda segunda, quarta,
         08:00", "Todo dia 5, 08:00", "A cada 3 dias, 08:00". "Próximas:" mostra as 3 próximas
         datas. O campo "Repetição" do modal mostra o resumo e abre o diálogo. (etapa 8)

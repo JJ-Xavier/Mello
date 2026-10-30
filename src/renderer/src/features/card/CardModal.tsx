@@ -21,6 +21,7 @@ import { CHECKLIST_TITLE_MAX } from '../../../../shared/limits'
 import { dueStatus } from '../../../../shared/rules/dates'
 import { isFinished } from '../../../../shared/rules/finished'
 import { priorityLevel } from '../../../../shared/rules/priority'
+import { colorName } from '../../../../shared/rules/color'
 import { recurrenceSummary } from '../../../../shared/rules/recurrence'
 import { Cover } from '../../components/Cover'
 import { DoneMark } from '../../components/DoneMark'
@@ -214,6 +215,7 @@ function Fields({ card, now }: { card: CardDetail; now: number }) {
                 type="button"
                 className={styles.chipButton}
                 popoverTarget={labelsId}
+                aria-label={l.name ? undefined : `Etiqueta ${colorName(l.color)}`}
               >
                 <LabelChip label={l} className={styles.modalLabel} />
               </button>
