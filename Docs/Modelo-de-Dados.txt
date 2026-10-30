@@ -1,0 +1,204 @@
+Modelo de dados — Mello
+
+Status: criado na etapa 1 (21/10/2026); a etapa 3 (22/10/2026) registrou o conteúdo de
+activity.data, a etapa 4 (23/10/2026) a origem de description_html, a etapa 5 (24/10/2026)
+os anexos e a capa, a etapa 7 (24/10/2026) as configurações do calendário e a etapa 8
+(26/10/2026) o uso da repetição e dos lembretes, sem migração nova. A etapa 11 (30/10/2026)
+registrou o activity.data do from_template, também sem migração.
+Fonte no código: src/main/db/schema.ts.
+Qualquer migração nova atualiza este documento (seções 3 e 4).
+
+
+1. CONVENÇÕES
+
+- IDs: UUID em texto, gerados no main. Exceção: file.id é o SHA-256 do conteúdo do arquivo.
+- created_at, updated_at e os demais *_at numéricos: epoch em milissegundos (UTC).
+- Datas de entrega e de tarefas: texto local sem fuso, "AAAA-MM-DD" ou "AAAA-MM-DDTHH:mm".
+- Booleanos: INTEGER 0/1 (no Drizzle, mode 'boolean').
+- position: chave de fractional indexing (ordem manual, ORDER BY position).
+- Textos com lista fechada de valores (bg_kind, reminder, freq…): a lista é conferida pelo Zod na
+  entrada do IPC, não por CHECK no banco, para não exigir recriar tabelas quando um valor novo
+  entrar. A única restrição CHECK é a da prioridade (1 a 5).
+- Chaves estrangeiras ligadas (PRAGMA foreign_keys = ON), banco em modo WAL.
+
+
+2. TABELAS
+
+board — quadros
+  id TEXT PK | title TEXT NOT NULL (QUA-01) | position TEXT NOT NULL
+  is_favorite INTEGER NOT NULL DEFAULT 0 (QUA-06) | is_template INTEGER NOT NULL DEFAULT 0 (MOD-04)
+  closed_at INTEGER NULL (QUA-04)
+  bg_kind TEXT NOT NULL DEFAULT 'gradient' (image | color | gradient)
+  bg_value TEXT NOT NULL DEFAULT 'mello' (hex, id do gradiente ou id do arquivo)
+  bg_auto INTEGER NOT NULL DEFAULT 1 | bg_focus INTEGER NOT NULL DEFAULT 4 (0–8, grade 3 × 3)
+  bg_zoom INTEGER NOT NULL DEFAULT 100 (100–200) | bg_dim INTEGER NOT NULL DEFAULT 0 (0–70)
+  bg_blur INTEGER NOT NULL DEFAULT 0 (0–20) | bg_tone TEXT NOT NULL (tom do envelhecimento, FUN-09)
+  created_at, updated_at INTEGER NOT NULL
+
+list — listas
+  id TEXT PK | board_id → board ON DELETE CASCADE | title TEXT NOT NULL | position TEXT NOT NULL
+  freezes_aging INTEGER NOT NULL DEFAULT 0 ("Não envelhece")
+  is_done_list INTEGER NOT NULL DEFAULT 0 ("Lista de conclusão", P1)
+  archived_at INTEGER NULL | created_at, updated_at
+
+card — cards
+  id TEXT PK (também é a semente do fog()) | list_id → list ON DELETE CASCADE
+  title TEXT NOT NULL | position TEXT NOT NULL
+  description_html, description_text, note_html, note_text TEXT NOT NULL DEFAULT ''
+    (o *_html é escrito pelo main a partir do documento do editor, só com as marcas da NOT-04;
+    o *_text é o texto puro, um bloco por linha, para o filtro e a busca; etapa 4; nota, etapa 5)
+  is_done INTEGER NOT NULL DEFAULT 0 (o ✓ circular) | done_at INTEGER NULL
+  priority INTEGER NULL, CHECK (priority BETWEEN 1 AND 5) — NULL = sem prioridade
+  due_at TEXT NULL | reminder TEXT NOT NULL DEFAULT 'none' (none | at_time | day_before)
+  reminder_fired_at INTEGER NULL (volta a NULL quando a data ou o lembrete mudam)
+  cover_kind TEXT NULL (color | image) | cover_value TEXT NULL (color: o hex da paleta das
+    etiquetas; image: o file.id da imagem; etapa 5)
+  is_template INTEGER NOT NULL DEFAULT 0 (MOD-01)
+  recurrence_id → recurrence ON DELETE SET NULL | occurrence_date TEXT NULL
+    (recurrence_id: a série do card, inclusive o card em que a repetição foi configurada;
+    occurrence_date: a ocorrência que criou o card, "AAAA-MM-DDTHH:mm"; etapa 8)
+  last_activity_at INTEGER NOT NULL (base do envelhecimento, ENV-01)
+  archived_at INTEGER NULL | created_at, updated_at
+
+label — etiquetas
+  id TEXT PK | board_id → board ON DELETE CASCADE | name TEXT NULL | color TEXT NOT NULL
+  position TEXT NOT NULL
+
+card_label — etiquetas de cada card
+  card_id → card ON DELETE CASCADE | label_id → label ON DELETE CASCADE
+  PRIMARY KEY (card_id, label_id)
+
+checklist
+  id TEXT PK | card_id → card ON DELETE CASCADE | title TEXT NOT NULL | position TEXT NOT NULL
+  hide_checked INTEGER NOT NULL DEFAULT 0
+
+checklist_item
+  id TEXT PK | checklist_id → checklist ON DELETE CASCADE | text TEXT NOT NULL
+  is_done INTEGER NOT NULL DEFAULT 0 | due_date TEXT NULL ("AAAA-MM-DD" ou "AAAA-MM-DDTHH:mm",
+  com hora desde 28/10/2026; a coluna já era texto, sem migração)
+  show_in_calendar INTEGER NOT NULL DEFAULT 1 | position TEXT NOT NULL | created_at, updated_at
+
+activity — histórico do card
+  id TEXT PK | card_id → card ON DELETE CASCADE
+  kind TEXT NOT NULL (created, moved, done, undone, archived, restored, copied, from_template,
+                      from_recurrence, recurrence_skipped, recurrence_missed)
+  data TEXT NOT NULL (JSON: nomes das listas, datas…) | created_at
+  O que vai em data, por tipo (os nomes são guardados, para o histórico não mudar se a lista ou
+  o quadro forem renomeados):
+    created ........ { list }                       (etapa 3)
+    moved .......... { from, to } e, entre quadros, também { fromBoard, toBoard } (etapa 3)
+    done, undone ... {}                             (etapa 3: ✓ automático ao mover)
+    archived, restored {}                           (etapa 2)
+    copied ......... { from: título do card de origem } (etapa 2)
+    from_template .. { from: título do card-modelo (MOD-03) ou do quadro-modelo (MOD-05) }
+                                                    (etapa 11)
+    from_recurrence  { date: a ocorrência, "AAAA-MM-DDTHH:mm" } (etapa 8)
+    recurrence_skipped { date } — no anterior em aberto (etapa 8)
+    recurrence_missed { from, to, count } — as perdidas de uma rodada, no anterior (etapa 8)
+
+file — arquivos guardados em <pasta de dados>\arquivos\<id>.<ext>
+  id TEXT PK (SHA-256) | ext TEXT NOT NULL | mime TEXT NOT NULL | size INTEGER NOT NULL
+  width, height INTEGER NULL | avg_color TEXT NULL (imagens) | created_at
+  Imagem (PNG, JPG, GIF, WebP, BMP) é reconhecida pelo conteúdo: ext e mime vêm dele, e width e
+  height já vêm na orientação em que a imagem aparece (EXIF). Outros arquivos: ext do nome
+  ([a-z0-9], até 10; senão "bin"), mime de uma lista curta ou application/octet-stream, width e
+  height NULL. O mesmo conteúdo com outro nome usa a mesma linha (ANX-02). (etapa 5)
+  avg_color: a cor média da imagem ("#rrggbb"), calculada pela tela no envio do fundo e guardada
+  na primeira vez que a imagem é aplicada a um quadro; de onde vem o tom do envelhecimento
+  (FUN-09). Fica NULL nos anexos e nas capas. (etapa 9)
+
+attachment — anexos
+  id TEXT PK | card_id → card ON DELETE CASCADE | file_id → file ON DELETE RESTRICT
+  name TEXT NOT NULL (nome original) | created_at
+  Copiar um card copia as linhas de attachment (apontando para os mesmos arquivos) e a capa. Card
+  excluído leva os anexos (CASCADE); a linha de file e o arquivo ficam até a limpeza (DAD-08).
+  (etapa 5) A limpeza é na abertura seguinte do app: sai a linha de file sem anexo, capa
+  (card.cover_value com cover_kind 'image') ou fundo (board.bg_value com bg_kind 'image') que
+  aponte para ela, e sai da pasta o arquivo sem linha. (etapa 10)
+
+recurrence — repetição de um card
+  id TEXT PK | board_id → board ON DELETE CASCADE
+  freq TEXT NOT NULL (daily | weekly | monthly | every_n)
+  weekdays INTEGER NOT NULL DEFAULT 0 (máscara: dom = 1, seg = 2, … sáb = 64)
+  month_day INTEGER NULL (1–31) | interval_days INTEGER NULL (1–365)
+  anchor_date TEXT NOT NULL | time TEXT NOT NULL ("HH:mm")
+  target_list_id → list ON DELETE SET NULL (NULL = pausada, REP-16)
+  copy_labels_priority, copy_description, copy_checklist, copy_due_date INTEGER NOT NULL (REP-04)
+  if_previous_open TEXT NOT NULL DEFAULT 'skip' (skip | create)
+  ends_kind TEXT NOT NULL DEFAULT 'never' (never | on_date | after_count)
+  ends_on TEXT NULL | ends_after INTEGER NULL | due_count INTEGER NOT NULL DEFAULT 0 (REP-06)
+  last_processed TEXT NULL | created_at, updated_at
+  Uso (etapa 8): anchor_date é o dia em que a regra foi salva (a cada salvamento);
+  last_processed é a última ocorrência processada ("AAAA-MM-DDTHH:mm"), e ao salvar vira o
+  momento do salvamento, para nada do passado ser processado. due_count soma as ocorrências que
+  venceram (criadas, puladas ou perdidas). Os campos que não valem para a frequência ficam
+  NULL (ou weekdays 0). A lista de destino arquivada também pausa (sem mudar o campo). Uma
+  repetição sem nenhum card na série é apagada pelo agendador.
+
+recurrence_occurrence — cada vez que uma repetição venceu
+  id TEXT PK | recurrence_id → recurrence ON DELETE CASCADE | occurrence_date TEXT NOT NULL
+  status TEXT NOT NULL (created | skipped | missed | created_anyway)
+  card_id → card ON DELETE SET NULL (card criado)
+  notice_card_id → card ON DELETE SET NULL (card que mostra o aviso)
+  dismissed_at INTEGER NULL | created_at
+  UNIQUE (recurrence_id, occurrence_date) — rodar o agendador duas vezes não duplica nada
+  Uso (etapa 8): occurrence_date é "AAAA-MM-DDTHH:mm". Na pulada, notice_card_id é o anterior
+  que mostra o aviso; só a mais recente sem dismissed_at aparece. "Criar agora mesmo assim"
+  muda o status para created_anyway, com o card_id e o dismissed_at.
+
+setting — configurações
+  key TEXT PK | value TEXT NOT NULL (JSON)
+  Chaves: theme, aging.enabled, calendar.showTasks, calendar.strikeDone, calendar.weekStart,
+  tray.keep, tray.noticeShown, app.autoStart, backup.folder. (O backup.lastAt do plano não
+  existe: o horário do último backup sai do nome do arquivo mais recente da pasta, etapa 10.)
+  Lidas desde a etapa 7 (src/main/modules/settings.ts): calendar.showTasks (true/false, padrão
+  true), calendar.strikeDone (true/false, padrão true) e calendar.weekStart ("sunday" ou
+  "monday", padrão "sunday"). Desde a etapa 6: aging.enabled (true/false, padrão true). Desde a
+  etapa 8: tray.keep (true/false, padrão true) e tray.noticeShown (o aviso da bandeja já
+  apareceu; padrão false, gravado pelo próprio main no "Entendi"). Desde a etapa 10: theme
+  ("dark", "light" ou "system", padrão "dark"), app.autoStart (true/false, padrão false) e
+  backup.folder (o caminho da pasta escolhida, ou null para a padrão). Chave ausente ou valor
+  inválido vale o padrão (src/shared/ipc/settings.ts). A tela de Configurações grava todas pelo
+  settings:set, menos tray.noticeShown e backup.folder, que só o main grava (a pasta vem da
+  janela do Windows).
+
+_migrations — controle das migrações (criada pelo app, fora do schema do Drizzle)
+  tag TEXT PK (nome da migração) | applied_at INTEGER NOT NULL
+
+
+3. ÍNDICES
+
+Do plano (PLANO.md, seção 5):
+  list(board_id, position)             card(list_id, position)       card(due_at)
+  card(recurrence_id)                  card(is_template)             label(board_id)
+  checklist(card_id, position)         checklist_item(checklist_id, position)
+  checklist_item(due_date)             activity(card_id, created_at) attachment(card_id)
+  recurrence_occurrence(recurrence_id, occurrence_date)  — UNIQUE
+
+Acrescentados na etapa 1, nas colunas de chave estrangeira que não tinham índice. Sem eles, cada
+exclusão em cascata (de um quadro, de um card, de uma etiqueta) precisaria varrer a tabela filha
+inteira:
+  card_label(label_id)                 attachment(file_id)           recurrence(board_id)
+  recurrence(target_list_id)           recurrence_occurrence(card_id)
+  recurrence_occurrence(notice_card_id)
+
+
+4. MIGRAÇÕES
+
+Como funcionam
+- O schema fica em src/main/db/schema.ts. Depois de mudá-lo: npm run db:generate (drizzle-kit
+  generate) cria o SQL em src/main/db/migrations/ e atualiza meta/_journal.json.
+- O app aplica as pendentes ao abrir (src/main/db/migrate.ts), em ordem, numa transação só, com as
+  chaves estrangeiras desligadas durante a troca e conferidas antes do commit.
+- Se o banco já tem dados, é feito um backup antes de migrar (DAD-01).
+- Os backups (etapa 10) são cópias completas do banco, num arquivo só (journal_mode = DELETE),
+  com o tipo do backup no user_version do cabeçalho (1 ao abrir, 2 de hora em hora, 3 manual,
+  4 antes de migrar, 5 antes de restaurar; 0 nos de antes da etapa 10). O banco em uso não usa o
+  user_version para nada.
+- Um banco com migrações que o app não conhece (de uma versão mais nova) é recusado.
+- Uma migração já aplicada nunca é editada. Toda mudança vira uma migração nova, mesmo durante o
+  desenvolvimento.
+- O drizzle-kit numera a partir de 0000. O plano chamava a primeira de "0001"; vale o 0000.
+
+Histórico
+  0000_esquema_inicial ... etapa 1 (21/10/2026): as 13 tabelas e os índices acima.

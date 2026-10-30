@@ -1,0 +1,69 @@
+/* Cabeçalho de 56 px do protótipo (Main, Quadro, Calendário e Configurações). */
+.header {
+  position: relative;
+  height: 56px;
+  flex: none;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--top);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--strong);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.create {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-txt);
+  font:
+    600 14px Inter,
+    sans-serif;
+}
+
+.create:hover {
+  filter: brightness(1.08);
+}
+
+.gear {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+.gear:hover {
+  background: var(--btn);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  text-decoration: none;
+  color: var(--txt);
+}
+
+.back:hover {
+  color: var(--strong);
+}

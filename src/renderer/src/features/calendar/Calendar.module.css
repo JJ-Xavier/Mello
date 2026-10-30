@@ -1,0 +1,497 @@
+/* Calendário mensal (Calendario.dc.html e NovoCalendarioTodos.dc.html). O protótipo só tem o tema
+   escuro; as variáveis --cal* têm o equivalente claro em themes.css. */
+
+/* Todos os quadros: dentro do Início, ao lado do menu lateral. */
+.allPage {
+  height: 100%;
+  padding: 20px 24px 24px;
+}
+
+.section {
+  height: 100%;
+  border-radius: 12px;
+  background: var(--cal);
+  color: var(--txt);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Do quadro: abaixo da barra do quadro, com o espaço da barra flutuante embaixo (tela 5: 660 px
+   de altura numa janela de 900). */
+.boardSection {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  margin: 16px 16px 104px;
+}
+
+.barTitle {
+  margin: 0;
+  min-width: 0;
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Barra do calendário */
+.toolbar {
+  height: 60px;
+  flex: none;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--strong);
+  font:
+    500 14px Inter,
+    sans-serif;
+  white-space: nowrap;
+}
+
+.tb:hover {
+  background: var(--cal-item);
+}
+
+/* Filtros ligados (CAL-09) */
+.tb[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.monthButton {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.navGroup {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.scopeButton {
+  margin-left: 16px;
+  max-width: 280px;
+}
+
+.scopeName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filters {
+  display: flex;
+  gap: 4px;
+  margin-left: 16px;
+}
+
+.filtersAfterScope {
+  margin-left: 8px;
+}
+
+.cardsSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: #e2b203;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.legend {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.close {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+.close:hover {
+  background: var(--cal-item);
+}
+
+/* Seletor de mês e "Quadros no calendário" (popovers) */
+.yearRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.iconButton {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton:hover {
+  background: var(--pop-hover);
+}
+
+.months {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.monthOption {
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.monthOption:hover {
+  background: var(--pop-hover);
+}
+
+.monthOption[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.mark {
+  width: 16px;
+  flex: none;
+  display: flex;
+  color: var(--accent);
+}
+
+.scopeAll {
+  color: var(--strong);
+  font-weight: 600;
+}
+
+/* Grade (CAL-03) */
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  flex: none;
+  border-bottom: 1px solid var(--divider);
+}
+
+.weekday {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.day {
+  position: relative;
+  min-height: 0;
+  padding: 6px;
+  border-right: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
+  background: var(--cal-day);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.outside {
+  background: var(--cal);
+}
+
+.num {
+  flex: none;
+  display: flex;
+  justify-content: center;
+}
+
+.num span {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 2px;
+  border-radius: 12px;
+  line-height: 24px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.outside .num span {
+  color: var(--cal-out);
+}
+
+/* CAL-04: hoje no círculo azul. */
+.today .num span {
+  background: var(--accent);
+  color: var(--accent-txt);
+}
+
+/* Itens do dia; os que não cabem ficam invisíveis no lugar (CAL-13). */
+.items {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slot {
+  flex: none;
+  display: flex;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.more {
+  position: absolute;
+  left: 0;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font:
+    600 12px Inter,
+    sans-serif;
+}
+
+.more:hover {
+  background: var(--cal-item);
+}
+
+.dayList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* CAL-12: "Adicionar" ao passar o mouse (ou com o foco no dia); continua visível com o popover
+   aberto. */
+.add {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--dashed);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--strong);
+  font:
+    500 13px Inter,
+    sans-serif;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.day:hover .add,
+.day:focus-within .add,
+.addOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Dia com "+N mais": só o "+", no canto de baixo à direita. */
+.addCompact {
+  left: auto;
+  right: 8px;
+  width: 32px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Card no dia */
+.card {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--cal-item);
+  color: var(--strong);
+  text-align: left;
+  text-decoration: none;
+  font:
+    500 13px Inter,
+    sans-serif;
+}
+
+.card:hover {
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.cardAll {
+  gap: 3px;
+}
+
+/* REP-14: repetição que não virou card, tracejada (Calendario.dc.html). */
+.ghost {
+  border: 1px dashed var(--cal-out);
+  background: transparent;
+  color: var(--txt);
+  opacity: 0.85;
+}
+
+.ghostNote {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--cal-note);
+}
+
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.label {
+  width: 40px;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.cardRow {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.late {
+  display: inline-flex;
+  color: var(--danger-txt);
+}
+
+/* A hora da entrega antes do título. */
+.time {
+  flex: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.repeat {
+  display: inline-flex;
+  color: var(--muted);
+}
+
+.priority {
+  margin-left: auto;
+  display: inline-flex;
+}
+
+.sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--cal-done);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* CAL-07: riscado = finalizado. */
+.struck {
+  color: var(--cal-done);
+  text-decoration: line-through;
+}
+
+.struckLine {
+  text-decoration: line-through;
+}
+
+/* Tarefa no dia */
+.task {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--strong);
+  text-align: left;
+  font:
+    400 12px Inter,
+    sans-serif;
+}
+
+.task:hover {
+  background: var(--cal-item);
+}
+
+.taskText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* CAL-08: tarefa atrasada em vermelho. */
+.lateText {
+  color: var(--danger-txt);
+}

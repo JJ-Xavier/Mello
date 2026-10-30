@@ -1,0 +1,41 @@
+# Instalador do Windows (npm run build:win → dist/). O ícone do app e do instalador é o
+# build/icon.ico, gerado do logo do protótipo (scripts/gerar-icones.mts, P14).
+appId: com.jjxavier.mello
+productName: Mello
+copyright: Copyright © 2026 Jackson Junio
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**
+  # Ícones da bandeja e das notificações: o main os acha em ../../resources (o ?asset do
+  # electron-vite).
+  - resources/**
+  - package.json
+  # Do better-sqlite3, só o binário do Windows x64 e o JavaScript: sem o código-fonte do SQLite e
+  # sem os binários das outras plataformas.
+  - '!**/node_modules/better-sqlite3/{deps,src}/**'
+  - '!**/node_modules/better-sqlite3/binding.gyp'
+  - '!**/node_modules/better-sqlite3/prebuilds/{darwin,linux,linuxmusl}-*.node'
+  - '!**/node_modules/better-sqlite3/prebuilds/win32-arm64.node'
+asarUnpack:
+  # Binário do better-sqlite3 (N-API): precisa ficar fora do .asar para ser carregado.
+  - '**/*.node'
+  # A bandeja e as notificações do Windows leem o ícone direto do disco.
+  - resources/**
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  executableName: Mello
+nsis:
+  artifactName: Mello-Setup-${version}.${ext}
+  shortcutName: Mello
+  uninstallDisplayName: Mello
+  createDesktopShortcut: always
+  # Os dados ficam em %APPDATA%\Mello e sobrevivem à desinstalação (ver Docs/LGPD.txt).
+  deleteAppDataOnUninstall: false
+# O better-sqlite3 já traz o binário pronto; não há nada para recompilar.
+npmRebuild: false
+publish: null

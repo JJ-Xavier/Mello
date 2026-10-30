@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento concluído e aprovado em 21/10/2026: plano, propostas P1 a P17 e telas novas 10 a 16. Aguardando a ordem para começar a etapa 1. Nenhum código de produção foi escrito ainda.
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026, etapa 10 em 29/10/2026, etapa 11 em 30/10/2026 e etapa 12 em 30/10/2026 (versão 1.0.0)**; a etapa 12 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -25,8 +25,8 @@
 
 | Assunto | Decisão | Origem |
 |---|---|---|
-| Tipo de app | Monólito local: Electron + SQLite, um usuário, um computador, sem rede | `Docs/Arquitetura.md` |
-| Plataforma | Só Windows (instalador NSIS) | `Docs/Arquitetura.md` |
+| Tipo de app | Monólito local: Electron + SQLite, um usuário, um computador, sem rede | `Docs/Arquitetura.txt` |
+| Plataforma | Só Windows (instalador NSIS) | `Docs/Arquitetura.txt` |
 | Front-end | React + TypeScript, com Vite (electron-vite) | `Docs/Definicao-da-Stack.txt` |
 | Fora do escopo | Caixa de entrada, Planejador, Membros, Compartilhar, comentários | Briefing |
 | Navegação | Quadro, Calendário e "Mudar de quadros" só na barra flutuante de baixo | Briefing |
@@ -40,6 +40,17 @@
 | Licença | MIT (arquivo `LICENSE` na etapa 1) | 21/10 |
 | Primeira abertura | Início vazio, com o convite "Criar seu primeiro quadro" (`QUA-09`) | 21/10 |
 | Telas sem protótipo | Desenhadas no canvas do protótipo, numa área separada ("Telas novas"), e aprovadas por você (telas 10 a 16, aprovadas em 21/10) | 21/10 |
+| Dados no desenvolvimento | `npm run dev` usa `%APPDATA%\Mello-dev`; o app instalado usa `%APPDATA%\Mello` | Etapa 1, 21/10 |
+| Barra de título | Barra nativa do Windows, no tema escuro, acima do cabeçalho de 56 px | Etapa 1, 21/10 |
+| Instalação do Electron | Script próprio (`scripts/instalar-electron.mjs`), sem exigir o Visual C++ Redistributable (ver `Pipeline.txt`) | Etapa 1, 21/10 |
+| Criar quadro | Popover com a prévia e o título; só cria ao confirmar (`QUA-10`) | Etapa 2, 21/10 |
+| Card novo em lista de conclusão | Nasce sem o ✓; o automático é só para quem chega arrastado ou movido (`FIN-02`) | Etapa 3, 22/10 |
+| Campos do modal | Etiquetas, prioridade e data só aparecem quando preenchidas; o "Adicionar" inclui (`CAR-09`) | Etapa 4, 23/10 |
+| Arquivar pelo modal | O modal continua aberto, com o aviso e Restaurar (`CAR-10`) | Etapa 4, 23/10 |
+| Ordem das etapas 6 e 7 | Uma de cada vez: a 7 (calendário) antes da 6 (envelhecimento) | 24/10 |
+| Relógio de teste | Só no modo de desenvolvimento: Ctrl+Alt+→ e ← (1 dia), com Shift (1 hora), Ctrl+Alt+0 (relógio real) e um selo no canto; o main e a tela adiantam juntos | Etapa 6, 24/10 |
+| Versão da etapa 6 | 0.7.1, porque veio depois da 7; as próximas seguem 0.N.0 | Etapa 6, 25/10 |
+| Envelhecimento em card baixo | Abaixo de 100 px de altura, as manchas do `fog()` encolhem na proporção da altura; de 100 px para cima, o desenho é o do protótipo (`ENV-09`) | Etapa 6, 26/10 |
 
 ### 1.2 Propostas (aprovadas em 21/10/2026)
 
@@ -101,27 +112,32 @@ Mello/
 ├── Docs/                      # documentação, inclusive este PLANO.md (já existe)
 ├── build/                     # ícone do instalador
 ├── scripts/
-│   └── capturar-telas.ts      # abre o app com dados fictícios e salva as capturas (Playwright)
+│   ├── instalar-electron.mjs  # postinstall: baixa o Electron sem exigir o VC++ Redistributable
+│   └── capturar-telas.mts     # abre o app com dados fictícios e salva as capturas (Playwright)
 ├── src/
 │   ├── main/                  # processo principal (Node.js)
 │   │   ├── index.ts           # ciclo de vida, janela, instância única
+│   │   ├── paths.ts           # pastas de dados (banco, arquivos, backups, logs)
 │   │   ├── tray.ts            # ícone e menu da bandeja
 │   │   ├── protocol.ts        # mello-arquivo:// → serve só arquivos de %APPDATA%\Mello\arquivos
 │   │   ├── scheduler.ts       # relógio: repetições, lembretes, backup, recálculo do envelhecimento
 │   │   ├── db/
 │   │   │   ├── client.ts      # conexão, pragmas, função unaccent para a busca
 │   │   │   ├── schema.ts      # tabelas (Drizzle)
+│   │   │   ├── migrate.ts     # aplica as migrações (tabela _migrations)
+│   │   │   ├── open.ts        # abre o banco: backup se preciso, depois migra
 │   │   │   └── migrations/    # SQL gerado pelo drizzle-kit
 │   │   ├── modules/           # regras + consultas, um arquivo por assunto
-│   │   │   ├── boards.ts  lists.ts  cards.ts  labels.ts  checklists.ts
+│   │   │   ├── boards.ts  lists.ts  cards.ts  labels.ts  checklists.ts  position.ts
 │   │   │   ├── activity.ts  files.ts  attachments.ts  covers.ts
 │   │   │   ├── recurrence.ts  reminders.ts  calendar.ts  search.ts
 │   │   │   ├── templates.ts  settings.ts  backup.ts  export.ts
-│   │   └── ipc/               # liga cada canal a um módulo (valida → chama → Result)
+│   │   └── ipc/               # handler.ts (Zod + Result), routes.ts (canais, sem Electron), index.ts
 │   ├── preload/
 │   │   └── index.ts           # expõe window.mello
 │   ├── shared/                # código puro, usado pelo main, pela tela e pelos testes
-│   │   ├── ipc/               # contratos: schemas Zod + tipos, por domínio
+│   │   ├── result.ts  text.ts # Result/AppError e removeAccents
+│   │   ├── ipc/               # contratos: canais, tipos e schemas Zod, por domínio
 │   │   └── rules/             # aging.ts finished.ts priority.ts recurrence.ts
 │   │                          # calendar.ts dates.ts background.ts tone.ts filter.ts
 │   └── renderer/
@@ -139,8 +155,10 @@ Mello/
 │           │   └── search/    # busca do topo
 │           ├── components/    # Popover, Modal, Button, PriorityIcon, Logo, DatePicker…
 │           ├── lib/           # fog.ts (do protótipo), api.ts, queryKeys.ts, format.ts
-│           └── styles/        # themes.css (paletas literais), base.css, fonts.css
-├── electron.vite.config.ts  electron-builder.yml  drizzle.config.ts  package.json
+│           ├── styles/        # themes.css (paletas literais), base.css, fonts.css
+│           └── test/          # preparação dos testes da tela (API real, imitação do popover)
+├── electron.vite.config.ts  vitest.config.mts  electron-builder.yml  drizzle.config.ts
+├── eslint.config.mjs  tsconfig*.json  package.json  LICENSE  README.md
 ```
 
 Os testes ficam ao lado do código (`aging.test.ts` junto de `aging.ts`). As regras de `shared/rules/` são funções puras, sem banco e sem relógio próprio (o "agora" chega por parâmetro), e por isso são testadas isoladamente.
@@ -172,10 +190,11 @@ Tela (React)  →  window.mello (preload)  →  ipc/ (Zod)  →  modules/  →  
 | Repetição | `recurrence:get`, `recurrence:save`, `recurrence:remove`, `recurrence:preview`, `recurrence:createAnyway`, `recurrence:dismiss` |
 | Calendário | `calendar:month` |
 | Busca | `search:query` |
-| Modelos | `templates:setCard`, `templates:listCards`, `templates:createCard`, `templates:setBoard`, `templates:createBoard` |
+| Modelos | `templates:setCard`, `templates:createCard`, `templates:listBoards`, `templates:setBoard`, `templates:createBoard` (etapa 11; o `templates:listCards` não foi preciso: os cards-modelo vêm no `boards:get`) |
 | Configurações | `settings:get`, `settings:set` |
-| Dados | `data:backupNow`, `data:listBackups`, `data:restore`, `data:export`, `data:openFolder`, `data:chooseBackupFolder`, `data:deleteAll` |
-| Eventos (main → tela) | `data:changed`, `app:openCard` (clique na notificação), `theme:changed`, `reminders:missed` |
+| App | `app:info` (versão, pasta de dados, se é desenvolvimento; criado na etapa 1); `dev:clock` e `dev:setClock` (relógio de teste do modo de desenvolvimento, etapa 6) |
+| Dados | `data:backupNow`, `data:backups` (era `data:listBackups`), `data:restore`, `data:export`, `data:openFolder`, `data:chooseBackupFolder`, `data:deleteAll`, `data:notices` (etapa 10) |
+| Eventos (main → tela) | `data:changed`, `app:openCard` (clique na notificação), `tray:notice`, `backup:notice` (etapa 10; o `theme:changed` não foi preciso: a tela segue o `prefers-color-scheme`) |
 
 ---
 
@@ -255,7 +274,7 @@ Convenções: IDs são UUID em texto. `created_at`, `updated_at` e os demais cam
 | Tabela | Campos |
 |---|---|
 | `checklist` | `id` PK, `card_id` → `card` CASCADE, `title` TEXT NOT NULL, `position` TEXT NOT NULL, `hide_checked` INTEGER NOT NULL DEFAULT 0 |
-| `checklist_item` | `id` PK, `checklist_id` → `checklist` CASCADE, `text` TEXT NOT NULL, `is_done` INTEGER NOT NULL DEFAULT 0, `due_date` TEXT NULL (`AAAA-MM-DD`), `show_in_calendar` INTEGER NOT NULL DEFAULT 1, `position` TEXT NOT NULL, `created_at`, `updated_at` |
+| `checklist_item` | `id` PK, `checklist_id` → `checklist` CASCADE, `text` TEXT NOT NULL, `is_done` INTEGER NOT NULL DEFAULT 0, `due_date` TEXT NULL (`AAAA-MM-DD` ou `AAAA-MM-DDTHH:mm`, com hora desde 28/10/2026), `show_in_calendar` INTEGER NOT NULL DEFAULT 1, `position` TEXT NOT NULL, `created_at`, `updated_at` |
 
 ### `activity` — histórico do card
 
@@ -304,8 +323,9 @@ O arquivo físico fica em `%APPDATA%\Mello\arquivos\<sha256>.<ext>`. Fundo, capa
 
 ### Migrações
 
-- O schema completo acima entra como **migração 0001** na etapa 1. O que mudar depois vira uma migração nova (0002, 0003…), mesmo durante o desenvolvimento, para praticar o fluxo real.
-- As migrações são geradas pelo drizzle-kit em SQL, vão junto com o app e rodam na abertura, dentro de uma transação, **depois de um backup automático** (DAD-01).
+- O schema completo acima entrou como a migração **`0000_esquema_inicial`** na etapa 1 (o drizzle-kit numera a partir de 0000). O que mudar depois vira uma migração nova (0001, 0002…), mesmo durante o desenvolvimento, para praticar o fluxo real.
+- Na etapa 1 entraram também índices nas colunas de chave estrangeira que não tinham índice (`card_label.label_id`, `attachment.file_id`, `recurrence.board_id`, `recurrence.target_list_id`, `recurrence_occurrence.card_id` e `notice_card_id`), para as exclusões em cascata não varrerem tabelas inteiras.
+- As migrações são geradas pelo drizzle-kit em SQL, entram no código do app no build e rodam na abertura, dentro de uma transação, **depois de um backup automático** quando o banco já tem dados (DAD-01).
 - Uma migração aplicada nunca é editada. Os detalhes ficam em `Docs/Modelo-de-Dados.txt`.
 
 ---
@@ -327,6 +347,8 @@ nivelDoCard(card, lista, config, agora):
 ```
 
 Casos de teste obrigatórios: os limites 2→3, 5→6, 8→9, 11→12, 13→14 dias (um milissegundo antes e no ponto exato); cada motivo de congelamento; card com ✓ fora da lista de conclusão envelhece (FIN-04); 100 dias → nível 5.
+
+Na etapa 6, a regra ficou em `agingOf` e é calculada na tela, com o "agora" dela (a mesma conta serve ao quadro e ao indicador do modal).
 
 ### 6.2 Eventos que zeram (ENV-05 e ENV-06)
 
@@ -385,70 +407,81 @@ Casos de teste obrigatórios: cada frequência (inclusive mensal dia 31 em fever
 
 São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visual, documentação atualizada e um aviso de "pronto" para você fazer o commit (seção 8). Os códigos de tela são os títulos do canvas: 1 Início, 2 Quadro, 3 Arrasto, 4 Modal, 5 Calendário, 6 Fundo, 6b Repetição, 7 Configurações, 8 Quadro claro e 9 Estados, mais as telas novas: 10 Início vazio, 11 Modelos de quadro, 12 Modelos de card, 13 Calendário de todos os quadros, 14 Modal com capa e anexos, 15 Configurações novas e 16 Estados e menus novos.
 
-### Etapa 1 — Base do app e banco
+### Etapa 1 — Base do app e banco ✅ concluída em 21/10/2026
 
-- **Entrega:** projeto electron-vite (React + TS) com ESLint, Prettier e Vitest; estrutura de pastas; conexão SQLite com pragmas e a função `unaccent`; schema completo e migração 0001; backup antes de migrar; utilitário de IPC (Zod + `Result`); protocolo `mello-arquivo://`; temas com as paletas literais e a fonte Inter local; casca do app (cabeçalho com o logo do protótipo, busca, "Criar" e engrenagem; barra flutuante de baixo; rotas vazias); `.gitignore`; `LICENSE` (MIT); `README.md` curto para a página do GitHub; `electron-builder.yml`; script de capturas.
+- **Resultado:** tudo da entrega abaixo foi feito; 46 testes, lint e tipos limpos; capturas das 5 rotas nos dois temas conferidas com o protótipo. Decisões da etapa: dados do dev em `%APPDATA%\Mello-dev`, barra de título nativa escura e instalação do Electron por script próprio (seção 1.1). O better-sqlite3 13 traz binário N-API, e o risco do módulo nativo (seção 9) deixou de existir. Detalhes no `Changelog.txt`.
+- **Entrega:** projeto electron-vite (React + TS) com ESLint, Prettier e Vitest; estrutura de pastas; conexão SQLite com pragmas e a função `unaccent`; schema completo e migração inicial (0000); backup antes de migrar; utilitário de IPC (Zod + `Result`); protocolo `mello-arquivo://`; temas com as paletas literais e a fonte Inter local; casca do app (cabeçalho com o logo do protótipo, busca, "Criar" e engrenagem; barra flutuante de baixo; rotas vazias); `.gitignore`; `LICENSE` (MIT); `README.md` curto para a página do GitHub; `electron-builder.yml`; script de capturas.
 - **Telas:** o cabeçalho e a barra flutuante comuns a 1, 2 e 5.
 - **Aceite:** `npm run dev` abre a janela com o cabeçalho igual ao protótipo (56 px, cores, logo); o banco é criado em `%APPDATA%\Mello\mello.db` com todas as tabelas; reabrir não recria nada; `npm test`, `npm run lint` e `npm run typecheck` passam limpos; o better-sqlite3 abre dentro do Vitest.
 - **Testes:** a migração roda do zero e é idempotente; chaves estrangeiras ligadas; `Result` de sucesso e de erro; Zod recusa entrada inválida; o protocolo recusa caminhos fora da pasta de arquivos (`..`, caminho absoluto, hash inválido).
 
-### Etapa 2 — Quadros e listas
+### Etapa 2 — Quadros e listas ✅ concluída em 21/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 112 testes no total (66 novos), lint e tipos limpos; capturas conferidas com as telas 1, 2, 9, 10 e 16 nos dois temas; arrastar conferido no app real (mouse e teclado). "Criar quadro" ganhou um popover com o título (`QUA-10`, aprovado). Filtro, "Alterar fundo", "Adicionar cartão", "Ordenar" e modelos aparecem apagados até a etapa deles. Os testes da tela passaram a usar o main de verdade (rotas + SQLite em memória). Detalhes no `Changelog.txt`.
 - **Entrega:** Início (área "Pessoal", grade de quadros com a miniatura do fundo, "Criar novo quadro", favoritos primeiro, "Ver todos os quadros fechados" e o convite "Criar seu primeiro quadro" quando não há nenhum, QUA-09); menu "Criar" → "Criar quadro"; popover "Mudar de quadros"; tela do quadro com a barra superior (título editável, filtro, favoritar, "Alterar fundo" e menu "…" com fechar quadro e itens arquivados); listas: criar, renomear, arrastar, contador e o menu "…" (copiar, mover para outro quadro, "Não envelhece", "Lista de conclusão", arquivar lista, arquivar todos os cards); quadro novo com 4 listas, 6 etiquetas e o fundo "Mello".
 - **Telas:** 1, 2 (estrutura), 9 (nova lista, menu da lista, "Mudar de quadros", menu "Criar"); 10 (Início vazio); 16 (menu da lista atualizado, menu do quadro, itens arquivados, quadros fechados).
 - **Aceite:** criar, renomear, favoritar, fechar e reabrir quadros; criar, renomear, arrastar, copiar, mover e arquivar listas; tudo persiste depois de reiniciar o app.
 - **Testes:** QUA-01..07, LIS-01..07; a posição fracionária ao arrastar listas; etiquetas recriadas ao mover lista (LIS-05).
 
-### Etapa 3 — Cards e arrastar
+### Etapa 3 — Cards e arrastar ✅ concluída em 22/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 161 testes no total (49 novos), lint e tipos limpos; capturas conferidas com as telas 2, 3, 8, 9 e 16 nos dois temas; arrastar conferido no app real (mouse e teclado, inclusive o ✓ automático e o "mesmo lugar"). Entrou também o "Criar card" do menu "Criar". O modal do card abre pelo endereço (`?card=`), para o calendário reaproveitar na etapa 7. Decisão da etapa: card criado numa lista de conclusão nasce sem ✓ (seção 1.1). Detalhes no `Changelog.txt`.
 - **Entrega:** criar card (formulário da tela 9); face do card com tudo o que já existe nessa etapa (etiquetas, título, ✓, data, contadores); arrastar cards dentro da lista e entre listas com o visual do protótipo (card inclinado e translúcido, lista de destino com borda azul, vaga reservada); arrastar listas e cards com teclado (dnd-kit); FIN-02 e FIN-03 automáticos; soltar no mesmo lugar não grava nada; clicar abre a casca do modal; tema claro do quadro.
 - **Telas:** 2, 3, 8, 9 (novo card); 16 (card concluído, arrastar para a área de finalizado).
 - **Aceite:** arrastar entre todas as listas, inclusive para a área de finalizado (o ✓ é marcado sozinho) e de volta (desmarcado); a ordem persiste.
 - **Testes:** CAR-02, CAR-03, FIN-01..05; o movimento atualiza a lista, a posição e o `last_activity_at`; o mesmo lugar não muda nada.
 
-### Etapa 4 — Modal do card: dados
+### Etapa 4 — Modal do card: dados ✅ concluída em 23/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 280 testes no total (119 novos, inclusive a tabela de eventos de ENV-05 e ENV-06 com cobertura de todos os canais), lint e tipos limpos; capturas conferidas com as telas 4, 9, 14 e 16 nos dois temas; conferência no app real (descrição com link, Esc e clique fora no modal, reordenar item, rolagem automática). Decisões da etapa: campos só quando preenchidos (`CAR-09`) e arquivar com aviso no modal (`CAR-10`). O texto rico passou a ser escrito pelo main a partir do documento do editor (sem parser de HTML no main), e a rolagem automática do arraste passou a ser própria. Entrou o TipTap 3.31.4. Detalhes no `Changelog.txt`.
 - **Entrega:** modal de 1160 × 804 px como no protótipo. Ele tem: seletor de lista (move o card); ✓ circular; título editável; botões Adicionar, Checklist, Anexo e Repetir; etiquetas (editor da tela 9); prioridade (seletor com "Sem prioridade") e o selo na face; data de entrega (seletor de data com hora e lembrete, que é salvo aqui e dispara na etapa 8; "Em atraso"); descrição (TipTap, "Editar"); checklists (vários, renomear, excluir, barra de progresso, "Ocultar itens marcados", itens com marcar, editar, data com "Mostrar no calendário", ações e "Adicionar um item"); "Última movimentação"; menu "…" (copiar, mover, arquivar, excluir). Também traz "Ordenar por prioridade" e "por data" na lista e o filtro do quadro (palavra-chave, prioridades, só recorrentes).
 - **Telas:** 4 (coluna da esquerda), 9 (etiquetas, prioridade, seletor de data, data da tarefa, filtro, menu da lista); 14 (menu "…" do card); 16 (mover, copiar e excluir card).
 - **Aceite:** cada campo do modal salva e reflete na face do card; ordenar e filtrar funcionam.
 - **Testes:** PRI-01..05, DAT-01..04, CHK-01..06, FLT-01..05, ETQ-01..04, CAR-05..07; a tabela de eventos de ENV-05 e ENV-06 para tudo o que existe até aqui.
 
-### Etapa 5 — Modal do card: nota, atividade, anexos e capa
+### Etapa 5 — Modal do card: nota, atividade, anexos e capa ✅ concluída em 24/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 336 testes no total (56 novos), lint e tipos limpos; capturas conferidas com as telas 4, 14 e 16 nos dois temas; conferência no app real (nota digitada, anexar pela janela do Windows e soltando arquivo, abrir a cópia, capa na face e no modal). Decisões da etapa: anexar também arrastando do Explorer (`ANX-01`); "Abrir" abre uma cópia temporária só leitura com o nome original, e programas são mostrados na pasta (`ANX-03`). A tela recebe uma ficha de cada arquivo, nunca o caminho. A limpeza dos arquivos sem uso fica para a etapa 10, com o espelho do backup. Entraram image-size 2.0.4 e @tiptap/extensions 3.31.4. Detalhes no `Changelog.txt`.
 - **Entrega:** coluna da direita com a Nota (TipTap com Título, Negrito, Itálico, Lista, Caixa de marcar e Link; salvamento automático; "Salvo automaticamente") e a Atividade recolhida, com a contagem; seção de Anexos (escolher arquivo, copiar com hash, miniatura de imagem, abrir, remover); Capa (cor ou imagem); ícone de nota e de anexos na face.
 - **Telas:** 4 (coluna da direita e barra do topo); 14 (capa e anexos); 16 (capa na face do card).
 - **Aceite:** a nota sobrevive a reiniciar o app; anexar o mesmo arquivo duas vezes guarda uma cópia só; a capa aparece na face e no modal.
 - **Testes:** NOT-01..07 (inclusive HTML proibido sendo descartado: `<script>`, `onerror`, `javascript:`), ATV-01..03, ANX-01..05, CAP-01..03; tabela de eventos ampliada.
 
-### Etapa 6 — Envelhecimento
+### Etapa 6 — Envelhecimento ✅ concluída em 26/10/2026 (depois da etapa 7)
 
+- **Resultado:** tudo da entrega abaixo foi feito; 423 testes no total (36 novos), lint e tipos limpos; capturas conferidas com as telas 2, 4 e 8 nos dois temas; no app real, 200 cards no nível 5 arrastam tão leve quanto 200 cards novos (17 ms por quadro no p95). O nível é calculado na tela, a cada minuto. O relógio do modo de desenvolvimento adianta por atalho (Ctrl+Alt+→), com um selo no canto, e serve também à etapa 8 (canais `dev:clock` e `dev:setClock`). Decisões da etapa: relógio de teste por atalho (24/10); versão 0.7.1 (25/10); manchas proporcionais nos cards com menos de 100 px de altura (26/10); textos do indicador e o card arrastado com o envelhecimento de antes de soltar. Detalhes no `Changelog.txt`.
 - **Entrega:** cálculo do nível (seção 6.1); `fog()` do protótipo adaptado ao tamanho real do card, com o tom vindo do fundo (FUN-09; até a etapa 9 só existem cor e gradiente); congelamento por lista, por finalização, por modelo e pela configuração; indicador no modal ("Parado há X dias · nível N de 5", com as barrinhas); recálculo ao abrir o quadro e de hora em hora.
 - **Telas:** 2 (os 5 níveis), 4 (indicador).
 - **Aceite:** com o relógio adiantado no modo de desenvolvimento, os cards passam pelos 5 níveis e o visual bate com o protótipo; qualquer alteração volta o card ao nível 0.
 - **Testes:** seção 6.1 completa; `fog()` determinístico (mesma semente, mesmo resultado); tom derivado de cor e de gradiente; desempenho (200 cards no quadro sem travar o arraste).
 
-### Etapa 7 — Calendário
+### Etapa 7 — Calendário ✅ concluída em 24/10/2026 (antes da etapa 6)
 
+- **Resultado:** tudo da entrega abaixo foi feito; 387 testes no total (51 novos), lint e tipos limpos; capturas conferidas com as telas 5 e 13 nos dois temas. Canais novos `calendar:month`, `calendar:addCard` e `settings:get` (o calendário já lê as três configurações dele; gravar é da etapa 10). Decisões da etapa: a 7 antes da 6; mês de 4 semanas ganha a seguinte (`CAL-03`); quadros-modelo fora do calendário (`CAL-06`); a lista do "+N mais" é interativa (`CAL-11`); num dia cheio o "Adicionar" vira só o "+". Detalhes no `Changelog.txt`.
 - **Entrega:** tela do calendário mensal com escopo de quadro ou de todos os quadros (P2); "‹ Hoje ›" e o seletor de mês; filtros Cards e Tarefas; "Riscado = finalizado"; células com cards (etiqueta, ✓, relógio de atraso, ↻, prioridade) e tarefas (caixa e card de origem); hoje destacado; início da semana configurável; "Adicionar" ao passar o mouse; "+N mais"; clicar no card abre o modal por cima; clicar na tarefa marca e desmarca.
 - **Telas:** 5; 13 (todos os quadros).
 - **Aceite:** um mês com cards finalizados, atrasados e tarefas marcadas aparece como no protótipo; trocar de mês e de escopo funciona.
 - **Testes:** CAL-01..14; montagem da grade (meses de 5 e 6 semanas, início no domingo e na segunda, ano bissexto); riscado conforme FIN-01; itens arquivados, modelos e quadros fechados ficam de fora.
 
-### Etapa 8 — Agendador: repetição e lembretes
+### Etapa 8 — Agendador: repetição e lembretes ✅ concluída em 28/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 504 testes no total (81 novos), lint e tipos limpos; capturas conferidas com as telas 6b, 9, 5 e 16 nos dois temas. O agendador fica em `src/main/scheduler.ts`, a bandeja e as notificações em `src/main/tray.ts` e os ícones (do logo do protótipo) em `resources/`. Canais novos `recurrence:save`, `remove`, `createAnyway` e `dismiss`, `reminders:missed` e `app:hideToTray`, e os eventos `data:changed`, `app:openCard` e `tray:notice`. O `recurrence:preview` não foi preciso: a prévia usa as mesmas contas do agendador, na tela. Decisões da etapa: salvar a regra vale a partir dali; só o aviso de pulada mais recente fica no card; série sem card sai; "Mudar nas Configurações" do aviso da bandeja fica apagado até a etapa 10. Pedido de 28/10/2026, feito na mesma etapa: a tarefa do checklist também tem hora, e o seletor de data (o do card e o da tarefa, tela 17A aprovada no canvas, sem atalhos de data) tem horários prontos e mostra se fica no prazo ou em atraso e quanto falta (DAT-05); a hora aparece na face e no calendário. Versão 0.8.0. Detalhes no `Changelog.txt`.
 - **Entrega:** diálogo "Repetir card" completo (frequência, dias, horário, lista, o que copiar, se o anterior não estiver concluído, término, "Próximas:", Salvar e Remover); agendador no main (seção 6.4); aviso de repetição pulada dentro do card, com "Criar agora mesmo assim" e "Dispensar"; ↻ e próximo dia na face; repetições fantasma, puladas e perdidas no calendário; lembretes com notificação do Windows (o clique abre o card) e o aviso dos perdidos; bandeja do Windows (P4).
 - **Telas:** 6b, 9 (aviso de repetição pulada), 4 (Repetir), 5 (fantasmas); 16 (aviso da bandeja, lembretes perdidos, notificação).
 - **Aceite:** com o relógio adiantado, uma repetição semanal cria o card, pula quando o anterior está aberto e mostra tudo no calendário; um lembrete "No horário" aparece como notificação.
 - **Testes:** seção 6.4 completa; REP-01..17; LEM-01..07 com relógio falso.
 
-### Etapa 9 — Fundo do quadro
+### Etapa 9 — Fundo do quadro ✅ concluída em 29/10/2026
 
+- **Resultado:** tudo da entrega abaixo foi feito; 529 testes no total (25 novos), lint e tipos limpos; capturas conferidas com a tela 6 nos dois temas, com o quadro, o calendário e o Início usando uma foto em retrato gerada pelo script. O editor é uma rota própria (`#/boards/:boardId/background`); o fundo chega à tela em `BoardSummary.background` e é desenhado por `BoardBackdrop`. O ajuste automático é puro (`shared/rules/backgroundAuto.ts`), sobre a cópia de 64 × 40 que a tela tira com o Chromium; para isso, o protocolo `mello-arquivo://` passou a responder com CORS. Canais novos `boards:uploadBackground` e `boards:setBackground`. Decisões da etapa: os controles ficam sempre liberados (mexer desliga o automático, FUN-05); o contraste estimado é a média mais um desvio padrão, que o desfoque reduz; o limite de "imagem carregada" foi calibrado com os papéis de parede do Windows; o nome do arquivo não é guardado. Versão 0.9.0. Detalhes no `Changelog.txt`.
 - **Entrega:** editor de fundo (prévia ao vivo com o quadro em miniatura; abas Imagem, Cor e Gradiente; envio por clique ou arrastando; ajuste automático com foco 3 × 3, zoom, escurecer e desfoque; indicador de legibilidade; "Restaurar automático"; Cancelar e "Aplicar ao quadro"); as 8 cores e os 6 gradientes do protótipo; o fundo no quadro, no calendário e na miniatura do Início; o tom do envelhecimento derivado da imagem.
 - **Telas:** 6, 1 (miniatura).
 - **Aceite:** uma foto clara recebe escurecimento automático e fica legível; mexer num controle desliga o "Auto"; restaurar volta aos valores automáticos.
 - **Testes:** FUN-01..09; a análise automática sobre imagens sintéticas (clara, escura, com detalhe concentrado num canto); contraste WCAG; persistência dos ajustes.
 
-### Etapa 10 — Configurações, tema, backup e dados
+### Etapa 10 — Configurações, tema, backup e dados ✅ concluída em 29/10/2026
+
+- **Resultado:** tudo da entrega abaixo foi feito; 570 testes no total (41 novos), lint e tipos limpos; capturas conferidas com as telas 7, 8 e 15 nos dois temas, com o tema trocado pela configuração de verdade em todas as telas; no app real, "Igual ao sistema" seguiu o Windows, e exportar, trocar a pasta de backup, restaurar e apagar tudo foram feitos de verdade. Canais novos `settings:set` e `data:backups`, `backupNow`, `chooseBackupFolder`, `restore`, `export`, `openFolder`, `deleteAll` e `notices`, e o evento `backup:notice` (o `theme:changed` do plano não foi preciso). O serviço de dados fica em `src/main/modules/data.ts` e os arquivos de backup em `backup.ts`. Decisões da etapa: o tema é decidido só pelo main (`nativeTheme`) e a tela segue o `prefers-color-scheme`; o tipo de cada backup fica no cabeçalho do próprio arquivo; o backup de hora em hora sai quando passou 1 hora do último e o banco mudou; a pasta de dados do Mello não serve de pasta de backup; o aviso de "mesmo disco" não aparece em pastas do OneDrive, Google Drive ou Dropbox; restaurar confere o arquivo antes. Versão 0.10.0. Detalhes no `Changelog.txt`.
 
 - **Entrega:** tela de Configurações com as seções do protótipo e duas novas no mesmo visual:
   - Aparência: Escuro, Claro ou Sistema, com prévias;
@@ -462,14 +495,18 @@ São 12 etapas, em ordem. Cada uma termina com testes verdes, conferência visua
 - **Aceite:** trocar o tema muda todas as telas na hora; "Sistema" acompanha o Windows; restaurar um backup devolve o estado anterior; a exportação abre num editor de texto.
 - **Testes:** TEM-01..04; DAD-01..10 (backup consistente com o banco em uso, rotação de 10, restauração com backup prévio, exportação completa, limpeza de arquivos órfãos, apagar tudo).
 
-### Etapa 11 — Busca e modelos
+### Etapa 11 — Busca e modelos ✅ concluída em 30/10/2026
+
+- **Resultado:** tudo da entrega abaixo foi feito; 606 testes no total (36 novos), lint e tipos limpos; capturas conferidas com as telas 9, 11 e 12 nos dois temas; no app real, um card e um quadro foram criados a partir dos modelos pela tela. Canais novos `search:query` e `templates:setCard`, `createCard`, `listBoards`, `setBoard` e `createBoard` (o `templates:listCards` do plano não foi preciso: os cards-modelo vêm no `boards:get`). Decisões da etapa: o menu "Criar" mostra os quadros-modelo e, dentro de um quadro, os cards-modelo dele; o "Abrir o modelo" do diálogo abre o quadro-modelo para editar ou desfazer; virar modelo tira o ✓, e um card com repetição não vira modelo; os cards-modelo de um quadro-modelo vêm só com "Manter cards". Versão 0.11.0. Detalhes no `Changelog.txt`.
 
 - **Entrega:** busca do topo (cards, tarefas e quadros, sem diferenciar acento e maiúscula, resultados agrupados, navegação por teclado); cards-modelo e quadros-modelo (P6), com "Criar a partir de modelo" na lista e no menu "Criar".
 - **Telas:** 9 (busca e menu "Criar"); 11 (modelos de quadro); 12 (modelos de card).
 - **Aceite:** buscar "acao" encontra "Ação"; criar um card e um quadro a partir de modelo copia o que a regra diz.
 - **Testes:** BUS-01..05, MOD-01..05.
 
-### Etapa 12 — Polimento, revisão geral e instalador
+### Etapa 12 — Polimento, revisão geral e instalador ✅ concluída em 30/10/2026
+
+- **Resultado:** tudo da entrega abaixo foi feito; 615 testes no total (9 novos), lint e tipos limpos; capturas de todas as telas conferidas de novo nos dois temas. Ícone do instalador gerado do logo do protótipo (`build/icon.ico`, P14). `npm run build:win` gerou o `Mello-Setup-1.0.0.exe`; instalação limpa, atualização por cima e desinstalação conferidas nesta máquina, com os dados preservados. Com 500 cards, o quadro abriu em 1476 ms (2862 ms com todos envelhecidos). Corrigidos no caminho: os ícones da bandeja que não iam no pacote, a etiqueta sem nome no modal, o lembrete vencido disparando na cópia e a repetição rodando dentro de quadro-modelo. Versão 1.0.0. Detalhes no `Changelog.txt`.
 
 - **Entrega:** conferência de todas as telas contra o protótipo nos dois temas; estados vazios; foco visível e rótulos de acessibilidade; teste de desempenho com 500 cards; ícone do instalador (P14); `npm run build:win` gerando o instalador NSIS; instalação limpa e atualização por cima conferidas, com os dados preservados; revisão geral do código procurando erros; documentação final.
 - **Aceite:** o instalador instala, o app abre, os dados sobrevivem à reinstalação e todos os testes passam.
@@ -495,7 +532,8 @@ Se uma funcionalidade não ficar boa, a etapa inteira é revertida (voltando ao 
 
 | Risco | Mitigação |
 |---|---|
-| O better-sqlite3 é módulo nativo: o binário do Electron pode não abrir no Node dos testes, e vice-versa | Conferir na etapa 1 se a versão atual traz binário N-API, que serve aos dois. Se não trouxer, rodar o Vitest com o binário do Electron (`ELECTRON_RUN_AS_NODE=1`). O electron-builder usa `asarUnpack` para o módulo. |
+| ~~O better-sqlite3 é módulo nativo: o binário do Electron pode não abrir no Node dos testes, e vice-versa~~ | **Resolvido na etapa 1:** o better-sqlite3 13 traz binário N-API, o mesmo para o Electron e para o Vitest, sem compilar nada. O electron-builder usa `asarUnpack` para o `.node`. |
+| O instalador oficial do Electron exige o Visual C++ Redistributable, que não está nesta máquina | Script próprio de instalação (`scripts/instalar-electron.mjs`), com o mesmo download e checksum oficiais. Se o Electron mudar a instalação, o script é ajustado (`Pipeline.txt`, seção 3). |
 | O `fog()` gera dezenas de gradientes por card, e pode pesar com muitos cards | Memorizar o resultado por (nível, id, tema, tom, tamanho); recalcular só quando algum desses muda; teste de desempenho com 200 e 500 cards. Plano B: desenhar a máscara uma vez num canvas e reaproveitar como imagem. |
 | O `fog()` do protótipo assume card de 252 × 100 px | Passar a largura e a altura reais (medidas com ResizeObserver), mantendo o algoritmo e as constantes. Conferir visualmente cards de 1, 3 e 8 linhas. |
 | Arrastar com o visual exato do protótipo e a regra do "mesmo lugar" | dnd-kit com DragOverlay (card inclinado); a comparação de vizinhos antes e depois decide se grava. Teste de componente do arraste. |

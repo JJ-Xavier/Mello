@@ -1,0 +1,15 @@
+/* Selo do relógio de teste (só no modo de desenvolvimento). Fica por cima de tudo e não pega o
+   mouse. */
+.badge {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: #e2b203;
+  color: #1d2125;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}

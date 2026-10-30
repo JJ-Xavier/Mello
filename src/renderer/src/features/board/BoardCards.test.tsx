@@ -1,0 +1,351 @@
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { randomUUID } from 'node:crypto'
+import { eq } from 'drizzle-orm'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { card as cardTable, file as fileTable, label } from '../../../../main/db/schema'
+import { insertCard } from '../../../../main/db/test-db'
+import type { MelloApi } from '../../../../shared/ipc/api'
+import type { BoardSummary } from '../../../../shared/ipc/boards'
+import { App } from '../../app/App'
+import { unwrap } from '../../lib/api'
+import { installRealApi } from '../../test/realApi'
+
+let api: MelloApi
+let db: ReturnType<typeof installRealApi>['db']
+let board: BoardSummary
+let lists: Record<string, string>
+
+beforeEach(async () => {
+  ;({ api, db } = installRealApi())
+  board = await unwrap(api.boards.create({ title: 'Casa' }))
+  const detail = await unwrap(api.boards.get({ boardId: board.id }))
+  lists = Object.fromEntries(detail.lists.map((l) => [l.title, l.id]))
+})
+
+function renderBoard(search = '') {
+  window.location.hash = `#/boards/${board.id}${search}`
+  return render(<App />)
+}
+
+function addCard(listTitle: string, title: string) {
+  return unwrap(api.cards.create({ listId: lists[listTitle]!, title }))
+}
+
+async function titlesIn(listTitle: string): Promise<string[]> {
+  const list = await screen.findByRole('region', { name: listTitle })
+  return within(list)
+    .queryAllByRole('link')
+    .map((link) => link.textContent ?? '')
+}
+
+async function savedTitles(listTitle: string): Promise<string[]> {
+  const detail = await unwrap(api.boards.get({ boardId: board.id }))
+  return detail.lists.find((l) => l.title === listTitle)!.cards.map((c) => c.title)
+}
+
+// Teclado do dnd-kit: espaço pega, setas andam, espaço solta. Ele passa a ouvir as setas logo
+// depois de pegar o card.
+async function press(target: Element, code: string) {
+  fireEvent.keyDown(target, { code, key: code === 'Space' ? ' ' : code })
+  await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+}
+
+describe('cards no quadro', () => {
+  it('CAR-02: "Adicionar um cartão" põe o card no fim e deixa o campo aberto', async () => {
+    await addCard('A fazer', 'Compras')
+    renderBoard()
+    const list = await screen.findByRole('region', { name: 'A fazer' })
+    await within(list).findByRole('link', { name: 'Compras' })
+    fireEvent.click(within(list).getByRole('button', { name: 'Adicionar um cartão' }))
+    const input = within(list).getByLabelText('Título do card') as HTMLTextAreaElement
+    fireEvent.change(input, { target: { value: 'Pagar a luz' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    await within(list).findByRole('link', { name: 'Pagar a luz' })
+    expect(await titlesIn('A fazer')).toEqual(['Compras', 'Pagar a luz'])
+    expect(within(list).getByLabelText('2 cards')).toBeTruthy()
+    expect(input.value).toBe('')
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(within(list).queryByLabelText('Título do card')).toBeNull()
+  })
+
+  it('o menu da lista também abre o campo do card novo', async () => {
+    renderBoard()
+    const list = await screen.findByRole('region', { name: 'Em andamento' })
+    fireEvent.click(within(list).getByRole('button', { name: 'Ações da lista' }))
+    const menu = await screen.findByRole('dialog', { name: 'Ações da lista Em andamento' })
+    fireEvent.click(within(menu).getByRole('button', { name: 'Adicionar cartão' }))
+    expect(within(list).getByLabelText('Título do card')).toBeTruthy()
+  })
+
+  it('card criado numa lista de conclusão nasce sem ✓ (FIN-02, etapa 3)', async () => {
+    renderBoard()
+    const list = await screen.findByRole('region', { name: 'Concluído' })
+    fireEvent.click(within(list).getByRole('button', { name: 'Adicionar um cartão' }))
+    const input = within(list).getByLabelText('Título do card')
+    fireEvent.change(input, { target: { value: 'Revisão' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    const created = await within(list).findByRole('link', { name: 'Revisão' })
+    expect(within(created).queryByRole('img', { name: 'Concluído' })).toBeNull()
+  })
+
+  it('CAR-04: a face mostra etiqueta, ✓, data e hora (verde ou em atraso) e os ícones', async () => {
+    const urgent = db.select().from(label).where(eq(label.boardId, board.id)).all()[1]!
+    db.update(label).set({ name: 'Urgente' }).where(eq(label.id, urgent.id)).run()
+    const late = insertCard(db, lists['A fazer']!, {
+      title: 'Contas',
+      labelIds: [urgent.id],
+      checklist: {
+        title: 'Itens',
+        items: [
+          { text: 'Luz', isDone: true },
+          { text: 'Água', isDone: false }
+        ]
+      }
+    })
+    db.update(cardTable)
+      .set({ dueAt: '2020-01-10', descriptionText: 'Pagar até sexta', noteText: 'Ligar' })
+      .where(eq(cardTable.id, late))
+      .run()
+    const done = insertCard(db, lists['Concluído']!, { title: 'Faxina', isDone: true })
+    db.update(cardTable).set({ dueAt: '2020-01-10T18:00' }).where(eq(cardTable.id, done)).run()
+    renderBoard()
+
+    const contas = await screen.findByRole('link', { name: /Contas/ })
+    expect(within(contas).getByTitle('Urgente')).toBeTruthy()
+    expect(within(contas).getByText(', em atraso')).toBeTruthy()
+    expect(within(contas).getByText('10 de jan.')).toBeTruthy()
+    expect(within(contas).getByRole('img', { name: 'Tem descrição' })).toBeTruthy()
+    expect(within(contas).getByRole('img', { name: 'Checklist: 1 de 2' })).toBeTruthy()
+    expect(within(contas).getByRole('img', { name: 'Tem nota' })).toBeTruthy()
+    expect(within(contas).queryByRole('img', { name: 'Concluído' })).toBeNull()
+
+    const faxina = await screen.findByRole('link', { name: /Faxina/ })
+    expect(within(faxina).getByRole('img', { name: 'Concluído' })).toBeTruthy()
+    expect(within(faxina).getByText(', concluído')).toBeTruthy()
+    // Com hora, a face mostra a hora junto com a data (NovoDataHoraA.dc.html).
+    expect(within(faxina).getByText('10 de jan., 18:00')).toBeTruthy()
+    expect(within(faxina).queryByText(', em atraso')).toBeNull()
+  })
+
+  it('CAP-02: a capa fica acima das etiquetas; a imagem com a proporção dela', async () => {
+    const colored = await addCard('A fazer', 'Revisão semanal')
+    await unwrap(
+      api.cards.setCover({ cardId: colored.id, cover: { kind: 'color', color: '#206a83' } })
+    )
+    const photo = await addCard('A fazer', 'Viagem')
+    const fileId = 'c'.repeat(64)
+    db.insert(fileTable)
+      .values({
+        id: fileId,
+        ext: 'jpg',
+        mime: 'image/jpeg',
+        size: 1,
+        width: 400,
+        height: 300,
+        createdAt: 0
+      })
+      .run()
+    db.update(cardTable)
+      .set({ coverKind: 'image', coverValue: fileId })
+      .where(eq(cardTable.id, photo.id))
+      .run()
+    renderBoard()
+
+    const band = (await screen.findByRole('link', { name: 'Revisão semanal' }))
+      .firstElementChild as HTMLElement
+    expect(band.getAttribute('aria-hidden')).toBe('true')
+    expect(band.style.background).toBe('rgb(32, 106, 131)')
+    const image = screen.getByRole('link', { name: 'Viagem' }).firstElementChild as HTMLElement
+    expect(image.tagName).toBe('IMG')
+    expect(image.getAttribute('src')).toBe(`mello-arquivo://arquivos/${fileId}.jpg`)
+    expect(image.style.aspectRatio).toBe('400 / 300')
+  })
+
+  it('clicar no card abre o modal com a lista e o título; fechar volta ao quadro', async () => {
+    await addCard('A fazer', 'Compras')
+    renderBoard()
+    fireEvent.click(await screen.findByRole('link', { name: 'Compras' }))
+    const modal = await screen.findByRole('dialog', { name: 'Compras' })
+    expect(within(modal).getByText('A fazer')).toBeTruthy()
+    fireEvent.click(within(modal).getByRole('button', { name: 'Fechar' }))
+    await expect.poll(() => screen.queryByRole('dialog', { name: 'Compras' })).toBeNull()
+    expect(window.location.hash).toBe(`#/boards/${board.id}`)
+  })
+
+  it('um card que não existe mais fecha o modal sozinho', async () => {
+    renderBoard(`?card=${randomUUID()}`)
+    await screen.findByRole('heading', { name: 'Casa' })
+    await expect.poll(() => window.location.hash).toBe(`#/boards/${board.id}`)
+  })
+
+  it('"Criar card" no menu "Criar": escolhe a lista e o card aparece no quadro', async () => {
+    renderBoard()
+    fireEvent.click(await screen.findByRole('button', { name: 'Criar' }))
+    const menu = await screen.findByRole('dialog', { name: 'Criar' })
+    fireEvent.click(within(menu).getByRole('button', { name: /Criar card/ }))
+    await within(menu).findByRole('option', { name: 'Em andamento' })
+    fireEvent.change(within(menu).getByLabelText('Lista'), {
+      target: { value: lists['Em andamento'] }
+    })
+    fireEvent.change(within(menu).getByLabelText('Título do card'), {
+      target: { value: 'Ligar para o banco' }
+    })
+    fireEvent.click(within(menu).getByRole('button', { name: 'Adicionar cartão' }))
+    const list = await screen.findByRole('region', { name: 'Em andamento' })
+    expect(await within(list).findByRole('link', { name: 'Ligar para o banco' })).toBeTruthy()
+  })
+})
+
+describe('arrastar cards pelo teclado', () => {
+  it('setas escolhem a lista e a posição; espaço solta e grava', async () => {
+    await addCard('A fazer', 'Compras')
+    await addCard('Em andamento', 'Mudança')
+    renderBoard()
+    const card = await screen.findByRole('link', { name: 'Compras' })
+    card.focus()
+    await press(card, 'Space')
+    await press(card, 'ArrowRight')
+    expect(await screen.findByText('Em andamento, posição 1.')).toBeTruthy()
+    await press(card, 'ArrowDown')
+    expect(await screen.findByText('Em andamento, posição 2.')).toBeTruthy()
+    await press(card, 'Space')
+
+    await expect.poll(() => savedTitles('Em andamento')).toEqual(['Mudança', 'Compras'])
+    expect(await titlesIn('Em andamento')).toEqual(['Mudança', 'Compras'])
+    expect(await titlesIn('A fazer')).toEqual([])
+  })
+
+  it('FIN-02 e FIN-03: entrar na lista de conclusão marca o ✓; sair desmarca', async () => {
+    const created = await addCard('Em andamento', 'Compras')
+    renderBoard()
+    let card = await screen.findByRole('link', { name: 'Compras' })
+    await press(card, 'Space')
+    await press(card, 'ArrowRight')
+    await press(card, 'Space')
+    await expect
+      .poll(async () => (await unwrap(api.cards.get({ cardId: created.id }))).isDone)
+      .toBe(true)
+    card = await screen.findByRole('link', { name: /Compras/ })
+    expect(within(card).getByRole('img', { name: 'Concluído' })).toBeTruthy()
+
+    await press(card, 'Space')
+    await press(card, 'ArrowLeft')
+    await press(card, 'Space')
+    await expect
+      .poll(async () => (await unwrap(api.cards.get({ cardId: created.id }))).isDone)
+      .toBe(false)
+  })
+
+  it('CAR-03: pegar e soltar no mesmo lugar não grava nada; Esc cancela', async () => {
+    const created = await addCard('A fazer', 'Compras')
+    await addCard('A fazer', 'Faxina')
+    const before = db.select().from(cardTable).where(eq(cardTable.id, created.id)).get()
+    renderBoard()
+    const card = await screen.findByRole('link', { name: 'Compras' })
+    await press(card, 'Space')
+    await press(card, 'Space')
+    expect(await screen.findByText('Compras voltou para o mesmo lugar.')).toBeTruthy()
+
+    await press(card, 'Space')
+    await press(card, 'ArrowDown')
+    await press(card, 'Escape')
+    expect(await titlesIn('A fazer')).toEqual(['Compras', 'Faxina'])
+    expect(db.select().from(cardTable).where(eq(cardTable.id, created.id)).get()).toEqual(before)
+  })
+})
+
+describe('filtro do quadro (FLT)', () => {
+  async function setup() {
+    const contas = await addCard('A fazer', 'Pagar a conta de luz')
+    const faxina = await addCard('A fazer', 'Faxina')
+    await addCard('Em andamento', 'Ação de limpeza')
+    await unwrap(api.cards.update({ cardId: contas.id, priority: 1 }))
+    await unwrap(api.cards.update({ cardId: faxina.id, priority: 4 }))
+    renderBoard()
+    await screen.findByRole('link', { name: /Faxina/ })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar cards' }))
+    return screen.findByRole('dialog', { name: 'Filtrar' })
+  }
+
+  it('PRI-02: a face mostra o ícone da prioridade com o nome', async () => {
+    await setup()
+    const contas = screen.getByRole('link', { name: /Pagar a conta/ })
+    expect(within(contas).getByRole('img', { name: 'Prioridade muito alta' })).toBeTruthy()
+  })
+
+  it('FLT-02 e FLT-04: só as prioridades marcadas, contador "visíveis/total"', async () => {
+    const panel = await setup()
+    fireEvent.click(within(panel).getByRole('checkbox', { name: /Muito alta/ }))
+    await expect.poll(() => titlesIn('A fazer')).toEqual(['Pagar a conta de luz'])
+    const todo = screen.getByRole('region', { name: 'A fazer' })
+    expect(within(todo).getByLabelText('1 de 2 cards').textContent).toBe('1/2')
+    expect(screen.getByRole('button', { name: 'Filtrar cards (filtro ativo)' })).toBeTruthy()
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Limpar filtro' }))
+    await expect.poll(() => titlesIn('A fazer')).toEqual(['Pagar a conta de luz', 'Faxina'])
+  })
+
+  it('FLT-01: palavra-chave sem acento e sem maiúscula', async () => {
+    const panel = await setup()
+    fireEvent.change(within(panel).getByLabelText('Filtrar por palavra-chave'), {
+      target: { value: 'ACAO' }
+    })
+    await expect.poll(() => titlesIn('A fazer')).toEqual([])
+    expect(await titlesIn('Em andamento')).toEqual(['Ação de limpeza'])
+  })
+
+  it('FLT-05: trocar de quadro limpa o filtro', async () => {
+    const panel = await setup()
+    fireEvent.click(within(panel).getByRole('checkbox', { name: /Baixa/ }))
+    await expect.poll(() => titlesIn('A fazer')).toEqual(['Faxina'])
+    const other = await unwrap(api.boards.create({ title: 'Estudos' }))
+    window.location.hash = `#/boards/${other.id}`
+    await screen.findByRole('heading', { name: 'Estudos' })
+    window.location.hash = `#/boards/${board.id}`
+    await screen.findByRole('heading', { name: 'Casa' })
+    await expect.poll(() => titlesIn('A fazer')).toEqual(['Pagar a conta de luz', 'Faxina'])
+  })
+})
+
+describe('ordenar a lista (LIS-08)', () => {
+  it('por prioridade e por data de entrega', async () => {
+    await addCard('A fazer', 'Sem nada')
+    const b = await addCard('A fazer', 'Média')
+    const c = await addCard('A fazer', 'Alta')
+    await unwrap(
+      api.cards.update({
+        cardId: b.id,
+        priority: 3,
+        due: { dueAt: '2026-10-18', reminder: 'none' }
+      })
+    )
+    await unwrap(
+      api.cards.update({
+        cardId: c.id,
+        priority: 2,
+        due: { dueAt: '2026-10-25', reminder: 'none' }
+      })
+    )
+    renderBoard()
+    const list = await screen.findByRole('region', { name: 'A fazer' })
+    await within(list).findByRole('link', { name: /Alta/ })
+
+    const openMenu = async () => {
+      fireEvent.click(within(list).getByRole('button', { name: 'Ações da lista' }))
+      return screen.findByRole('dialog', { name: 'Ações da lista A fazer' })
+    }
+    fireEvent.click(
+      within(await openMenu()).getByRole('button', { name: 'Ordenar por prioridade' })
+    )
+    await expect.poll(() => savedTitles('A fazer')).toEqual(['Alta', 'Média', 'Sem nada'])
+    fireEvent.click(
+      within(await openMenu()).getByRole('button', { name: 'Ordenar por data de entrega' })
+    )
+    await expect.poll(() => savedTitles('A fazer')).toEqual(['Média', 'Alta', 'Sem nada'])
+    // Na tela, o texto do card também traz a data ("Média18 de out.").
+    await expect
+      .poll(async () => (await titlesIn('A fazer')).map((text) => text.split(/\d+ de /)[0]))
+      .toEqual(['Média', 'Alta', 'Sem nada'])
+  })
+})

@@ -1,0 +1,493 @@
+/* Editor de fundo (Fundo.dc.html): a prévia à esquerda e o painel de 460 px à direita. */
+.screen {
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--txt);
+}
+
+.stage {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stageBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--txt);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--strong);
+}
+
+.live {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.preview {
+  position: relative;
+  isolation: isolate;
+  flex: 1;
+  min-height: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+/* A barra e as listas da miniatura do quadro (as do protótipo). */
+.miniBar {
+  height: 44px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.28);
+  font-size: 15px;
+  font-weight: 700;
+  color: #172b4d;
+}
+
+.miniLists {
+  position: absolute;
+  left: 16px;
+  top: 60px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.miniList {
+  width: 180px;
+  box-sizing: border-box;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--list);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.miniTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.miniCard {
+  height: 44px;
+  border-radius: 7px;
+  background: var(--card);
+}
+
+.focusMark {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  box-sizing: border-box;
+  border: 2px solid #fff;
+  border-radius: 14px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.aside {
+  width: 460px;
+  flex: none;
+  box-sizing: border-box;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+
+.head {
+  padding: 24px 24px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--strong);
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.close {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+.close:hover {
+  background: var(--btn);
+  color: var(--strong);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 24px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.tab {
+  flex: 1;
+  height: 36px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font:
+    600 14px Inter,
+    sans-serif;
+}
+
+.tab:hover {
+  color: var(--strong);
+}
+
+.tabOn,
+.tabOn:hover {
+  background: var(--line);
+  color: var(--strong);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.panel,
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.controls {
+  gap: 16px;
+}
+
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px;
+  border: 2px dashed var(--dashed);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--txt);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.drop:hover,
+.dropOver {
+  border-color: var(--accent);
+  color: var(--strong);
+}
+
+.drop:disabled {
+  opacity: 0.6;
+}
+
+.dropHint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.fileCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.fileThumb {
+  position: relative;
+  flex: none;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #33374b;
+  background-size: 100% 100%;
+}
+
+/* O recorte que aparece na tela, com o resto escurecido. */
+.crop {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.45);
+}
+
+.fileInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fileName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strong);
+  overflow-wrap: anywhere;
+}
+
+.fileMeta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.fileAuto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ok-txt);
+}
+
+.autoToggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.autoText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.autoTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.autoHint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.autoCheck {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.controlHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lab {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.autoTag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-hi);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.focusGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  width: 132px;
+}
+
+.focusCell {
+  height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--line);
+}
+
+.focusCell:hover {
+  background: var(--dashed);
+}
+
+.focusOn,
+.focusOn:hover {
+  background: var(--accent);
+}
+
+.range {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.legibility {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.legible {
+  color: var(--ok-txt);
+}
+
+.lowContrast {
+  color: var(--cal-note);
+}
+
+.restore {
+  align-self: flex-start;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--modal-line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--strong);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.restore:hover {
+  background: var(--btn);
+}
+
+.colors {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gradients {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.swatch {
+  height: 64px;
+  border: 0;
+  border-radius: 10px;
+}
+
+.gradient {
+  height: 72px;
+  padding: 8px;
+  display: flex;
+  align-items: flex-end;
+  color: #fff;
+  font:
+    600 12px Inter,
+    sans-serif;
+}
+
+.swatchOn {
+  box-shadow:
+    0 0 0 3px var(--panel),
+    0 0 0 5px var(--accent);
+}
+
+.foot {
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancel {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 6px;
+  background: var(--btn);
+  color: var(--strong);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cancel:hover {
+  background: var(--line);
+}
+
+.apply {
+  height: 40px;
+  padding: 0 16px;
+  font-weight: 600;
+}

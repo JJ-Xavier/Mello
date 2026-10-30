@@ -1,8 +1,9 @@
 To-do list — Mello
 
-Atualizado em: 21/10/2026
-Situação: planejamento concluído e aprovado em 21/10/2026 (plano e telas novas 10 a 16).
-          Aguardando a ordem do Jackson para começar a etapa 1.
+Atualizado em: 29/10/2026
+Situação: as 12 etapas concluídas em 30/10/2026 (versão 1.0.0); a etapa 12 aguarda o commit do
+          Jackson. A 7 veio antes da 6 (decisão de 24/10/2026: uma etapa de cada vez, a 7
+          primeiro).
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -25,101 +26,133 @@ PLANEJAMENTO
 [x] Aprovação das telas novas (21/10/2026)
 
 
-ETAPA 1 — BASE DO APP E BANCO
-[ ] Projeto electron-vite (React + TypeScript), ESLint, Prettier, Vitest
-[ ] Estrutura de pastas (main, preload, renderer, shared)
-[ ] SQLite: conexão, pragmas, função unaccent
-[ ] Schema completo + migração 0001 + backup antes de migrar
-[ ] Utilitário de IPC (Zod + Result) e protocolo mello-arquivo://
-[ ] Temas (paletas literais do protótipo) e fonte Inter local
-[ ] Casca do app: cabeçalho com logo, barra flutuante de baixo, rotas
-[ ] .gitignore, electron-builder.yml, script de capturas
-[ ] LICENSE (MIT) e README.md
-[ ] Converter Docs/Arquitetura.md em Docs/Arquitetura.txt
-[ ] Criar Modelo-de-Dados.txt, Testes.txt e Changelog.txt; preencher Pipeline.txt
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 1 — BASE DO APP E BANCO (concluída em 21/10/2026)
+[x] Projeto electron-vite (React + TypeScript), ESLint, Prettier, Vitest
+[x] Estrutura de pastas (main, preload, renderer, shared)
+[x] SQLite: conexão, pragmas, função unaccent
+[x] Schema completo + migração 0000_esquema_inicial + backup antes de migrar (DAD-01)
+[x] Utilitário de IPC (Zod + Result) e protocolo mello-arquivo://
+[x] Temas (paletas literais do protótipo) e fonte Inter local
+[x] Casca do app: cabeçalho com logo, menu lateral do Início, barra flutuante de baixo, rotas
+[x] .gitignore, .gitattributes, electron-builder.yml, script de capturas
+[x] LICENSE (MIT) e README.md
+[x] Converter Docs/Arquitetura.md em Docs/Arquitetura.txt
+[x] Criar Modelo-de-Dados.txt, Testes.txt e Changelog.txt; preencher Pipeline.txt
+[x] Instalação do Electron sem o VC++ Redistributable (scripts/instalar-electron.mjs)
+[x] Testes (46), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 2 — QUADROS E LISTAS
-[ ] Início: área Pessoal, grade de quadros, criar, favoritos, quadros fechados, convite da
+ETAPA 2 — QUADROS E LISTAS (concluída em 21/10/2026)
+[x] Início: área Pessoal, grade de quadros, criar, favoritos, quadros fechados, convite da
     primeira abertura (QUA)
-[ ] Menu Criar, "Mudar de quadros"
-[ ] Barra do quadro: título, filtro, favoritar, Alterar fundo, menu "…"
-[ ] Listas: criar, renomear, arrastar, copiar, mover, arquivar (LIS)
-[ ] "Não envelhece" e "Lista de conclusão" no menu da lista
-[ ] Quadro novo com 4 listas, 6 etiquetas e fundo Mello
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+[x] "Criar quadro" em popover com o título (QUA-10, aprovado em 21/10/2026)
+[x] Menu Criar, "Mudar de quadros"
+[x] Barra do quadro: título, favoritar, menu "…" (filtro na etapa 4, "Alterar fundo" na 9)
+[x] Listas: criar, renomear, arrastar (mouse e teclado), copiar, mover, arquivar (LIS)
+[x] "Não envelhece" e "Lista de conclusão" no menu da lista
+[x] Itens arquivados (cards e listas) e quadros fechados
+[x] Quadro novo com 4 listas, 6 etiquetas e fundo Mello
+[x] Testes (112 no total), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 3 — CARDS E ARRASTAR
-[ ] Criar card e face do card (CAR-04)
-[ ] Arrastar cards com o visual do protótipo; teclado
-[ ] ✓ automático ao entrar e sair da área de finalizado (FIN-02, FIN-03)
-[ ] Soltar no mesmo lugar não grava (CAR-03)
-[ ] Tema claro do quadro
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 3 — CARDS E ARRASTAR (concluída em 22/10/2026)
+[x] Criar card (pé da lista, menu da lista e menu "Criar") e face do card (CAR-02, CAR-04)
+[x] Arrastar cards com o visual do protótipo; teclado
+[x] ✓ automático ao entrar e sair da área de finalizado (FIN-02, FIN-03)
+[x] Soltar no mesmo lugar não grava (CAR-03)
+[x] Casca do modal do card (abre pelo clique ou Enter, endereço ?card=)
+[x] Tema claro do quadro
+[x] Card criado numa lista de conclusão nasce sem ✓ (FIN-02, decidido em 22/10/2026)
+[x] Testes (161 no total), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 4 — MODAL DO CARD: DADOS
-[ ] Modal: seletor de lista, ✓, título, botões
-[ ] Etiquetas (ETQ), prioridade (PRI), data de entrega e atraso (DAT)
-[ ] Descrição com TipTap (NOT-07)
-[ ] Checklists e itens com data (CHK)
-[ ] Menu "…": copiar, mover, arquivar, excluir (CAR-05..07)
-[ ] Ordenar lista por prioridade e por data; filtro do quadro (FLT)
-[ ] Testes (inclui tabela de eventos ENV-05/06), conferência visual, documentos, aviso de pronto para commit
+ETAPA 4 — MODAL DO CARD: DADOS (concluída em 23/10/2026)
+[x] Modal: seletor de lista, ✓, título, botões
+[x] Etiquetas (ETQ), prioridade (PRI), data de entrega e atraso (DAT)
+[x] Descrição com TipTap (NOT-07)
+[x] Checklists e itens com data (CHK)
+[x] Menu "…": copiar, mover, arquivar, excluir (CAR-05..07)
+[x] Ordenar lista por prioridade e por data; filtro do quadro (FLT)
+[x] Campos só quando preenchidos (CAR-09) e arquivar com aviso no modal (CAR-10), decididos em
+    23/10/2026
+[x] Testes (280 no total, inclui a tabela de eventos ENV-05/06), conferência visual, documentos,
+    aviso de pronto para commit
 
-ETAPA 5 — MODAL DO CARD: NOTA, ATIVIDADE, ANEXOS E CAPA
-[ ] Nota com TipTap e salvamento automático (NOT)
-[ ] Atividade recolhida (ATV)
-[ ] Anexos (ANX) e capa (CAP)
-[ ] Testes, conferência visual, documentos (LGPD: anexos), aviso de pronto para commit
+ETAPA 5 — MODAL DO CARD: NOTA, ATIVIDADE, ANEXOS E CAPA (concluída em 24/10/2026)
+[x] Nota com TipTap e salvamento automático (NOT)
+[x] Atividade recolhida (ATV)
+[x] Anexos (ANX) e capa (CAP), com os arquivos guardados pelo hash
+[x] Anexar também arrastando do Explorer; "Abrir" abre cópia temporária; programas mostrados na
+    pasta (ANX-01, ANX-03, decididos em 23/10/2026)
+[x] Testes (336 no total), conferência visual, documentos (LGPD: anexos), aviso de pronto para
+    commit
 
-ETAPA 6 — ENVELHECIMENTO
-[ ] Cálculo do nível e congelamentos (ENV-01..04)
-[ ] fog() do protótipo no tamanho real do card, com tom do fundo (ENV-09)
-[ ] Indicador no modal (ENV-08); recálculo de hora em hora (ENV-10)
-[ ] Testes (inclui desempenho), conferência visual, documentos, aviso de pronto para commit
+ETAPA 6 — ENVELHECIMENTO (concluída em 26/10/2026, depois da 7)
+[x] Cálculo do nível e congelamentos (ENV-01..04), na tela
+[x] fog() do protótipo no tamanho real do card, com tom do fundo (ENV-09)
+[x] Indicador no modal (ENV-08); recálculo a cada minuto (ENV-10)
+[x] Relógio de teste do modo de desenvolvimento: atalho e selo (decidido em 24/10/2026)
+[x] Testes (423 no total, inclusive o desempenho no app real), conferência visual, documentos,
+    aviso de pronto para commit
 
-ETAPA 7 — CALENDÁRIO
-[ ] Tela mensal com escopo quadro/todos (CAL-01..03)
-[ ] Cards e tarefas, riscado, atraso, hoje, filtros (CAL-04..10)
-[ ] Abrir modal, marcar tarefa, Adicionar, "+N mais" (CAL-11..14)
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 7 — CALENDÁRIO (concluída em 24/10/2026, antes da 6)
+[x] Tela mensal com escopo quadro/todos (CAL-01..03), seletor de mês e "‹ Hoje ›"
+[x] Cards e tarefas, riscado, atraso, hoje, filtros (CAL-04..10)
+[x] Abrir modal, marcar tarefa, Adicionar, "+N mais" (CAL-11..14)
+[x] Configurações do calendário lidas do banco (settings:get; a tela que grava é da etapa 10)
+[x] Testes (387 no total), conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 8 — AGENDADOR: REPETIÇÃO E LEMBRETES
-[ ] Diálogo Repetir (REP-01..06, REP-17)
-[ ] Agendador: criar, pular e avisar, app fechado (REP-07..12, REP-16)
-[ ] ↻ na face, fantasmas no calendário (REP-13..15)
-[ ] Lembretes e bandeja (LEM)
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 8 — AGENDADOR: REPETIÇÃO E LEMBRETES (concluída em 28/10/2026)
+[x] Diálogo Repetir (REP-01..06, REP-17) e o campo "Repetição" no modal
+[x] Agendador: criar, pular e avisar, app fechado (REP-07..12, REP-16)
+[x] Aviso de repetição pulada no card, com "Criar agora mesmo assim" e "Dispensar" (REP-09)
+[x] ↻ na face, fantasmas no calendário, remover repetição (REP-13..15)
+[x] Lembretes com notificação do Windows e os perdidos ao abrir (LEM)
+[x] Bandeja do Windows e o aviso da primeira vez (P4, LEM-07)
+[x] Data e hora do card e da tarefa (pedido de 28/10/2026): tela 17A no canvas, aprovada sem os
+    atalhos de data; horários prontos, "No prazo" ou "Em atraso" com quanto falta (DAT-05),
+    hora na tarefa (CHK-05), na face e no calendário
+[x] Testes, conferência visual, documentos, aviso de pronto para commit
 
-ETAPA 9 — FUNDO DO QUADRO
-[ ] Editor: imagem, cor, gradiente, prévia ao vivo (FUN-01..03, FUN-07)
-[ ] Ajuste automático, legibilidade, restaurar (FUN-04..06)
-[ ] Fundo no quadro, calendário e miniatura; tom do envelhecimento (FUN-08, FUN-09)
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+ETAPA 9 — FUNDO DO QUADRO (concluída em 29/10/2026)
+[x] Editor: imagem, cor, gradiente, prévia ao vivo (FUN-01..03, FUN-07)
+[x] Ajuste automático, legibilidade, restaurar (FUN-04..06), calibrado com os papéis de parede
+    do Windows
+[x] Fundo no quadro, calendário e miniatura; tom do envelhecimento (FUN-08, FUN-09)
+[x] Testes (529 no total), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 10 — CONFIGURAÇÕES, TEMA, BACKUP E DADOS
-[ ] Aparência, Envelhecimento, Calendário (tela 7)
-[ ] Lembretes e bandeja; Dados e backup (seções novas)
-[ ] Tema claro/sistema em todas as telas (TEM)
-[ ] Backup automático, restaurar, exportar, apagar tudo (DAD)
-[ ] Testes, conferência visual, documentos (LGPD), aviso de pronto para commit
+[x] Aparência, Envelhecimento, Calendário (tela 7), gravando pelo settings:set
+[x] Lembretes e bandeja; Dados e backup (tela 15); "Mudar nas Configurações" do aviso da bandeja
+[x] Tema claro/sistema em todas as telas, pelo prefers-color-scheme (TEM)
+[x] Backup automático, restaurar, exportar, apagar tudo (DAD)
+[x] Limpeza dos arquivos sem uso (DAD-08), junto com o espelho do backup (DAD-05)
+[x] Testes (570 no total), conferência visual, documentos (LGPD), aviso de pronto para commit
 
 ETAPA 11 — BUSCA E MODELOS
-[ ] Busca do topo (BUS)
-[ ] Cards-modelo e quadros-modelo (MOD)
-[ ] Testes, conferência visual, documentos, aviso de pronto para commit
+[x] Busca do topo (BUS), com o painel de resultados e o teclado
+[x] Cards-modelo e quadros-modelo (MOD), com o "Criar a partir de modelo" na lista e no "Criar"
+[x] Testes (606 no total), conferência visual, documentos, aviso de pronto para commit
 
 ETAPA 12 — POLIMENTO, REVISÃO GERAL E INSTALADOR
-[ ] Conferência de todas as telas nos dois temas; estados vazios; acessibilidade
-[ ] Desempenho com 500 cards
-[ ] Ícone do instalador; npm run build:win; instalar e atualizar sem perder dados
-[ ] Revisão geral do código; suíte completa de novo
-[ ] Todos os documentos conferidos contra o estado final; resumo da entrega
+[x] Conferência de todas as telas nos dois temas; estados vazios; acessibilidade (teste novo)
+[x] Desempenho com 500 cards (main e app real)
+[x] Ícone do instalador; npm run build:win; instalar e atualizar sem perder dados
+[x] Revisão geral do código; suíte completa de novo (615 testes)
+[x] Todos os documentos conferidos contra o estado final; resumo da entrega
 
 
 PENDÊNCIAS E OBSERVAÇÕES
 
-- As mudanças de pasta (Documentacao → Docs, Criativo → Assets) e os documentos do planejamento
-  ainda não foram commitados (commit e push ficam com o Jackson).
-- As telas de modelos, capa e lembretes não existem no protótipo; seguem o comportamento do Trello
-  no visual do protótipo (propostas P5, P6 e P7).
+- As telas de modelos, capa e lembretes não existem no protótipo; foram desenhadas nas telas novas
+  10 a 16 (aprovadas em 21/10/2026).
+- Desempenho (avaliado na etapa 12): a capa de imagem é mostrada a partir do arquivo inteiro.
+  Com 500 cards, o quadro abriu em 1476 ms; as miniaturas ficam para quando muitas fotos grandes
+  num quadro pesarem de verdade.
+- O post-it azul do calendário no canvas ainda diz "riscado = ✓ ou Concluído/Entregue"; a regra
+  que vale é a FIN-01 (lista de conclusão E ✓), registrada no post-it verde "Telas novas".
+- Versão: a etapa 7 é a 0.7.0 e a 6, feita depois, é a 0.7.1 (decisão de 25/10/2026). As
+  próximas seguem "0.N.0 na etapa N" (a 8 é a 0.8.0).
+- Com o app instalado, no seu computador (Testes.txt, roteiro da etapa 12): "Iniciar com o
+  Windows" (ligar, reiniciar e ver o Mello só na bandeja) e uma notificação de lembrete de
+  verdade, com o clique abrindo o card. O script de capturas confere as notificações com o
+  Notification do Electron trocado por uma anotação.
+- Relógio de teste: se Ctrl+Alt+seta girar a tela (atalho de alguns drivers Intel), trocar o
+  atalho.

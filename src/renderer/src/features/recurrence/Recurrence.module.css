@@ -1,0 +1,168 @@
+/* Diálogo "Repetir card" e aviso de repetição pulada (Repeticao.dc.html). */
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group > p {
+  margin-bottom: 4px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.tab {
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font:
+    600 13px Inter,
+    sans-serif;
+}
+
+.tab[aria-selected='true'] {
+  background: var(--sec);
+  color: var(--strong);
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.weekday {
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--sec);
+  color: var(--strong);
+  font:
+    600 13px Inter,
+    sans-serif;
+}
+
+.weekday[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-txt);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  font-size: 14px;
+  color: var(--strong);
+}
+
+.small {
+  width: 64px;
+  height: 32px;
+}
+
+.date {
+  width: 120px;
+  height: 32px;
+}
+
+.count {
+  width: 56px;
+  height: 32px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.preview {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* REP-08: aviso de repetição pulada, amarelo como no protótipo. */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--warn-bg);
+  color: var(--warn-txt);
+}
+
+.notice > svg {
+  margin-top: 1px;
+}
+
+.noticeBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.noticeActions {
+  display: flex;
+  gap: 8px;
+}
+
+.noticePrimary {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--warn-txt);
+  color: var(--warn-bg);
+  font:
+    600 13px Inter,
+    sans-serif;
+}
+
+.noticeSecondary {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--warn-txt);
+  font:
+    500 13px Inter,
+    sans-serif;
+}
+
+.noticeSecondary:hover {
+  background: rgba(0, 0, 0, 0.12);
+}

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="pt-BR" class="tema-escuro">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Nada de fora do app: scripts, estilos e fontes só do próprio app; imagens também pelo
+         protocolo de arquivos do Mello (mello-arquivo:). -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: mello-arquivo:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Mello</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

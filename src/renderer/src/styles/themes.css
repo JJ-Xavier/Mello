@@ -1,0 +1,142 @@
+/*
+ * Paletas do protótipo, sem alteração (TEM-02). A classe vai no <html>: tema-escuro ou tema-claro.
+ * Cada tela do protótipo define só parte das variáveis; aqui está a união de todas.
+ *
+ * Diferenças entre telas do próprio protótipo, mantidas como lá:
+ * - --btn no tema claro: #e9ebee nas Configurações (TEM-02) e #e4e6ea nas telas do quadro; as telas
+ *   do quadro sobrescrevem --btn localmente (etapa 2).
+ * - Variáveis que só aparecem no tema escuro (Início e calendário, que não têm versão clara no
+ *   protótipo) usam no tema claro a variável clara equivalente; estão marcadas "só no escuro".
+ */
+.tema-escuro {
+  color-scheme: dark;
+  --bg: #1d2125;
+  --top: #1d2125;
+  --panel: #22272b;
+  --line: #38414a;
+  --list: #101204;
+  --card: #22272b;
+  --txt: #b6c2cf;
+  --strong: #dee4ea;
+  --muted: #9fadbc;
+  --btn: #2c333a;
+  --accent: #579dff;
+  --accent-txt: #1d2125;
+  --accent-soft: #1c2b41;
+  --a1: #2a2f34;
+  --a2: #32363c;
+  --a3: #3a3e44;
+  --a4: #43464c;
+  --a5: #4c4f55;
+  /* envelhecimento (ENV-09): o cinza do card em cada nível, do fog() do protótipo. O tom de baixo,
+     --aging-tone, vem do fundo do quadro (FUN-09); o bege do protótipo vale fora do quadro. */
+  --fog1: #2c3035;
+  --fog2: #35383d;
+  --fog3: #3d3f44;
+  --fog4: #45464b;
+  --fog5: #4c4d52;
+  --aging-tone: #d8bd9b;
+  --slot: rgba(255, 255, 255, 0.06);
+  --nav-active: rgba(87, 157, 255, 0.16);
+  /* só no escuro: borda do campo de busca e divisória do menu lateral do Início */
+  --field-line: #738496;
+  --divider: #2c333a;
+  /* só no escuro: popovers, campos e botões dos menus (Estados.dc.html e NovosEstados.dc.html) */
+  --pop: #282e33;
+  --pop-hover: #38414a;
+  --field: #22272b;
+  --sec: #38414a;
+  --sec-txt: #dee4ea;
+  --item: #22272b;
+  --danger-txt: #fd9891;
+  --danger: #ae2e24;
+  --danger-on: #ffeceb;
+  --dashed: #454f59;
+  --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.45);
+  /* só no escuro: modal do card (Card.dc.html) */
+  --modal: #323940;
+  --modal-line: #454f59;
+  --modal-btn: #3b444c;
+  --modal-aside: #1d2125;
+  /* só no escuro: calendário (Calendario.dc.html e NovoCalendarioTodos.dc.html). --cal é o fundo
+     do calendário e dos dias de fora do mês; --cal-done, o texto riscado e a linha de baixo;
+     --cal-note, o aviso da repetição tracejada. */
+  --cal: #161a1d;
+  --cal-day: #1d2125;
+  --cal-item: #2c333a;
+  --cal-out: #738496;
+  --cal-done: #8c9bab;
+  --cal-note: #f5cd47;
+  /* só no escuro: repetição (Repeticao.dc.html): o aviso de repetição pulada e o botão
+     "Repetir" com o diálogo aberto */
+  --warn-bg: #533f04;
+  --warn-txt: #f8e6a0;
+  --accent-hi: #85b8ff;
+  /* só no escuro: editor de fundo (Fundo.dc.html), "Ajustado automaticamente" e "Cards legíveis" */
+  --ok-txt: #b3df72;
+  /* só no escuro: o aviso da pasta de backup (NovoConfig.dc.html); o ícone usa --cal-note */
+  --warn-box: #4f3a0e;
+}
+
+.tema-claro {
+  color-scheme: light;
+  --bg: #f7f8f9;
+  --top: #ffffff;
+  --panel: #ffffff;
+  --line: #dcdfe4;
+  --list: #f1f2f4;
+  --card: #ffffff;
+  --txt: #44546f;
+  --strong: #172b4d;
+  --muted: #5b687e;
+  --btn: #e9ebee;
+  --accent: #0c66e4;
+  --accent-txt: #ffffff;
+  --accent-soft: #e9f2ff;
+  --a1: #f6f7f8;
+  --a2: #eceef1;
+  --a3: #e2e4e9;
+  --a4: #d8dbe0;
+  --a5: #cdd1d7;
+  --fog1: #f1f2f4;
+  --fog2: #e7e9ec;
+  --fog3: #dde0e4;
+  --fog4: #d3d7dc;
+  --fog5: #c9cdd3;
+  --aging-tone: #d8bd9b;
+  --slot: rgba(9, 30, 66, 0.08);
+  --nav-active: rgba(87, 157, 255, 0.16);
+  --field-line: var(--line);
+  --divider: var(--line);
+  --pop: #ffffff;
+  --pop-hover: var(--btn);
+  --field: #ffffff;
+  --sec: var(--btn);
+  --sec-txt: var(--strong);
+  --item: var(--list);
+  --danger-txt: #ae2e24;
+  --danger: #c9372c;
+  --danger-on: #ffffff;
+  --dashed: var(--line);
+  --shadow-pop: 0 10px 28px rgba(9, 30, 66, 0.25);
+  --modal: #ffffff;
+  --modal-line: var(--btn);
+  --modal-btn: var(--btn);
+  --modal-aside: var(--bg);
+  --cal: var(--list);
+  --cal-day: #ffffff;
+  --cal-item: #e9ebee;
+  --cal-out: #8590a2;
+  --cal-done: #626f86;
+  --cal-note: #946f00;
+  --warn-bg: #f8e6a0;
+  --warn-txt: #533f04;
+  --accent-hi: var(--accent);
+  --ok-txt: #216e4e;
+  --warn-box: var(--warn-bg);
+}
+
+/* As telas do quadro usam --btn #e4e6ea no tema claro (Quadro.dc.html e QuadroClaro.dc.html). */
+.tema-claro .board-screen {
+  --btn: #e4e6ea;
+}

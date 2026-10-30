@@ -1,7 +1,8 @@
 Pipeline — Mello
 
-Status: versão inicial (21/10/2026). Os comandos da seção 4 passam a existir na etapa 1 e serão
-conferidos e completados nela.
+Status: atualizado na etapa 12 (30/10/2026, versão 1.0.0: instalador conferido, ícone do logo
+do protótipo e a medição com 500 cards nas capturas).
+Os comandos da seção 4 existem e foram conferidos.
 
 
 1. QUEM FAZ O QUÊ
@@ -26,6 +27,13 @@ conferidos e completados nela.
 8. Próxima etapa, só depois que o Jackson liberar. A implementação PARA ao fim de cada etapa
    (decidido em 21/10/2026), para que cada etapa vire um commit separado.
 
+Trocar de branch durante uma etapa: antes de instalar pacotes ou gravar arquivos, o Claude
+confere em que branch o repositório está. Uma branch sem o código da etapa anterior (por
+exemplo, a Developer ainda no commit inicial) não tem package.json, e um "npm install" nela cria
+arquivos soltos que impedem voltar para a branch da feature (aconteceu em 21/10/2026). Se isso
+acontecer, os arquivos soltos são apagados e a volta é feita com "git checkout <branch>"; depois,
+"npm ci" refaz a pasta node_modules.
+
 Se uma funcionalidade não ficar boa, a etapa é revertida por completo (voltando ao commit
 anterior) e refeita, em vez de remendada.
 
@@ -41,26 +49,81 @@ Necessário (já instalado na máquina em 21/10/2026):
 Internet só é preciso para instalar as dependências (npm install baixa os pacotes e o Electron).
 Depois disso, desenvolver, testar e gerar o instalador funcionam sem internet.
 
-Não deve ser necessário: Python e Visual Studio Build Tools. Eles só seriam exigidos se o
-better-sqlite3 precisasse ser compilado na máquina. A etapa 1 confere se a versão escolhida traz
-o binário pronto para Windows; se não trouxer, esta seção é atualizada.
+Não são necessários (conferido na etapa 1):
+- Python e Visual Studio Build Tools: o better-sqlite3 13 já traz o binário pronto para Windows
+  (N-API), que serve ao Electron e aos testes sem compilar nada.
+- Microsoft Visual C++ Redistributable: o instalador oficial do Electron passou a usar um
+  descompactador nativo que exige esse componente, e ele não está instalado nesta máquina. Por
+  decisão de 21/10/2026, o postinstall usa um script próprio (scripts/instalar-electron.mjs), que
+  baixa o mesmo zip oficial pelo @electron/get, confere o checksum e descompacta com o tar.exe do
+  Windows. Se o Electron mudar a forma de instalar numa versão futura, é esse script que precisa
+  de ajuste.
+- GitHub CLI, contas ou tokens de serviço nenhum.
 
-Não é necessário: GitHub CLI, contas ou tokens de serviço nenhum.
+Scripts de instalação das dependências (npm 11.19): o npm só roda o script de instalação de um
+pacote com aprovação no campo "allowScripts" do package.json. Os 5 pacotes que têm script estão
+recusados de propósito (false), porque nenhum é necessário: o better-sqlite3 tentaria compilar
+do zero com node-gyp, o que exige Python e Visual Studio, e o binário pronto já vem no pacote; os
+esbuild usados pelo drizzle-kit só conferem o binário; o electron-winstaller é de outro tipo de
+instalador, que o Mello não usa. Sem a recusa explícita, o "npm ci" rodava a compilação e falhava
+(descoberto na etapa 2). O script do próprio projeto (postinstall do Electron) não é afetado.
+Para reinstalar tudo do zero, exatamente como está no package-lock.json: npm ci.
+
+Cuidado com ELECTRON_RUN_AS_NODE: alguns terminais de dentro do VS Code (como o do Claude Code)
+herdam essa variável, que faz o Electron rodar como se fosse o Node e o app não abre. Num
+terminal normal ela não existe. Se "npm run dev" não abrir a janela, confira com
+"echo %ELECTRON_RUN_AS_NODE%" (cmd) ou "$env:ELECTRON_RUN_AS_NODE" (PowerShell) e, se houver
+valor, apague a variável ou use outro terminal. O script de capturas já a remove sozinho.
+
+Pastas de dados: o "npm run dev" usa %APPDATA%\Mello-dev; o app instalado usa %APPDATA%\Mello.
+Assim, o desenvolvimento nunca mexe nos dados reais.
+
+Relógio de teste (desde a etapa 6, só no modo de desenvolvimento): com o app aberto,
+Ctrl+Alt+→ adianta 1 dia e Ctrl+Alt+Shift+→ adianta 1 hora; Ctrl+Alt+← e Ctrl+Alt+Shift+←
+voltam; Ctrl+Alt+0 volta ao relógio real. Enquanto estiver adiantado, um selo amarelo no canto
+mostra quanto. Tudo o que o app grava nesse tempo usa o relógio adiantado. Reabrir o app volta
+ao relógio real. Em alguns computadores com placa de vídeo Intel, Ctrl+Alt+seta gira a tela
+(atalho do driver); nesse caso, desligue o atalho do driver ou peça outro atalho.
+Desde a etapa 8, mudar o relógio roda o agendador na hora: adiantar até depois do horário de uma
+repetição cria (ou pula) o card, e adiantar até depois de um lembrete mostra a notificação do
+Windows.
 
 
-4. COMANDOS (previstos; confirmados na etapa 1)
+4. COMANDOS
 
-npm install ............ instala as dependências (uma vez, e quando o package.json mudar)
-npm run dev ............ abre o app em modo de desenvolvimento, com recarga automática
-npm test ............... roda todos os testes uma vez
+npm install ............ instala as dependências e baixa o Electron (uma vez, e quando o
+                         package.json mudar)
+npm ci ................. reinstala tudo do zero, exatamente como no package-lock.json
+npm run dev ............ abre o app em modo de desenvolvimento, com recarga automática; F12 abre
+                         as ferramentas de desenvolvedor
+npm start .............. abre o app já compilado (electron-vite preview)
+npm run build .......... compila main, preload e tela em out/
+npm test ............... roda todos os testes uma vez (Vitest)
 npm run test:watch ..... roda os testes a cada alteração
 npm run lint ........... confere o padrão de código (ESLint)
 npm run format ......... formata o código (Prettier)
-npm run typecheck ...... confere os tipos do TypeScript
-npm run capturas ....... abre o app com dados fictícios e salva capturas de cada tela em
-                         capturas/ (pasta ignorada pelo Git)
+npm run typecheck ...... confere os tipos do TypeScript (main/preload, tela e testes da tela)
+npm run capturas ....... compila, abre o app com uma pasta de dados temporária, confere banco e
+                         IPC e salva capturas de cada tela em capturas/etapa-N/ (pasta ignorada
+                         pelo Git). Abre o app duas vezes (a segunda para os lembretes perdidos e
+                         o aviso da bandeja) e lista as notificações em vez de mostrá-las.
+                         Desde a etapa 9, desenha uma foto em retrato (o céu e as montanhas
+                         do protótipo, 1080 × 1920), envia pelo editor de fundo, mostra no
+                         terminal o ajuste automático calculado e aplica no quadro "Casa".
+                         Desde a etapa 10, troca o tema pela configuração de verdade (sem a
+                         emulação de tema do Playwright), exporta, troca a pasta de backup,
+                         restaura e apaga tudo no app real (a reabertura do app é trocada por
+                         só sair, e o script abre de novo); o Explorer só fica anotado.
+                         Desde a etapa 11, busca, cria modelos e cria um card e um quadro a
+                         partir deles pela tela, e apaga o que criou.
+                         Desde a etapa 12, no fim, mede o quadro com 500 cards
 npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit)
-npm run build:win ...... gera o instalador do Windows em dist/
+node scripts/gerar-icones.mts
+                         gera os PNGs do logo em resources/ (bandeja e notificações). Precisa do
+                         app compilado (npm run build). Só é preciso se o logo mudar; os PNGs
+                         ficam no Git
+npm run build:win ...... confere os tipos, compila e gera o instalador do Windows em dist/
+                         (conferido na etapa 12)
 
 
 5. VERIFICAÇÕES ANTES DE CADA AVISO DE "PRONTO"
@@ -70,11 +133,20 @@ npm run build:win ...... gera o instalador do Windows em dist/
 - npm test ............. todos os testes passando
 - Conferência visual ... telas da etapa iguais ao protótipo (cores, medidas, textos, ícones)
 - git status ........... nenhum arquivo de dados (.db, arquivos, backups, capturas) na lista
+- npm audit --omit=dev . sem vulnerabilidades no que vai dentro do app. Avisos só de ferramentas
+                         de desenvolvimento são avaliados caso a caso (na etapa 1: um esbuild
+                         antigo usado pelo drizzle-kit e o sprintf-js; nenhum vai para o app)
 
 
 6. INSTALADOR
 
-- npm run build:win gera dist/Mello-Setup-<versão>.exe (NSIS, Windows x64), com o ícone de build/.
+- npm run build:win gera dist/Mello-Setup-<versão>.exe (NSIS, Windows x64), com o ícone de
+  build/icon.ico (gerado do logo do protótipo por node scripts/gerar-icones.mts; rodar de novo só
+  se o logo mudar). O pacote leva out/, resources/ (ícones da bandeja e das notificações, fora do
+  .asar) e, do better-sqlite3, só o binário do Windows x64.
+- O instalador é por usuário: instala em %LOCALAPPDATA%\Programs\mello, sem pedir
+  administrador, com atalhos no menu Iniciar e na área de trabalho. Conferido em 30/10/2026:
+  instalação limpa, atualização por cima e desinstalação (Testes.txt, roteiro da etapa 12).
 - Instalar: abrir o .exe. Como o instalador não é assinado, o Windows SmartScreen avisa na
   primeira vez: "Mais informações" → "Executar assim mesmo".
 - Atualizar: gerar o instalador da versão nova e instalar por cima. Os dados ficam em
@@ -84,9 +156,12 @@ npm run build:win ...... gera o instalador do Windows em dist/
 
 7. VERSÕES
 
-- Versionamento semântico no package.json: MAIOR.MENOR.CORREÇÃO. A primeira versão completa,
-  ao fim da etapa 12, é a 1.0.0.
-- O que mudou em cada etapa e em cada versão fica no Docs/Changelog.txt (criado na etapa 1).
+- Versionamento semântico no package.json: MAIOR.MENOR.CORREÇÃO. Durante a construção, a etapa N
+  é a versão 0.N.0 (a etapa 1 é a 0.1.0). A primeira versão completa, ao fim da etapa 12, é a
+  1.0.0.
+- As dependências ficam com a versão exata no package.json (sem ^), e o package-lock.json, gerado
+  pelo npm, registra a versão e o checksum de cada pacote. Ele é commitado e nunca é editado à mão.
+- O que mudou em cada etapa e em cada versão fica no Docs/Changelog.txt.
 
 
 8. CI (INTEGRAÇÃO CONTÍNUA)
@@ -112,7 +187,10 @@ de cada aviso de "pronto". Se um dia fizer falta, basta um arquivo .github/workf
 
 O .gitignore (criado na etapa 1) bloqueia:
 - node_modules/, out/, dist/ (dependências e builds);
-- *.db, *.db-wal, *.db-shm (bancos de dados);
-- arquivos/, backups/, exportações e capturas/ (dados e imagens geradas);
+- *.db, *.db-wal, *.db-shm, *.db-journal (bancos de dados);
+- arquivos/, backups/, exportações (Mello-exportacao-*) e capturas/ (dados e imagens geradas);
 - .env e arquivos de chave, por precaução (o app não usa nenhum segredo);
-- logs.
+- logs e caches (.eslintcache, *.tsbuildinfo).
+
+O .gitattributes guarda todos os textos com final de linha LF, igual ao .editorconfig e ao
+Prettier, mesmo com o Git do Windows configurado para CRLF.

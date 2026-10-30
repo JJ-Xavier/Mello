@@ -1,0 +1,599 @@
+Changelog — Mello
+
+O que mudou em cada etapa e em cada versão. A versão do package.json sobe a cada etapa (0.N.0 na
+etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
+
+
+1.0.0 — Etapa 12: polimento, revisão geral e instalador (30/10/2026)
+
+A primeira versão completa: as 12 etapas do PLANO.md estão prontas.
+
+Adicionado
+- Ícone do app e do instalador (build/icon.ico), gerado do logo do protótipo, de 16 a 256 px
+  (P14). O scripts/gerar-icones.mts gera também o .ico.
+- Instalador conferido: npm run build:win gera o Mello-Setup-1.0.0.exe; instalação limpa,
+  atualização por cima e desinstalação conferidas nesta máquina, com os dados preservados.
+- Teste de acessibilidade (todo controle das telas principais tem nome) e teste de desempenho com
+  500 cards, no main e no app real (pelo script de capturas).
+
+Corrigido
+- O app instalado ia sem os ícones da bandeja e das notificações: a pasta resources/ não estava
+  no pacote. Agora vai, fora do .asar.
+- A etiqueta sem nome, no modal do card, não tinha nome para o leitor de tela; agora é lida como
+  "Etiqueta <cor>".
+- A cópia de um card (Copiar, copiar lista e os modelos) disparava na hora um lembrete cujo
+  horário já tinha passado (CAR-07).
+- Um quadro-modelo continuava criando os cards das repetições dele; agora a repetição fica
+  pausada, como num quadro fechado (REP-16).
+- O script de capturas falhava perto do fim do mês: os cards do quadro "Estudos" caíam no mês
+  seguinte e sumiam do calendário.
+
+Mudou
+- O instalador leva só o binário do better-sqlite3 do Windows x64, sem o código-fonte do SQLite
+  e sem os binários das outras plataformas.
+
+Revisão geral
+- Uma revisão do código (código-fonte inteiro) achou 8 pontos: 2 foram corrigidos (o
+  comentário da pausa e a folga do teste de desempenho) e 6 ficaram como estão, com o motivo
+  registrado no aviso da etapa.
+
+Testes
+- 9 novos (615 no total). Capturas de todas as telas conferidas de novo, nos dois temas.
+
+
+0.11.0 — Etapa 11: busca e modelos (30/10/2026)
+
+Adicionado
+- Busca do topo (tela 9): a partir de 2 caracteres, sem diferenciar acento nem maiúscula
+  (BUS-01), procura nos cards (título, descrição e nota), nos itens de checklist e nos quadros
+  (BUS-02). Os resultados abrem embaixo do campo, nos grupos Cards, Tarefas e Quadros, até 8 em
+  cada (BUS-03), sem arquivados, modelos e quadros fechados (BUS-04). Setas, Enter e Esc
+  funcionam; abrir leva ao card no quadro dele ou ao quadro (BUS-05).
+- Cards-modelo (tela 12): "Transformar em modelo" e "Deixar de ser modelo" no menu do card
+  (MOD-01), o selo "Modelo" na face, o ✓ e o "Repetir" apagados no modal (MOD-02). O ícone ao
+  lado de "Adicionar um cartão" lista os modelos do quadro e cria a cópia no fim da lista, com o
+  registro "Criado a partir do modelo <título>" (MOD-03).
+- Quadros-modelo (tela 11): "Transformar em modelo" e "Deixar de ser modelo" no menu do quadro;
+  a seção "Modelos" no Início (MOD-04); o diálogo "Criar quadro a partir de modelo", com as
+  contagens, o título e "Manter os cards do modelo" (MOD-05).
+- "Criar a partir de modelo" no menu "Criar": os quadros-modelo e, dentro de um quadro, os
+  cards-modelo dele.
+
+Mudou
+- Canais novos: search:query e templates:setCard, createCard, listBoards, setBoard e
+  createBoard. O templates:listCards do plano não foi preciso: os cards-modelo vêm no boards:get.
+- O BoardSummary ganhou isTemplate. O texto do registro from_template passou a ter o título.
+- O filtro do quadro e a busca usam a mesma condição de texto (cards.containsText).
+
+Decisões da etapa
+- O menu "Criar" mostra os quadros-modelo e, dentro de um quadro, os cards-modelo dele; ali a
+  cópia do card entra na lista do próprio modelo.
+- O "Abrir o modelo" do diálogo abre o quadro-modelo para editar; o menu "…" dele troca para
+  "Deixar de ser modelo".
+- Virar modelo tira o ✓. Com repetição, "Transformar em modelo" fica apagado: tirar a repetição
+  é com você.
+- Os cards-modelo de dentro de um quadro-modelo vêm só com "Manter cards" e continuam modelos.
+- Entrar e sair de modelo não zera o envelhecimento (congelar não zera o tempo, ENV-04).
+- A busca abre embaixo do campo do cabeçalho, com o foco de 2 px do protótipo; os cards com a
+  palavra no título vêm primeiro.
+
+Testes
+- 36 novos (606 no total): a busca no main (acento, campos, grupos, o que fica de fora) e na
+  tela (grupos, teclado, abrir), os modelos no main (virar, criar a partir de card e de quadro,
+  recusas) e na tela (menus, selo, ícone da lista, seção do Início, diálogo, menu "Criar").
+  Capturas das telas 9, 11 e 12 conferidas no app real, com um card e um quadro criados a partir
+  dos modelos.
+
+
+0.10.0 — Etapa 10: Configurações, tema, backup e dados (29/10/2026)
+
+Adicionado
+- Tela de Configurações (telas 7 e 15) com as cinco seções numa coluna só e o menu da esquerda
+  que leva à seção e marca a que está à vista. Cada opção vale na hora.
+- Aparência (TEM-01): Escuro, Claro e Igual ao sistema, com as prévias do protótipo. O tema muda
+  todas as telas e a barra de título do Windows na hora; "Igual ao sistema" acompanha a troca de
+  tema do Windows sem reiniciar (TEM-03).
+- Envelhecimento dos cards: ligar e desligar (ENV-03), a prévia dos 6 níveis com o mesmo desenho
+  do quadro, o que zera e as listas que não envelhecem, agrupadas por quadro.
+- Calendário: mostrar as tarefas, riscar os finalizados e o primeiro dia da semana.
+- Lembretes e bandeja: manter na bandeja ao fechar e iniciar com o Windows (abre direto na
+  bandeja; só no app instalado). O "Mudar nas Configurações" do aviso da bandeja abre esta seção.
+- Dados e backup: a pasta de backup com "Escolher pasta" e os avisos de "mesmo disco" e de pasta
+  indisponível (DAD-04); "Fazer backup agora" e a lista dos backups guardados, com quando, tipo e
+  tamanho, e "Restaurar" (DAD-06); "Exportar dados" (DAD-07); "Abrir pasta de dados"; "Apagar
+  tudo" com a confirmação por APAGAR e a opção de apagar também os backups (DAD-09).
+- Backup automático (DAD-01): ao abrir (se o último tiver mais de 1 hora), de hora em hora com
+  alteração, antes de migrar e antes de restaurar. Ficam os 10 mais recentes (DAD-03), com os
+  arquivos espelhados na pasta de backup (DAD-05).
+- Limpeza dos arquivos sem uso na abertura (DAD-08): anexos removidos, cards excluídos e fundos
+  enviados e não aplicados.
+
+Mudou
+- Canais novos: settings:set e data:backups, backupNow, chooseBackupFolder, restore, export,
+  openFolder, deleteAll e notices; o evento backup:notice. Chaves novas: theme, app.autoStart e
+  backup.folder.
+- O tema não é mais fixo no escuro: o main passa a escolha para o Chromium, e a tela segue o
+  prefers-color-scheme (lib/theme.ts). O script de capturas troca o tema pela configuração de
+  verdade, sem a emulação de tema do Playwright.
+- Cada backup é um arquivo só (sem -wal ao lado), com o tipo gravado no cabeçalho. O backup
+  antes de migrar também vai para a pasta escolhida e espelha os arquivos.
+
+Decisões da etapa
+- O tema é decidido só pelo main (nativeTheme); a tela não lê a configuração para pintar. Assim a
+  primeira pintura já sai no tema certo, e o "Igual ao sistema" segue o Windows sozinho.
+- O tipo de cada backup fica no user_version do próprio arquivo (o número que o SQLite reserva ao
+  app), e não num arquivo à parte: mover ou copiar um backup leva o tipo junto.
+- Backup de hora em hora: o agendador confere a cada minuto, e o backup sai quando já passou 1
+  hora do último e o banco mudou (contado pelo total_changes() do SQLite).
+- A pasta de dados do Mello não pode ser a pasta de backup (o espelho cairia em cima dos arquivos
+  do app). Escolher uma pasta faz um backup nela na hora.
+- O aviso de "mesmo disco" não aparece numa pasta do OneDrive, do Google Drive ou do Dropbox, que
+  têm cópia fora do computador.
+- Restaurar confere o arquivo antes (danificado, de outro programa ou de uma versão mais nova não
+  serve), e o backup feito antes de restaurar não roda a rotação.
+- "Apagar tudo" apaga, nas pastas de backup, só os backups e o espelho; o log técnico fica.
+- O backup.lastAt do plano não existe: o horário do último backup sai do nome do arquivo.
+- Os "10 mais recentes" são os últimos gravados (a data do arquivo), e não os de horário mais
+  novo no nome: com o relógio voltando, o backup recém-feito não pode ser o primeiro a sair. O
+  roteiro de capturas achou isso com o relógio de teste.
+
+Testes
+- 41 novos (570 no total): os arquivos de backup (nome, arquivo só, tipo, espelho, rotação,
+  limpeza do espelho, conferência e restauração), o serviço de dados (backup ao abrir e de hora
+  em hora, pasta indisponível, restaurar, exportar, apagar tudo), a limpeza dos arquivos sem uso,
+  o backup antes de migrar na pasta escolhida, o settings:set, o agendador e a tela de
+  Configurações inteira (tema, envelhecimento, calendário, bandeja, dados). Capturas das telas 7
+  e 15 conferidas no app real, com exportar, trocar de pasta, restaurar e apagar tudo de verdade.
+
+
+0.9.0 — Etapa 9: fundo do quadro (29/10/2026)
+
+Adicionado
+- Editor de fundo (tela 6), aberto pelo "Alterar fundo" do quadro e do calendário do quadro: a
+  prévia ao vivo com o quadro em miniatura (as listas e os cards de verdade) e as abas Imagem,
+  Cor e Gradiente, com as 8 cores e os 6 gradientes do protótipo (FUN-01). Nada muda no quadro
+  até "Aplicar ao quadro"; Cancelar, o X e "Voltar ao quadro" descartam (FUN-07).
+- Imagem por clique ou arrastando, JPG, PNG ou WEBP de até 25 MB, conferida pelo conteúdo antes
+  de copiar (FUN-02). A miniatura mostra o recorte que aparece na tela, com o nome e o tamanho
+  ("Retrato 1080 × 1920 → recortado para a tela (16:10)").
+- Ajuste automático (FUN-04): foco na célula da grade 3 × 3 com mais detalhe, zoom de 112% fora
+  do centro, desfoque de 6 px na imagem carregada e o menor escurecer que deixa o texto
+  legível. Mexer num ajuste desliga o automático e mostra "Restaurar automático" (FUN-05); a
+  caixa "Ajuste automático" também liga e desliga; os selos "Auto" mostram o que vale.
+- Indicador de legibilidade: "Cards legíveis sobre este fundo" ou "Pouco contraste: aumente o
+  escurecer ou o desfoque" (FUN-06).
+- O fundo de imagem no quadro e no calendário do quadro, por inteiro (foco, zoom, desfoque e
+  escurecer), e nas miniaturas do Início, de "Mudar de quadros", dos quadros fechados e do
+  seletor do calendário, com o foco e o escurecer (FUN-03, FUN-08).
+- Tom do envelhecimento tirado da cor média da imagem (FUN-09): com a foto de montanhas do
+  protótipo, um bege perto do #d8bd9b original.
+
+Mudou
+- Canais novos: boards:uploadBackground e boards:setBackground. BoardSummary traz background
+  (tipo, valor, endereço e tamanho da imagem, ajustes) no lugar de bgKind e bgValue.
+- O protocolo mello-arquivo:// responde com CORS, para a tela ler os pixels da imagem de fundo
+  num canvas (ajuste automático). Ele continua só lendo a pasta de arquivos.
+- file.avg_color passa a ser usado: a cor média da imagem de fundo, guardada no primeiro uso.
+
+Decisões da etapa
+- Os controles do ajuste ficam sempre liberados: mexer desliga o automático (FUN-05). No
+  protótipo, as barras ficavam travadas com o automático ligado.
+- O contraste estimado (FUN-04 e FUN-06) é o do texto branco contra a luminância média do fundo
+  escurecido mais um desvio padrão; o desfoque reduz o desvio até sumir em 20 px. O foco só sai
+  do centro com pelo menos 10% mais detalhe. O limite de imagem carregada (24) foi calibrado com
+  os papéis de parede do Windows.
+- O nome do arquivo não é guardado: aparece logo depois do envio; ao reabrir, "Imagem do
+  quadro". Uma imagem enviada e não aplicada sai na limpeza dos arquivos sem uso (etapa 10).
+
+Testes
+- 25 novos (529 no total): o ajuste automático e a legibilidade com imagens sintéticas, o
+  recorte, a miniatura, enviar e aplicar no main (com as recusas), a tabela do envelhecimento e
+  o editor na tela. Capturas do editor e do fundo aplicado conferidas no app real.
+
+
+0.8.0 — Etapa 8: agendador, repetição e lembretes (26 a 28/10/2026)
+
+Adicionado
+- Diálogo "Repetir card" (tela 6b): frequência (diária, semanal com os dias, mensal no dia X, a
+  cada N dias), horário, lista de destino, o que copiar, o que fazer com o anterior em aberto,
+  término (nunca, numa data, depois de N vezes), "Próximas:" com as 3 próximas datas, Salvar e
+  "Remover repetição" (REP-01 a REP-06, REP-15, REP-17). O botão "Repetir" fica destacado com
+  o diálogo aberto, e o modal ganha o campo "Repetição" com o resumo ("Toda segunda, 08:00").
+- Agendador no main (seção 6.4 do PLANO.md): roda ao abrir o app e a cada minuto, também na
+  bandeja; cria o card no topo da lista de destino, copiando conforme a regra, com nível 0 e a
+  atividade "Criado pela repetição de <dia>" (REP-04, REP-11, REP-12); com o anterior em
+  aberto, pula e avisa (REP-08); com o app fechado, processa só a mais recente e registra as
+  outras como "não criada: app fechado" (REP-10); quadro fechado ou lista de destino arquivada
+  ou excluída pausam (REP-16).
+- Aviso de repetição pulada dentro do card, com "Criar agora mesmo assim" e "Dispensar"
+  (REP-08, REP-09).
+- ↻ e o próximo dia na face do card (REP-13); "Só cards recorrentes" passa a valer (FLT-03).
+- Repetições tracejadas no calendário: as próximas, as puladas e as não criadas (REP-14).
+- Lembretes: notificação do Windows "Mello · <card>", "Entrega hoje, 18:00 · Casa"; clicar
+  abre o card (LEM-03). Os perdidos com o app fechado viram o aviso "Você perdeu N lembretes",
+  com "Abrir" em cada um (LEM-06).
+- Bandeja do Windows (P4, LEM-07): fechar a janela esconde o Mello, que continua com os
+  lembretes e as repetições; na primeira vez, o aviso "O Mello continua na bandeja". Menu da
+  bandeja com "Abrir o Mello" e "Sair".
+- Textos completos da atividade da repetição: criado, pulada e não criadas (com as datas).
+- Data e hora (pedido de 28/10/2026, tela 17A do canvas, aprovada sem os atalhos de data): a
+  tarefa do checklist também tem hora (CHK-05). O seletor de data, o mesmo para o card e para a
+  tarefa, ganhou os horários prontos (09:00, 12:00, 18:00 e "Sem hora"), hoje marcado na grade e
+  a linha que mostra, enquanto se escolhe, se fica no prazo ou em atraso e quanto falta ("No
+  prazo · faltam 2 dias e 4 h", "Em atraso · há 3 h", DAT-05). No do card, embaixo do lembrete,
+  aparece quando a notificação sai.
+
+Mudou
+- Canais novos: recurrence:save, remove, createAnyway e dismiss; reminders:missed;
+  app:hideToTray. Avisos do main para a tela (eventos): data:changed, app:openCard e
+  tray:notice; o preload repassa só esses nomes.
+- Data de entrega: o modal mostra "No prazo", "Em atraso" ou "Concluído" (DAT-03); com hora, a
+  face do card mostra a hora ("30 de out., 18:00"), a tarefa também ("10 set. 18:00"), e o
+  calendário mostra a hora antes do título, com as tarefas do dia em ordem de horário (CAL-08,
+  CAL-10). checklist_item.due_date aceita "AAAA-MM-DDTHH:mm" (a coluna já era texto, sem
+  migração).
+- O main tem o agendador (scheduler.ts) e a bandeja com as notificações (tray.ts). O relógio de
+  teste roda o agendador ao mudar. Desligar, reiniciar ou sair da conta do Windows encerra o
+  Mello de verdade: esconder na bandeja seguraria o desligamento.
+- A face do card traz nextRepeat; recurring passa a ser "repetição ativa". O card do modal traz
+  a regra (recurrence) e o aviso (skipNotice); o mês do calendário traz as fantasmas (repeats).
+- Configurações lidas: tray.keep e tray.noticeShown (o main grava o aviso).
+- Ícones da bandeja e das notificações em resources/, gerados do logo do protótipo
+  (scripts/gerar-icones.mts).
+- Variáveis novas de tema: --warn-bg, --warn-txt, --accent-hi e --cal-note.
+- Script de capturas: etapa 8, com uma série semanal, o diálogo, o aviso de pulada e as
+  fantasmas depois de adiantar o relógio, as notificações anotadas e uma segunda abertura para
+  os lembretes perdidos e o aviso da bandeja.
+- Versão 0.8.0.
+
+Corrigido
+- (Durante a etapa) o aviso de pulada terminava em ".." quando o mês abreviado já tem ponto
+  ("2 de nov.").
+
+Decisões tomadas na etapa (26/10/2026)
+- Ícone da bandeja e das notificações gerado do logo do protótipo (o ícone do instalador continua
+  para a etapa 12, P14).
+- "Mudar nas Configurações", no aviso da bandeja, fica apagado até a etapa 10.
+- Só o aviso de pulada mais recente fica no card; as perdidas de uma rodada viram um registro só
+  na atividade.
+- Salvar ou alterar a regra vale a partir daquele momento (nada do passado é processado), e
+  alterar mantém a contagem.
+- A prévia "Próximas:" é calculada na tela, com as mesmas contas do agendador (sem o canal
+  recurrence:preview do plano).
+- Uma série sem nenhum card sai sozinha.
+
+Documentação
+- Atualizados: Regras.txt (REP e LEM, com os testes), Arquitetura.txt (agendador, bandeja,
+  eventos), Modelo-de-Dados.txt (uso da repetição, atividade, chaves da bandeja), Testes.txt,
+  Pipeline.txt (ícones, capturas, relógio de teste), LGPD.txt (notificações), PLANO.md,
+  To-do-list.txt, README.md.
+
+
+0.7.1 — Etapa 6: envelhecimento (26/10/2026)
+
+A etapa 6 veio depois da 7 (decisão de 24/10/2026) e sai como 0.7.1 (decisão de 25/10/2026): a
+regra "0.N.0 na etapa N" continua valendo para as próximas (a etapa 8 é a 0.8.0).
+
+Adicionado
+- Nível de envelhecimento de 0 a 5 pelos dias parado (ENV-01, ENV-02). A tela calcula o nível com
+  o "agora" dela, então ele muda sozinho com o tempo: ao abrir o quadro e a cada minuto (ENV-10).
+- Congelamento no nível 0, sem perder os dias (ENV-03, ENV-04): envelhecimento desligado nas
+  Configurações, lista com "Não envelhece", card finalizado e card-modelo. O ✓ fora de lista de
+  conclusão não congela (FIN-04).
+- Visual do protótipo (ENV-09): a função fog() de Quadro.dc.html, com o algoritmo e as
+  constantes dela, no tamanho real de cada card (medido ao aparecer e quando muda de tamanho). O
+  cinza de cada nível vem do tema (--fog1 a --fog5, os valores do protótipo) e o tom de baixo vem
+  do fundo do quadro (--aging-tone, FUN-09). A semente é o id do card. Num card com menos de
+  100 px de altura, as manchas encolhem na proporção da altura (decisão de 26/10/2026), para o
+  card de uma linha mostrar o desgaste.
+- O leitor de tela ouve "parado há N dias" no card envelhecido.
+- Indicador no modal, ao lado de "Última movimentação" (ENV-08): 5 barrinhas e "Parado há X dias
+  · nível N de 5"; congelado, "Não envelhece" e o motivo.
+- Relógio de teste no modo de desenvolvimento (decisão de 24/10/2026): Ctrl+Alt+→ adianta 1 dia,
+  Ctrl+Alt+Shift+→ adianta 1 hora, Ctrl+Alt+← e Ctrl+Alt+Shift+← voltam e Ctrl+Alt+0 volta ao
+  relógio real. Um selo amarelo no canto mostra quanto está adiantado. O main e a tela somam o
+  mesmo adiantamento; o app instalado recusa mudar o relógio.
+
+Mudou
+- Canais novos: dev:clock e dev:setClock (relógio de teste).
+- O main tem um relógio só (src/main/clock.ts), que as rotas usam no lugar do Date.now. A tela
+  também (lib/clock.ts): o useNow, o calendário e o seletor de data usam ele.
+- Configuração lida: aging.enabled (padrão ligado).
+- A face do card traz lastActivityAt e isTemplate; o card do modal traz listFreezesAging e
+  isTemplate.
+- Soltar um card arrastado já o mostra novo, antes da resposta do main (ENV-05).
+- Variáveis novas de tema: --fog1 a --fog5 (escuro e claro, do protótipo) e --aging-tone.
+- app:info ganhou um hook (useAppInfo), usado pelas Configurações e pelo relógio de teste.
+- Script de capturas: etapa 6, com uma fase final que adianta o relógio pelo atalho e deixa os 5
+  níveis como no protótipo.
+- Versão 0.7.1.
+
+Corrigido
+- (Durante a etapa) com 200 cards no nível 5, o arraste travava, com até 2 s por quadro: cada
+  card gasto tem dezenas de gradientes. Com contain: paint no card gasto, o arraste ficou como com
+  cards novos (17 ms por quadro no p95).
+- (Durante a etapa) teclas do relógio de teste apertadas em sequência rápida contavam como uma.
+
+Decisões tomadas na etapa (24 a 26/10/2026)
+- Relógio de teste por atalho, com o selo, só no modo de desenvolvimento (24/10).
+- A etapa 6 sai como 0.7.1 (25/10).
+- O nível é calculado na tela, com o mesmo relógio da data em atraso: a cada minuto, mais do que o
+  "de hora em hora" da ENV-10.
+- Textos do indicador: "Parado há menos de 1 dia" no primeiro dia. Os motivos do congelado são
+  "lista congelada", "finalizado", "modelo" e "desligado nas Configurações"; com mais de um, vale
+  o primeiro da ENV-03.
+- O card que segue o mouse mantém o envelhecimento de antes de soltar.
+- Manchas proporcionais nos cards com menos de 100 px de altura (26/10): com as medidas do
+  protótipo, pensadas para cards de 100 px, o card de uma linha quase não mostrava o desgaste.
+  De 100 px para cima, o desenho é exatamente o do protótipo.
+- O relógio de teste não fica atrás do relógio real e não fica salvo: reabrir o app volta ao
+  real. Ctrl+Alt+0 não vale dentro de campos de texto, onde AltGr+0 escreve "}".
+
+Documentação
+- Atualizados: Regras.txt (ENV-08 e ENV-10, com os testes), Arquitetura.txt, Modelo-de-Dados.txt
+  (aging.enabled), Testes.txt, Pipeline.txt (relógio de teste), PLANO.md, To-do-list.txt,
+  README.md.
+
+
+0.7.0 — Etapa 7: calendário (24/10/2026)
+
+A etapa 7 veio antes da 6 (envelhecimento), por decisão de 24/10/2026. A 6 entra depois, com a
+versão que for combinada.
+
+Adicionado
+- Calendário mensal (CAL-01), aberto no mês atual, nas duas telas do protótipo: o do quadro
+  (tela 5, pela barra de baixo, com a barra do quadro e o X que volta ao quadro) e o de todos os
+  quadros (tela 13, pelo menu lateral do Início, com o seletor "Quadros no calendário"), CAL-02.
+- Grade de 5 ou 6 semanas, começando no domingo ou na segunda (Configurações); dias de fora do
+  mês mais escuros e sem itens; hoje no círculo azul (CAL-03, CAL-04).
+- Cards no dia da entrega, com etiquetas, ✓, relógio vermelho de atraso, ↻, prioridade e, em
+  todos os quadros, o nome do quadro; tarefas com a caixa de marcar e o card embaixo (CAL-05,
+  CAL-08, CAL-14). Riscado = finalizado, pela FIN-01, com a legenda (CAL-07).
+- Filtros "Cards" e "Tarefas do checklist" (CAL-09); ordem do dia (CAL-10).
+- Clicar no card abre o modal por cima do calendário; clicar na tarefa marca e desmarca, e conta
+  como alteração do card (CAL-11).
+- "Adicionar" ao passar o mouse (ou com o foco) num dia: popover com o título; o card entra na
+  primeira lista que não é de conclusão, com a data do dia; em todos os quadros, pergunta o
+  quadro (CAL-12).
+- "+N mais" quando os itens não cabem no dia, com a lista completa num popover (CAL-13).
+- Seletor de mês (ano e os 12 meses), além de "‹ Hoje ›".
+
+Mudou
+- Canais novos: calendar:month, calendar:addCard e settings:get (só leitura; gravar entra na
+  etapa 10, com a tela de Configurações). Configurações lidas: calendar.showTasks,
+  calendar.strikeDone e calendar.weekStart, com os padrões quando não há nada gravado.
+- cards.create aceita a data de entrega (usada pelo "Adicionar" do calendário).
+- O modal do card também abre por cima do Início e do calendário de todos os quadros (?card=).
+- Toda ação da tela invalida também o calendário, que junta cards de todos os quadros.
+- O aviso de quadro fechado virou um componente (ClosedBoardNotice), usado pelo quadro e pelo
+  calendário do quadro.
+- O Popover avisa quando abre e fecha (onToggle).
+- monthGrid (shared/rules/dates.ts) aceita começar na segunda.
+- Variáveis novas de tema para o calendário (--cal, --cal-day, --cal-item, --cal-out,
+  --cal-done), com o equivalente claro.
+- Script de capturas: etapa 7, com cards e tarefas no calendário e um dia cheio.
+- Versão 0.7.0.
+
+Corrigido
+- (Durante a etapa) num dia cheio, o "Adicionar" cobria o "+N mais": agora vira só o "+" à
+  direita.
+
+Decisões tomadas na etapa (24/10/2026)
+- A etapa 7 vem antes da 6.
+- Um mês que cabe em 4 semanas ganha a semana seguinte (CAL-03).
+- Quadros-modelo ficam fora do calendário, como os cards-modelo (CAL-06).
+- A lista do "+N mais" é a mesma do dia: os cards abrem o modal e as tarefas se marcam (CAL-11).
+
+Documentação
+- Atualizados: Regras.txt (CAL, com os testes), Arquitetura.txt, Modelo-de-Dados.txt (chaves das
+  configurações lidas), Testes.txt, PLANO.md, To-do-list.txt, README.md.
+
+
+0.5.0 — Etapa 5: modal do card (nota, atividade, anexos e capa) (24/10/2026)
+
+Adicionado
+- Nota na coluna da direita do modal (NOT-01 a NOT-03): o mesmo editor da descrição, sempre
+  aberto, que salva sozinho 800 ms depois da última tecla, ao fechar o modal e ao fechar o app,
+  com "Salvando…" e "Salvo automaticamente". Até 20 000 caracteres.
+- Atividade recolhida embaixo da nota, com a quantidade de registros; aberta, do mais recente
+  para o mais antigo, com data e hora (ATV-01).
+- Anexos (ANX): pela janela "Abrir" do Windows (botões Anexo e Adicionar) ou arrastando arquivos
+  do Explorer para o modal; miniatura das imagens, tamanho e data; Abrir, Usar como capa, Remover
+  capa e Remover (com confirmação); confirmação acima de 200 MB.
+- Capa (CAP): botão "Capa do card" no topo do modal, com prévia, as 8 cores, as imagens anexadas,
+  "Enviar imagem" e "Remover capa"; faixa de 96 px no modal e capa na face do card (cor de 32 px
+  ou imagem com a proporção dela, até 160 px).
+
+Mudou
+- Canais novos: cards:setCover e uploadCover; files:pick e dropped; attachments:add, open e
+  delete. cards:update ganhou a nota, e cards:get traz a nota, a capa, os anexos e a atividade.
+- Arquivos guardados pelo hash do conteúdo, copiados e conferidos na mesma leitura
+  (modules/files.ts). A tela recebe só uma ficha de cada arquivo escolhido ou solto, nunca o
+  caminho; o preload usa o webUtils para os arquivos soltos.
+- O limite de tamanho da descrição passou a contar como o editor conta, e os editores param de
+  aceitar texto no limite.
+- A confirmação ganhou o botão azul, para ações que não perdem nada (anexar arquivo grande).
+- Os botões da barra do editor só acendem com o editor em uso.
+- Script de capturas: anexos de verdade (fotos fictícias geradas no canvas) e opções do Chromium
+  para a janela continuar desenhando coberta ou com o monitor desligado.
+- Dependências novas (só desenvolvimento, empacotadas no build): image-size 2.0.4 (no main) e
+  @tiptap/extensions 3.31.4 (na tela).
+- Versão 0.5.0.
+
+Corrigido
+- Esc dentro da nota não fechava o modal (o ProseMirror segura o Esc); agora fecha e salva.
+- No editor, a caixa de marcar da lista de tarefas ficava numa linha e o texto em outra (o item
+  do TipTap não tem data-type), e o rótulo dela para leitor de tela vinha em inglês.
+- Ao terminar de anexar, a seção Anexos sumia por um instante e voltava.
+
+Decisões tomadas na etapa (23/10/2026)
+- Anexar pelo botão e também arrastando arquivos do Explorer (ANX-01).
+- "Abrir" abre uma cópia temporária só leitura, com o nome original; o anexo guardado nunca muda
+  (ANX-03).
+- Programas (.exe, .bat, .msi, .ps1…) são mostrados na pasta em vez de executados (ANX-03).
+
+Documentação
+- Atualizados: Regras.txt (NOT-01, NOT-03, NOT-05, NOT-07, ATV-02, ATV-03, ANX-01 a ANX-05,
+  CAP-01 a CAP-03, CAR-07, ENV-05, ENV-06; testes ligados a NOT, ATV, ANX e CAP),
+  Arquitetura.txt, Modelo-de-Dados.txt, Testes.txt, Definicao-da-Stack.txt, LGPD.txt (anexos),
+  PLANO.md, To-do-list.txt, README.md.
+
+
+0.4.0 — Etapa 4: modal do card (dados), filtro e ordenar (23/10/2026)
+
+Adicionado
+- Modal do card completo na coluna da esquerda (tela 4): seletor de lista, ✓ (FIN-04, FIN-05),
+  título editável, Adicionar, Checklist, etiquetas, prioridade, data de entrega com "Em atraso",
+  última movimentação, descrição e checklists. A coluna da nota e da atividade entra na etapa 5.
+- Campos vazios não aparecem: o "Adicionar" inclui etiquetas, prioridade e data (CAR-09).
+- Editor de etiquetas (tela 9): buscar, marcar no card, criar, editar nome e cor e excluir
+  (ETQ-04), com as 8 cores da paleta do protótipo.
+- Seletor de prioridade (PRI-03) e o ícone na face do card (PRI-02).
+- Seletor de data (tela 9): grade do mês, data dd/mm/aaaa, hora opcional e lembrete (guardado
+  agora; dispara na etapa 8).
+- Descrição com o TipTap (NOT-07): modo leitura com "Editar", barra com Título, Negrito,
+  Itálico, Lista, Caixa de marcar e Link.
+- Checklists (CHK): vários por card, renomear, excluir, barra de progresso (verde em 100%),
+  "Ocultar itens marcados", itens com marcar, editar, data da tarefa com "Mostrar no calendário",
+  excluir e "Adicionar um item"; checklists e itens se reordenam pelo título (mouse e teclado).
+- Menu "…" do card: Mover e Copiar (tela 16, com quadro, lista e posição), Arquivar (o modal
+  continua aberto, com o aviso e Restaurar, CAR-10) e Excluir com confirmação.
+- Lista: "Ordenar por prioridade" e "Ordenar por data de entrega" (LIS-08).
+- Filtro do quadro (FLT): palavra-chave sem acento, prioridades e "só recorrentes"; contador
+  "visíveis/total" e botão destacado; arrastar continua funcionando com o filtro.
+- Tabela de eventos do envelhecimento (ENV-05, ENV-06) passando por todos os canais do IPC.
+
+Mudou
+- Canais novos: cards:update, copy, setLabels, archive, matching; labels:list, create, update,
+  delete; checklists:create, update, move, delete; items:create, update, toggle, move, delete;
+  lists:sort.
+- Texto rico: a tela manda o documento do editor e o main escreve o HTML só com as marcas da
+  NOT-04 (shared/rules/richText.ts).
+- Links da descrição abrem no programa padrão também com http e mailto (NOT-05).
+- Arrastar: rolagem automática própria nas bordas do quadro e da lista; a do dnd-kit rolava o
+  quadro sozinha depois de um arraste cancelado.
+- Módulos novos no main: activity.ts (atividade e "zerar o envelhecimento") e checklists.ts.
+- Dependências novas (só na tela): TipTap 3.31.4 (@tiptap/react, pm, starter-kit,
+  extension-list).
+- Versão 0.4.0.
+
+Corrigido
+- No modal, Esc num campo em edição fechava o modal inteiro; agora cancela só a edição.
+- Com um popover aberto no modal, um clique fora fechava também o modal.
+
+Decisões tomadas na etapa (23/10/2026)
+- Etiquetas, prioridade e data aparecem no modal só quando preenchidas; "Adicionar" inclui
+  (CAR-09).
+- "Arquivar" mantém o modal aberto, com o aviso e Restaurar (CAR-10).
+
+Documentação
+- Atualizados: Regras.txt (CAR-09, CAR-10; testes ligados a PRI, ETQ, FLT, CHK, DAT, NOT;
+  esclarecimentos em CAR-07, DAT-01, DAT-04, ENV-05, ENV-06, ETQ-01, FLT-03, NOT-05, NOT-07),
+  Arquitetura.txt, Testes.txt, Definicao-da-Stack.txt (TipTap), Modelo-de-Dados.txt, PLANO.md,
+  To-do-list.txt, README.md.
+
+
+0.3.0 — Etapa 3: cards e arrastar (22/10/2026)
+
+Adicionado
+- Cards: "Adicionar um cartão" no pé da lista e no menu "…" da lista (o card entra no fim, e o
+  campo continua aberto para o próximo; Enter adiciona, Esc fecha). "Criar card" no menu "Criar",
+  escolhendo o quadro e a lista (CAR-01, CAR-02).
+- Face do card (CAR-04): etiquetas, ✓ verde, título, data de entrega (vermelha em atraso, verde
+  no card finalizado), ícones de descrição e nota, checklist x/y e anexos. Prioridade, capa,
+  repetição e "Modelo" entram nas etapas 4, 5, 8 e 11.
+- Arrastar cards na mesma lista e entre listas, com o mouse ou o teclado, no visual do protótipo:
+  o card fica translúcido no lugar de origem, a vaga aparece no destino, a lista de destino ganha
+  a borda azul e o card vai inclinado. Arrastar para uma lista de conclusão marca o ✓ (o card
+  inclinado já mostra o ✓ antes de soltar); tirar de lá desmarca (FIN-02, FIN-03). Soltar no
+  mesmo lugar não grava nada (CAR-03).
+- Modal do card: clicar no card (ou Enter) abre a casca do modal, com a lista, o ✓ e o título;
+  Esc, o X ou o clique fora fecham. O card aberto fica no endereço (?card=), para o calendário
+  usar o mesmo modal na etapa 7.
+- Atividade do card: criado, movido (inclusive entre quadros) e ✓ marcado ou desmarcado.
+- Quadro no tema claro conferido com a tela 8.
+
+Mudou
+- boards:get devolve os cards de cada lista, já com o que a face mostra.
+- Canais novos: cards:get, cards:create e cards:move.
+- Testes da tela com mais tempo de espera (5 s nos findBy e no expect.poll, 20 s por teste): os
+  limites padrão estouravam às vezes com o computador ocupado.
+- Versão 0.3.0.
+
+Decisões tomadas na etapa (22/10/2026)
+- Card criado direto numa lista de conclusão nasce sem o ✓; o automático é só para quem chega
+  arrastado ou movido (FIN-02).
+
+Documentação
+- Atualizados: Regras.txt (FIN-02; testes ligados às regras CAR, FIN e DAT), Arquitetura.txt
+  (arrastar cards, modal pelo endereço), Modelo-de-Dados.txt (conteúdo de activity.data),
+  Testes.txt, Definicao-da-Stack.txt, PLANO.md, To-do-list.txt, README.md.
+
+
+0.2.0 — Etapa 2: quadros e listas (21/10/2026)
+
+Adicionado
+- Início: área "Pessoal", grade de quadros com a miniatura do fundo, favoritos primeiro, arrastar
+  para mudar a ordem, "Criar novo quadro" e "Ver todos os quadros fechados" (reabrir e excluir
+  com confirmação). Na primeira abertura, só o convite "Criar seu primeiro quadro" (QUA-09).
+- "Criar quadro" num popover com a prévia e o título (QUA-10), no Início, no menu "Criar" do
+  cabeçalho e em "Mudar de quadros". O quadro novo vem com as 4 listas, as 6 etiquetas e o fundo
+  Mello, e o tom do envelhecimento já calculado a partir do fundo (FUN-09).
+- Tela do quadro: fundo do quadro, barra com título editável, favoritar e menu "…" (itens
+  arquivados e fechar quadro). Quadro fechado aberto pelo endereço mostra o aviso para reabrir.
+- Listas: criar, renomear, arrastar (mouse e teclado), contador, menu "…" com copiar, mover (para
+  outra posição ou outro quadro), "Lista de conclusão", "Cards desta lista não envelhecem",
+  arquivar todos os cartões e arquivar lista.
+- "Itens arquivados": cards e listas, com busca, restaurar e excluir card com confirmação.
+- "Mudar de quadros" na barra flutuante.
+- Popovers nativos presos ao botão, confirmação em <dialog> modal e aviso de erro no canto.
+- Testes da tela usando o main de verdade (rotas + SQLite em memória).
+
+Ainda apagados, com a etapa em que entram: filtro e "Ordenar" (4), "Adicionar cartão" e
+"Criar card" (3), "Alterar fundo" (9), modelos (11).
+
+Mudou
+- IPC: a tabela de canais virou src/main/ipc/routes.ts (sem Electron) e window.mello é montado por
+  createApi, em src/shared/ipc/api.ts, compartilhado pelo preload e pelos testes.
+- package.json: recusa explícita dos scripts de instalação desnecessários (allowScripts), para o
+  "npm ci" não tentar compilar o better-sqlite3.
+- Versão 0.2.0.
+
+Decisões tomadas na etapa (21/10/2026)
+- "Criar quadro" abre um popover com o título; nada é criado antes de confirmar (QUA-10).
+
+Documentação
+- Atualizados: Regras.txt (QUA-10; LIS-05, LIS-06 e ENV-06 esclarecidos; testes ligados às regras
+  QUA e LIS), Arquitetura.txt, Testes.txt, Pipeline.txt, Definicao-da-Stack.txt, PLANO.md,
+  To-do-list.txt.
+
+
+0.1.0 — Etapa 1: base do app e banco (21/10/2026)
+
+Adicionado
+- Projeto Electron + React + TypeScript com electron-vite, ESLint, Prettier e Vitest.
+- Banco SQLite (better-sqlite3 + Drizzle) com o schema completo das 13 tabelas, a migração
+  0000_esquema_inicial e o aplicador de migrações do próprio app, com backup antes de migrar
+  (DAD-01, DAD-02).
+- Função unaccent no SQLite, base da busca sem acentos (BUS-01).
+- Utilitário de IPC com validação Zod e resposta Result; primeiro canal: app:info.
+- Protocolo mello-arquivo:// para servir os arquivos do app com segurança.
+- Temas escuro e claro com as paletas literais do protótipo e a fonte Inter local.
+- Casca do app: cabeçalho de 56 px com o logo do protótipo, busca, "Criar" e engrenagem; menu
+  lateral do Início; barra flutuante do quadro; rotas do Início, quadro, calendário (de todos e do
+  quadro) e Configurações, ainda com o aviso "Em construção".
+- Script de capturas (npm run capturas), que também confere banco e IPC de ponta a ponta.
+- Script próprio de instalação do Electron (scripts/instalar-electron.mjs), que dispensa o
+  Microsoft Visual C++ Redistributable.
+- .gitignore, .gitattributes (finais de linha LF), electron-builder.yml, LICENSE (MIT), README.md.
+
+Decisões tomadas na etapa (21/10/2026)
+- Dados do desenvolvimento em %APPDATA%\Mello-dev, separados do app instalado.
+- Barra de título nativa do Windows, no tema escuro.
+- Instalação do Electron pelo script próprio, em vez de instalar o VC++ Redistributable.
+
+Documentação
+- Novos: Arquitetura.txt (substitui Arquitetura.md), Modelo-de-Dados.txt, Testes.txt, este
+  Changelog.txt.
+- Atualizados: PLANO.md, Pipeline.txt (comandos reais), Definicao-da-Stack.txt (versões fixadas),
+  LGPD.txt (pasta do desenvolvimento), Regras.txt (TEM-02), Apresentacao.txt, To-do-list.txt.

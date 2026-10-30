@@ -1,0 +1,953 @@
+Testes — Mello
+
+Status: criado na etapa 1 (21/10/2026), atualizado na etapa 12 (615 testes, versão 1.0.0, em
+30/10/2026).
+Atualizado a cada etapa.
+
+
+1. COMO RODAR
+
+npm test ............... todos os testes, uma vez (Vitest)
+npm run test:watch ..... roda de novo a cada alteração
+npx vitest run --project main ....... só os testes do main e do shared (Node)
+npx vitest run --project renderer ... só os testes da tela (jsdom)
+npm run capturas ....... abre o app de verdade e salva as capturas (seção 4)
+
+Os testes rodam no Node 24 do computador. O better-sqlite3 13 traz um binário N-API que serve tanto
+ao Node quanto ao Electron, então o banco real abre dentro do Vitest sem recompilar nada.
+
+
+2. ONDE FICAM
+
+Ao lado do código testado (backup.test.ts junto de backup.ts). Dois projetos no
+vitest.config.mts:
+- main: src/main/**/*.test.ts e src/shared/**/*.test.ts, ambiente Node, banco SQLite real (em
+  memória ou numa pasta temporária apagada no fim);
+- renderer: src/renderer/**/*.test.{ts,tsx}, ambiente jsdom com Testing Library.
+
+Testes da tela com o main de verdade (desde a etapa 2): src/renderer/src/test/realApi.ts monta
+o window.mello com as mesmas rotas do main (routes.ts: Zod + módulos) sobre um SQLite em
+memória. Só o transporte do Electron fica de fora; entradas e respostas passam por
+structuredClone, como no IPC. Assim um teste de tela também confere o contrato com o banco.
+
+Arquivos (desde a etapa 5): src/main/modules/test-files.ts cria uma pasta temporária com a pasta
+de arquivos e um SystemPort falso: a janela "Abrir" devolve os caminhos que o teste combinou, e
+abrir ou mostrar na pasta só ficam anotados; a janela de escolher pasta (etapa 10) devolve o que o
+teste pôs em folders. O realApi.ts usa o mesmo, e um File "solto" no modal
+só tem caminho se o teste o registrar (dropPath), como o webUtils do preload faria. Para digitar
+na nota, os testes usam o editor que o TipTap pendura no elemento do texto.
+
+O jsdom não tem o popover nem o <dialog> modal, que o app usa nativos. src/renderer/src/test/
+setup.ts imita o mínimo, só nos testes: abrir e fechar, o evento "toggle", o botão com
+popovertarget e o modal fechando os popovers. O arrastar com o mouse não funciona no jsdom (lá
+tudo mede 0 px): ele é conferido no app real (seção 5), e as contas de onde o card cai são
+testadas em funções puras (cardDrag.test.ts). O arrastar de cards pelo teclado roda no jsdom e é
+testado na tela (BoardCards.test.tsx).
+
+Calendário (desde a etapa 7): os testes da tela fixam "hoje" trocando só o Date
+(vi.useFakeTimers({ toFake: ['Date'] })), e os temporizadores continuam de verdade. Como no jsdom
+tudo mede 0 px (e então todos os itens cabem no dia), o "+N mais" é testado com medidas falsas
+num teste só, além da função pura (visibleCount), e conferido no app real mudando o tamanho da
+janela.
+
+Limites de tempo dos testes da tela (desde a etapa 3): 5 s para os findBy… e o expect.poll e
+20 s por teste. Cada teste monta o app inteiro com o banco de verdade, e os limites padrão (1 s e
+5 s) estouravam às vezes com o computador ocupado, inclusive na versão da etapa 2. Um teste que
+falha de verdade continua falhando; só demora mais para avisar.
+
+Os testes da tela importam código do main, por isso têm o tsconfig.test.json próprio (com os
+tipos do Node); o código da tela continua no tsconfig.web.json, sem acesso ao Node.
+
+Os nomes dos testes citam o código da regra do Regras.txt quando existe (ex.: "DAD-01: …").
+
+
+3. O QUE É TESTADO
+
+Etapa 1 — 46 testes
+
+src/main/db/db.test.ts
+- A migração inicial cria as 13 tabelas (e a _migrations) num banco vazio.
+- Reabrir o banco não reaplica nada e mantém os dados.
+- O banco novo é criado no arquivo, em modo WAL.
+- DAD-01: faz backup antes de migrar um banco que já tem dados; o backup é o estado de antes.
+- Um banco novo não gera backup.
+- Uma migração com erro não aplica nada (transação) e as chaves estrangeiras voltam a ficar
+  ligadas.
+- Recusa um banco criado por uma versão mais nova do app.
+- As chaves estrangeiras estão ligadas; excluir um quadro apaga as listas (CASCADE).
+- A prioridade do card só aceita 1 a 5 ou nada (CHECK).
+- BUS-01: a função unaccent ignora acentos e cedilha ("acao util" acha "Ação Útil").
+
+src/main/modules/backup.test.ts
+- DAD-02: nome mello-AAAA-MM-DD_HHmm.db no horário local.
+- DAD-02: o backup é uma cópia consistente do banco aberto.
+- Dois backups no mesmo minuto não se sobrescrevem (sufixo -2).
+
+src/main/ipc/handler.test.ts
+- Result de sucesso com o retorno da função (síncrona e assíncrona).
+- O Zod recusa entrada inválida sem chamar a função e diz quais campos falharam.
+- AppError vira Result de erro com o mesmo código e mensagem.
+- Erro inesperado vira INTERNAL e é registrado no log.
+
+src/main/protocol.test.ts
+- Entrega um arquivo da pasta de arquivos pelo hash.
+- Recusa (17 casos): "..", ".." codificado, barra codificada, barra invertida, caminho absoluto
+  (direto e codificado), subpasta, hash curto, hash com letra fora do hexadecimal, hash em
+  maiúsculas, sem extensão, extensão inválida, outro host, host com usuário, host com porta,
+  outro protocolo e endereço inválido.
+
+src/shared/text.test.ts
+- removeAccents tira acentos, til e cedilha e não mexe no resto.
+
+src/renderer/src/app/App.test.tsx
+- O Início tem o cabeçalho do protótipo (logo, busca, Criar, Configurações) e o menu lateral, com
+  "Quadros" marcado.
+- O quadro tem a barra flutuante (Quadro, Calendário, Mudar de quadros), com "Quadro" marcado.
+- O calendário do quadro marca "Calendário" na barra.
+- As Configurações mostram a versão vinda do main pelo IPC.
+- O "Voltar" das Configurações leva para a tela de onde elas foram abertas.
+- Um endereço desconhecido volta ao Início; um quadro que não existe também (etapa 2).
+
+Etapa 2 — 66 testes novos
+
+src/shared/rules/tone.test.ts (FUN-09)
+- A média de um gradiente é a média simples das paradas.
+- O tom tem luminosidade 73% e saturação de no máximo 45%, para todas as cores do protótipo.
+- O bege do protótipo quase não muda; cinza continua cinza; o fundo Mello gera um tom azulado.
+- Fundos viram o CSS do protótipo; um gradiente desconhecido cai no "Mello".
+
+src/main/modules/position.test.ts
+- As chaves ficam em ordem; mover para o início, o meio e o fim; índice além do fim vai para o fim.
+- Mover 50 vezes para o mesmo lugar continua funcionando.
+- Itens ocultos (listas arquivadas) não contam no índice.
+- Posições repetidas pedem reorganização, que restaura a ordem.
+
+src/main/modules/boards.test.ts
+- QUA-01 (título de 1 a 80, sem espaços nas pontas), QUA-02 (4 listas, Concluído e Entregue de
+  conclusão e sem envelhecer), QUA-03 (fundo Mello, tom e as 6 etiquetas padrão sem nome).
+- Quadros novos vão para o fim; renomear e favoritar.
+- QUA-04 (fechar e reabrir), QUA-06 (favoritos primeiro; ordem manual dentro de cada grupo; mover
+  para o mesmo lugar não grava nada).
+- QUA-07 (só exclui quadro fechado; a exclusão apaga listas, cards, etiquetas, checklists,
+  atividade, anexos e repetições, e o arquivo físico espera a limpeza de órfãos).
+- Itens arquivados em ordem; quadro inexistente dá NOT_FOUND.
+
+src/main/modules/lists.test.ts
+- LIS-01 (título); lista nova vai para o fim; não cria lista em quadro fechado.
+- Renomear não mexe nos cards (ENV-06); LIS-02 e FIN-06 (opções independentes, sem mudar o ✓).
+- LIS-03 (arrastar muda só a posição); soltar no mesmo lugar não grava; arquivadas não contam.
+- LIS-04 (cópia à direita, com os cards ativos, etiquetas, checklist com o estado dos itens, nível
+  0 e atividade "copiado"; título de 80 caracteres; opções da lista copiadas).
+- LIS-05 (mover para outro quadro recria as etiquetas que faltam, leva as repetições e não zera o
+  envelhecimento; mesmo quadro = mudar a posição; não move para quadro fechado).
+- LIS-06 (arquivar e restaurar na mesma posição) e LIS-07 (arquivar todos os cards registra
+  "arquivado" e não zera o envelhecimento); o contador conta só os ativos.
+- Cards arquivados: restaurar zera o envelhecimento e registra "restaurado"; excluir apaga tudo
+  do card.
+
+src/renderer/src/features/home/HomePage.test.tsx
+- QUA-09: na primeira abertura só aparece o convite, e nada é criado.
+- Criar o primeiro quadro pelo convite (QUA-10) abre o quadro com as 4 listas.
+- Favoritos primeiro no Início; o menu "Criar" cria um quadro.
+- Quadros fechados: reabrir e excluir com confirmação; cancelar a exclusão não apaga nada.
+
+src/renderer/src/features/board/BoardPage.test.tsx
+- Título, listas, contadores e barra do quadro; renomear o quadro (Enter salva, Esc cancela).
+- Favoritar; adicionar lista (vai para o fim e o campo continua aberto); renomear lista.
+- Copiar lista; as opções do menu mostram e mudam o estado; arquivar e restaurar lista pelos
+  "Itens arquivados"; mover lista para outro quadro e dentro do mesmo quadro.
+- Fechar o quadro volta ao Início; quadro fechado aberto pelo endereço mostra o aviso e reabre.
+- "Mudar de quadros" lista os quadros, marca o atual e abre o escolhido.
+
+Etapa 3 — 49 testes novos (os arquivos da etapa 3 ganharam testes na etapa 4; ver abaixo)
+
+src/shared/rules/finished.test.ts
+- FIN-01 (finalizado = lista de conclusão E ✓; ✓ fora dela não finaliza).
+- FIN-02 (entrar numa lista de conclusão marca), FIN-03 (sair desmarca; entre duas de conclusão
+  fica), FIN-04 (entre listas comuns o ✓ continua).
+
+src/shared/rules/dates.test.ts
+- Lê a data com e sem hora, no horário local.
+- DAT-02: sem hora, atrasa quando o dia acaba; com hora, quando o instante passa; card finalizado
+  não atrasa; virada de mês e de ano.
+
+src/main/modules/cards.test.ts
+- CAR-01 (título de 1 a 500, sem espaços nas pontas).
+- CAR-02 (card novo no fim da lista, nível 0, atividade "criado em <lista>"); criado numa lista
+  de conclusão nasce sem ✓; não cria em lista arquivada nem em quadro fechado.
+- Mover: reordenar na mesma lista zera o envelhecimento (ENV-05) sem registrar atividade; CAR-03
+  (mesmo lugar não grava nada); para outra lista muda lista e posição, zera e registra "movido".
+- FIN-02, FIN-03, FIN-04 e FIN-05 no movimento, com a atividade "✓ marcado/desmarcado".
+- O índice ignora os cards arquivados; posições repetidas são reorganizadas.
+- CAR-06: para outro quadro, com as etiquetas recriadas lá (LIS-05) e a atividade com os quadros.
+- Não move card arquivado, nem para lista arquivada, quadro fechado ou card inexistente.
+- CAR-04: o quadro traz os cards em ordem, sem os arquivados; a face tem as etiquetas na ordem do
+  quadro, o checklist x/y somando todos, anexos, descrição, nota e data.
+- Abrir o card traz o título, a lista e o quadro.
+
+src/renderer/src/features/board/cardDrag.test.ts
+- Mouse: a posição é quantos cards têm o meio acima do ponteiro; o card arrastado não conta;
+  fora das listas vale a mais próxima.
+- Teclado: cima e baixo sem passar das pontas; lados vão para a lista vizinha, na mesma altura ou
+  no fim.
+- Durante o arraste: o card de origem fica translúcido no lugar; a vaga entra antes do card da
+  posição de destino; no mesmo lugar não há vaga; em outra lista, a origem guarda o card e o
+  destino mostra a vaga.
+- Depois de soltar: a ordem, os contadores e o ✓ (FIN-02, FIN-03) mudam na hora.
+
+src/renderer/src/features/board/BoardCards.test.tsx
+- CAR-02: "Adicionar um cartão" põe o card no fim e o campo continua aberto; Esc fecha. O menu
+  da lista também abre o campo. Card criado em Concluído nasce sem ✓.
+- CAR-04: a face mostra etiqueta, ✓, data em atraso e data verde de card finalizado, descrição,
+  checklist e nota.
+- Clicar no card abre o modal com a lista e o título; fechar volta ao quadro; um card que não
+  existe mais fecha o modal sozinho.
+- "Criar card" no menu "Criar" cria na lista escolhida.
+- Teclado: setas escolhem a lista e a posição, espaço solta e grava; FIN-02 e FIN-03 marcam e
+  desmarcam o ✓; CAR-03: pegar e soltar no mesmo lugar não grava nada, e Esc cancela.
+
+Etapa 4 — 119 testes novos
+
+src/shared/rules/richText.test.ts (NOT-04, NOT-07)
+- As marcas permitidas viram o HTML que o TipTap entende (título, negrito, itálico, lista, lista de
+  tarefas, link).
+- O texto é escapado: <script> e onerror chegam como texto, nunca como marca.
+- Link só http, https ou mailto; javascript: (em qualquer caixa), data: e caminho relativo são
+  descartados; aspas no endereço não escapam do atributo.
+- Nós e marcas fora da lista são descartados; título vira sempre h3; entrada que não é documento
+  vira documento vazio; item de lista começa com parágrafo; listas aninhadas demais são cortadas.
+- Texto puro um bloco por linha; documento sem texto vira HTML vazio.
+
+src/shared/rules/cardRules.test.ts
+- PRI-01 e PRI-05 (níveis, ícones, cores; ordenação estável com "sem prioridade" no fim).
+- Etiquetas: texto escuro só no amarelo e no cinza, como no protótipo.
+- CHK-02 (porcentagem arredondada, vazio 0%) e CHK-06 (cinza, vermelho, verde).
+- Campos de data: "dd/mm/aaaa" e "hh:mm", recusando o que não existe (29/02/2026, 24:00);
+  validação do que chega pelo IPC; DAT-04 (dia inteiro depois de um horário no mesmo dia).
+- Grade do mês do seletor (domingo a sábado; 4, 5 ou 6 semanas).
+- FLT-01 a FLT-04 (prioridades, só recorrentes, critérios somados; a palavra-chave não esconde
+  nada enquanto a busca não volta).
+
+src/main/modules/cards.test.ts (13 novos)
+- Abrir o card traz todos os campos do modal.
+- Título (o mesmo título não grava nada); FIN-04 e FIN-05 pelo ✓ do modal, com a atividade.
+- PRI-01; DAT-01 e LEM-01 (sem data não há lembrete); LEM-04 (mudar a data rearma o lembrete).
+- NOT-07: a descrição é limpa, vira HTML e texto; HTML proibido é descartado; vazia vira "".
+- ETQ-04: marcar e desmarcar zera o envelhecimento; o mesmo conjunto não grava; etiqueta de outro
+  quadro é recusada.
+- CAR-07: cópia com outro título, na lista e posição escolhidas, com checklist; em outro quadro,
+  com as etiquetas recriadas.
+- CAR-05: arquivar não zera e registra; restaurar zera.
+- FLT-01: palavra-chave no título, na descrição, na nota e na etiqueta, sem acento e sem
+  maiúscula; % não vira curinga; arquivados ficam de fora.
+
+src/main/modules/labels.test.ts
+- ETQ-01 (paleta, nome opcional de até 40), lista em ordem, a nova vai para o fim.
+- Editar nome e cor não mexe nos cards (ENV-06); ETQ-04: excluir tira de todos os cards.
+
+src/main/modules/checklists.test.ts
+- CHK-01 (vários checklists, renomear, reordenar, excluir; mesmo lugar não grava); CHK-04 fica
+  salvo e não zera; CHK-05 (item novo sem data e no calendário; data só com o dia).
+- Cada mudança de item zera o envelhecimento; o mesmo valor não grava; CHK-03 soma todos.
+
+src/main/modules/lists.test.ts (3 novos)
+- LIS-08 com PRI-05 e DAT-04 (arquivados ficam depois); ordenar não zera (ENV-06).
+
+src/main/ipc/events.test.ts (tabela de eventos, PLANO.md 6.2)
+- ENV-05: 17 eventos que zeram, mais restaurar e reordenar checklist e item.
+- ENV-06: 22 eventos que não zeram (abrir, mesmo lugar, arquivar, copiar, opções da lista,
+  ordenar, etiquetas, quadro, filtro…).
+- Cobertura: todo canal do IPC está classificado; um canal novo sem classificação faz o teste
+  falhar.
+
+src/renderer/src/features/board/cardDrag.test.ts (5 novos)
+- Com filtro ativo, a posição entre os visíveis vira a posição na lista inteira.
+- Rolagem automática: perto das bordas rola, mais rápido quanto mais perto; no meio, não.
+
+src/renderer/src/features/card/CardModal.test.tsx
+- Título editável e ✓ (FIN-04); campos vazios não aparecem e a última movimentação sim (CAR-09).
+- Adicionar: prioridade (e "Sem prioridade"); data com hora e lembrete, "Em atraso" e remover;
+  data inválida não é salva; dia escolhido na grade; etiquetas (marcar, buscar, criar, editar).
+- Checklist: criar, adicionar itens, marcar (50%), ocultar marcados, excluir item; data da
+  tarefa com "Mostrar no calendário" (CHK-05).
+- Descrição em modo leitura, entrar em edição e cancelar; o convite abre o editor.
+- Seletor de lista (CAR-06), "Mover" para outra posição e lista, "Copiar" logo abaixo (CAR-07),
+  arquivar com o aviso e restaurar (CAR-10), excluir com confirmação fecha o modal.
+
+src/renderer/src/features/board/BoardCards.test.tsx (5 novos)
+- PRI-02 na face; FLT-02 e FLT-04 (contador "visíveis/total", botão destacado, limpar); FLT-01
+  sem acento e maiúscula; FLT-05 (trocar de quadro limpa); LIS-08 pelo menu da lista.
+
+Etapa 5 — 56 testes novos
+
+src/shared/rules/activity.test.ts (ATV)
+- ATV-02: o texto de cada registro (criado, movido, inclusive entre quadros, ✓, arquivado,
+  restaurado, copiado); registro sem os dados não quebra; ATV-01: "1 registro", "2 registros".
+
+src/shared/rules/richText.test.ts (1 novo)
+- O tamanho do texto conta os caracteres e as quebras de linha, não a passagem entre blocos (o
+  mesmo que o limite do editor).
+
+src/main/modules/files.test.ts (ANX-01 a ANX-03)
+- Copia para a pasta com o hash do conteúdo como nome; o mesmo conteúdo com outro nome é guardado
+  uma vez só; se o arquivo sumiu da pasta, guardar de novo devolve a cópia.
+- Imagem reconhecida pelo conteúdo, com o tamanho; foto girada pelo EXIF tem largura e altura
+  trocadas; PDF e SVG não são imagem; a capa enviada recusa o que não é imagem e não guarda nada.
+- Extensão do nome em minúsculas, ou "bin".
+- Fichas: só arquivos de verdade, com caminho completo; cada ficha vale uma vez; as mais antigas
+  saem quando passam do limite.
+
+src/main/modules/attachments.test.ts (ANX, CAP)
+- Anexar guarda o nome, o tamanho e a miniatura das imagens, zera o envelhecimento e não entra na
+  atividade; ANX-02 com dois anexos do mesmo arquivo; a face mostra a quantidade.
+- ANX-03: abre uma cópia só leitura com o nome original (abrir de novo substitui a cópia); abrir
+  não zera; programa é mostrado na pasta; arquivo que sumiu avisa; nomes que o Windows não aceita
+  viram nomes válidos.
+- ANX-04: remover tira a referência e deixa o arquivo; CAP-03: remover o anexo da capa tira a
+  capa, a não ser que outro anexo tenha o mesmo arquivo.
+- CAP-01: cor da paleta (a mesma não grava; null remove); imagem só se for anexo de imagem do
+  card; imagem enviada vira capa sem virar anexo; CAP-02: a face traz o tamanho da imagem.
+
+src/main/modules/cards.test.ts (4 novos)
+- ATV-01: a atividade do mais recente para o mais antigo (mover e o ✓ automático na ordem certa).
+- NOT-03 e NOT-04: a nota é limpa (link javascript: e imagem com onerror descartados), vira HTML
+  e texto; a mesma nota não grava; nada entra na atividade; nota em branco vira "".
+- NOT-01 e NOT-07: até 20 000 caracteres, contados como o editor conta.
+- CAR-07: a cópia leva a nota, a capa e os anexos, sem copiar arquivos.
+
+src/main/ipc/events.test.ts (8 novos)
+- ENV-05: editar a nota, remover anexo, capa de cor e de imagem anexada; anexar arquivo; enviar
+  imagem de capa e remover a capa.
+- ENV-06: abrir um anexo; remover a capa de um card sem capa.
+- files:pick e files:dropped classificados (não mexem em card).
+
+src/renderer/src/features/card/CardAside.test.tsx
+- NOT-03: salva sozinha ("Salvando…" e depois "Salvo automaticamente"); fechar o modal salva o
+  pendente e a face ganha o ícone (NOT-06); Esc na nota fecha o modal e salva; a caixa de marcar
+  tem o rótulo em português; NOT-02: a barra tem as seis ferramentas.
+- ATV-01: recolhida com a quantidade; aberta, do mais recente para o mais antigo.
+- ANX-01 e ANX-03: anexar pela janela do Windows, abrir e remover (com confirmação); soltar
+  arquivo do Explorer anexa; soltar pasta avisa e não anexa; programa tem "Mostrar na pasta".
+- CAP-01 e CAP-03: imagem anexada vira capa com o selo "Capa" e sai junto com o anexo; cor da
+  paleta pelo botão "Capa do card" e "Remover capa"; "Enviar imagem" vira capa sem virar anexo.
+
+src/renderer/src/features/card/useAttach.test.ts
+- ANX-05: acima de 200 MB pede confirmação, com o botão azul; até 200 MB, não pergunta.
+
+src/renderer/src/features/board/BoardCards.test.tsx (1 novo)
+- CAP-02: a capa fica acima das etiquetas; a imagem com a proporção dela.
+
+Etapa 7 — 51 testes novos (feita antes da 6)
+
+src/shared/rules/calendar.test.ts (CAL-03, CAL-10, CAL-12, CAL-13)
+- Grade: outubro de 2026 começando no domingo e na segunda; maio de 2026 com 6 e 5 semanas;
+  agosto de 2026 com 6 nos dois; fevereiro de 2026 (4 semanas) ganha a seguinte; ano bissexto
+  (fevereiro de 2028 com o dia 29); virada de ano sem dias repetidos.
+- Intervalo do mês (inclusive dezembro) e ‹ › passando pela virada do ano.
+- CAL-10: sem hora primeiro, depois pela hora, prioridade e título (sem diferenciar acento);
+  tarefas juntas por card.
+- CAL-12: a primeira lista que não é de conclusão; nenhuma, null.
+- CAL-13: todos cabem; os que cabem deixando lugar para o "+N mais"; dia baixo demais; sem
+  medidas (0 px, como no jsdom) aparecem todos.
+
+src/main/modules/calendar.test.ts (CAL-02, CAL-05 a CAL-07, CAL-12)
+- Cards do mês pela data de entrega, com e sem hora; tarefas com data e "Mostrar no
+  calendário", com o card e o quadro; etiquetas na ordem do quadro e a prioridade.
+- CAL-07 com a FIN-01: finalizado só com o ✓ numa lista de conclusão.
+- CAL-06: arquivado, modelo, lista arquivada e quadro fechado ficam de fora, e as tarefas deles.
+- CAL-02: um quadro ou todos, com o nome do quadro; a entrada recusa mês fora de 1 a 12.
+- CAL-12: na primeira lista que não é de conclusão (mesmo com Concluído em primeiro), no fim,
+  com a data sem hora e nível 0; pula a lista arquivada; recusa quadro sem lista comum,
+  fechado ou inexistente; a entrada recusa dia que não existe, hora e título vazio.
+
+src/main/modules/settings.test.ts
+- Padrões sem nada gravado; o valor gravado vale; valor inválido, ilegível ou chave desconhecida
+  voltam ao padrão.
+
+src/main/ipc/events.test.ts (2 novos)
+- ENV-06: abrir o calendário e adicionar outro card pelo calendário não mexem no card "Alvo";
+  settings:get classificado (não mexe em card). Marcar a tarefa pelo calendário usa o
+  items:toggle, que já estava na tabela (ENV-05).
+
+src/renderer/src/features/calendar/CalendarPage.test.tsx (relógio falso só no Date: "hoje" é
+quarta, 21 de outubro de 2026)
+- Calendário do quadro: CAL-01, CAL-03 e CAL-04 (mês atual, 35 dias a partir do domingo, hoje
+  marcado, dia de fora sem "Adicionar"); CAL-05 e CAL-14 (card no dia, tarefa com o card
+  embaixo, sem o nome do quadro, fora do mês não aparece); CAL-07 (finalizado, ✓ fora da
+  conclusão, legenda; com a opção desligada, a legenda some); CAL-08 e CAL-10 (atrasados, ordem
+  do dia); CAL-09 (filtros independentes, Tarefas desligado pelas Configurações); CAL-03 (semana
+  na segunda); ‹ Hoje › e o seletor de mês; CAL-11 (card abre o modal por cima e fechar volta;
+  tarefa marca e desmarca e zera o envelhecimento); CAL-12 (Adicionar cria no dia, na lista
+  "A fazer"); CAL-13 ("+N mais" com medidas falsas, o "Adicionar" compacto e a lista completa
+  em ordem); CAL-06 (arquivado de fora); quadro fechado mostra o aviso; o X volta ao quadro.
+- Calendário de todos os quadros: CAL-02 e CAL-14 (todos, com o nome do quadro); o seletor
+  escolhe um quadro e volta para todos; CAL-12 pergunta o quadro; CAL-06 (quadro fechado de
+  fora) e o modal por cima do Início.
+
+src/renderer/src/app/App.test.tsx
+- O "Voltar" das Configurações volta para o calendário de todos os quadros (agora pela região do
+  calendário, no lugar do aviso "Em construção").
+
+Etapa 6 — 36 testes novos (feita depois da 7)
+
+src/shared/rules/aging.test.ts (ENV-01 a ENV-04)
+- ENV-02: o nível muda no dia 3, 6, 9, 12 e 14, e 1 ms antes ainda não; a tabela completa de
+  dias; 100 dias é nível 5.
+- ENV-01: dias inteiros; card novo é nível 0; relógio atrás da alteração conta 0 dias.
+- ENV-03 e ENV-04: cada motivo congela no nível 0 sem perder os dias; sem a condição, o nível
+  volta pela última alteração.
+- FIN-04: card com ✓ fora de lista de conclusão envelhece.
+
+src/renderer/src/lib/fog.test.ts (ENV-09)
+- No tamanho do protótipo (252 × 100), o fog() dá exatamente o desenho da função do protótipo,
+  nos 5 níveis e nos dois temas (as cores --fog1 a --fog5 de themes.css são as do protótipo).
+- Nível 0 é o card normal; a mesma semente dá o mesmo desenho; outra semente ou outro nível, outro.
+- Usa o tamanho real: num card mais alto, as manchas das laterais descem até embaixo.
+- Card com menos de 100 px: as manchas encolhem na proporção da altura (decidido em
+  26/10/2026); de 100 px para cima, não muda; card ainda sem tamanho não trava.
+
+src/main/clock.test.ts (relógio de teste)
+- Soma o adiantamento; no modo de desenvolvimento, o que o main grava usa o relógio adiantado; o
+  app instalado recusa mudar o relógio; adiantamento negativo é recusado.
+
+src/main/modules/cards.test.ts (1 novo)
+- ENV-08: o card leva a última alteração, se é modelo e se a lista não envelhece.
+
+src/main/modules/settings.test.ts (sem testes novos)
+- aging.enabled entrou nos padrões, no valor gravado e no valor inválido.
+
+src/main/ipc/events.test.ts (sem testes novos)
+- dev:clock e dev:setClock classificados (não mexem em card).
+
+src/renderer/src/features/board/cardDrag.test.ts (1 novo)
+- ENV-05: o card solto fica novo na hora; os outros não mudam.
+
+src/renderer/src/features/board/Aging.test.tsx (ENV-03, ENV-05, ENV-08, ENV-09, FUN-09, FIN-04)
+- Card parado fica gasto, com o cinza do nível e o tom de baixo; o leitor de tela ouve há quantos
+  dias; o card novo fica normal; o tom é o do fundo do quadro.
+- ENV-03: lista que não envelhece e envelhecimento desligado ficam normais; FIN-04.
+- ENV-05: mover o card pelo teclado o deixa novo na hora e grava.
+- ENV-08: "Parado há 9 dias · nível 3 de 5" com as 5 barrinhas; "menos de 1 dia" no card novo;
+  "Não envelhece" com os motivos lista congelada, finalizado e desligado nas Configurações.
+
+src/renderer/src/app/DevClock.test.tsx (relógio de teste)
+- Ctrl+Alt+→ adianta 1 dia, com Shift 1 hora, ← volta, e o selo mostra quanto; Ctrl+Alt+0 volta
+  ao real, menos dentro de um campo de texto; o que é gravado com o relógio adiantado nasce
+  novo; o app instalado não tem o relógio de teste.
+- Aceite da etapa: adiantando o relógio dia a dia, o card passa pelos níveis 0 a 5 nos dias
+  certos (3, 6, 9, 12 e 14).
+
+Etapa 8 — 69 testes novos (mais os 12 da data e hora, no fim desta parte)
+
+src/shared/rules/recurrence.test.ts (REP-01, REP-06, REP-13, REP-17)
+- Diária (inclusive salva antes do horário do dia), semanal com segunda e quarta, mensal no dia
+  31 (fevereiro, abril e o dia 29 do ano bissexto), a cada N dias contando do dia em que foi
+  salva, virada de ano.
+- Término numa data (inclusive) e depois de N vezes, descontando as que já venceram.
+- REP-17: o resumo de cada frequência; "Todo" com domingo e sábado; semanal sem dias.
+- O agora como ocorrência, o dia do aviso ("seg., 19 de out."), a prévia ("seg. 26/10") e o
+  próximo dia da face ("seg." nos próximos 6 dias, "28 out." depois).
+
+src/shared/rules/reminders.test.ts (LEM-01 a LEM-03)
+- "No horário" e "1 dia antes"; data sem hora às 09:00 (LEM-02); sem lembrete ou sem data não
+  dispara.
+- O texto: hoje, ontem, amanhã ou a data; título "Mello · <card>" e "Entrega <data> · <quadro>".
+
+src/shared/rules/activity.test.ts (1 novo)
+- Os textos da repetição: criado (REP-12), pulada (REP-08), uma e várias não criadas (REP-10).
+
+src/main/modules/recurrence.test.ts (a seção 6.4 do PLANO.md; REP-01 a REP-17)
+- Salvar liga o card à série, zera o envelhecimento e mostra o ↻ com o próximo dia; alterar
+  mantém a contagem e vale a partir de agora; a lista de destino precisa ser ativa e do quadro;
+  a entrada exige os dias, o dia do mês, o N, o horário e o término; REP-15 (remover deixa os
+  cards, sem o ↻, e apaga as ocorrências).
+- REP-04 e REP-12: nada antes do horário; no horário, o card no topo da lista, com o título, as
+  etiquetas, a prioridade, a descrição e o checklist desmarcado e sem data, sem nota, nível 0,
+  a atividade e a ocorrência; a data de entrega copiada com o lembrete; sem as opções, só o
+  título. REP-05 (copia do mais recente). Rodar duas vezes no mesmo minuto não duplica.
+- REP-07 a REP-09: pula e avisa no anterior, com a próxima; o ✓ fora da conclusão não conta;
+  "Criar mesmo assim" na regra; "Criar agora mesmo assim" e "Dispensar"; o aviso novo substitui
+  o anterior; anterior arquivado não conta.
+- REP-10: 10 dias fechado numa diária cria 1 e registra 9 como perdidas, num registro só da
+  atividade. REP-16: lista de destino arquivada, quadro fechado e lista excluída pausam; ao
+  voltar, vale a REP-10. REP-06: depois de N vezes (as perdidas contam) e numa data. Série sem
+  nenhum card sai.
+- REP-14: as fantasmas do mês (próximas, pulada e perdida), com o card mais recente; pausada sem
+  as próximas; quadro fechado sem nada; a restrição UNIQUE.
+
+src/main/modules/reminders.test.ts (LEM-02 a LEM-06)
+- Dispara no horário uma vez só, com o card e o quadro; "1 dia antes" e data sem hora, na ordem
+  em que venceram; LEM-05 (finalizado, arquivado, modelo, lista arquivada e quadro fechado; o
+  finalizado continua pendente); LEM-04 (mudar a data rearma); LEM-06 (mais de 7 dias é
+  descartado; a entrega que passou fica em atraso).
+
+src/main/scheduler.test.ts (REP-11, LEM-03, LEM-06; relógio e temporizador falsos)
+- Na abertura, os perdidos viram o aviso agrupado, uma vez, sem notificação; com o app aberto,
+  cada lembrete vira uma notificação; roda a cada minuto e avisa a tela quando a repetição cria
+  um card; um erro numa rodada não para o agendador.
+
+src/main/modules/settings.test.ts (1 novo)
+- tray.keep e tray.noticeShown nos padrões; o main grava uma chave e recusa valor fora do schema.
+
+src/main/ipc/events.test.ts (3 novos)
+- ENV-05: configurar a repetição (na tabela) e remover a repetição. ENV-06: "Dispensar" e "Criar
+  agora mesmo assim" não mexem no card do aviso. reminders:missed e app:hideToTray classificados.
+
+src/renderer/src/features/recurrence/Recurrence.test.tsx (relógio falso só no Date)
+- Diálogo: começa semanal no dia de hoje, com "Próximas:" e a lista do card, e salva (o campo
+  "Repetição" mostra o resumo); mensal no dia 31 com "depois de N vezes" (digitar no campo
+  escolhe a opção); erros de dia e de horário; remover; a dica do checklist.
+- Face: ↻ com o dia da semana; FLT-03 com a repetição ativa.
+- Aviso de pulada com a próxima; "Criar agora mesmo assim" cria o card; "Dispensar" só some
+  com o aviso; REP-14 no calendário (pulada e próximas) e o clique abre o card.
+
+src/renderer/src/app/AppEvents.test.tsx (avisos do main)
+- data:changed recarrega a tela; app:openCard abre o card (LEM-03); o aviso da bandeja com o
+  "Entendi" (P4); LEM-06: o aviso dos lembretes perdidos, com "Abrir" e "Dispensar", uma vez só.
+
+Data e hora do card e da tarefa (pedido de 28/10/2026, ainda na etapa 8) — 12 testes novos
+
+src/shared/rules/dates.test.ts (DAT-05, 4 novos)
+- A duração em dias, horas e minutos; com hora, quanto falta, "vence agora" e há quanto tempo
+  venceu (pelo menos 1 min); sem hora, em dias, valendo até o fim do dia; finalizado não conta
+  atraso.
+
+src/shared/rules/reminders.test.ts (2 novos)
+- Quando a notificação sai, no seletor: "1 dia antes", data sem hora às 09:00, o aviso de
+  horário que já passou e nada sem lembrete ou sem data.
+
+src/shared/rules/calendar.test.ts (CAL-10, 1 novo) e src/main/modules/calendar.test.ts (1 novo)
+- Tarefas sem hora primeiro, depois pela hora, empate juntas por card; tarefa com hora no fim
+  do mês entra no mês, a de 01/11 00:00 não.
+
+src/main/modules/checklists.test.ts (CHK-05, alterado)
+- A data da tarefa aceita a hora; hora que não existe (24:00) ou sem os dois dígitos é recusada.
+
+src/renderer/src/features/card/CardModal.test.tsx (DAT-05, 3 novos; relógio parado em qua.,
+28/10/2026, 14:00)
+- O seletor: hoje marcado na grade; "18:00" sem dia vale para hoje; "No prazo · faltam 4 h",
+  "Em atraso · há 3 h", "Sem hora" até o fim do dia, "faltam 2 dias e 4 h"; a notificação do
+  "1 dia antes"; salvar mostra "30 de out., 18:00" e "No prazo" no modal.
+- Hora inválida: "Confira a data e a hora" e o erro ao salvar, sem gravar.
+- CHK-05: a tarefa com hora fica "28 out. 11:00, em atraso"; marcada, deixa de estar em atraso.
+
+src/renderer/src/features/calendar/CalendarPage.test.tsx (1 novo) e BoardCards.test.tsx
+(alterado)
+- No calendário, a hora antes do título do card e da tarefa, e as tarefas em ordem de horário.
+  Na face, a data com a hora ("10 de jan., 18:00").
+
+Os testes da tela simulam os avisos do main (realApi.ts, emit) e a lista dos lembretes perdidos;
+a notificação de verdade e a bandeja são conferidas no app real (seção 5).
+
+Etapa 9 — 25 testes novos
+
+src/shared/rules/backgroundAuto.test.ts (FUN-03, FUN-04, FUN-06, FUN-09; imagens sintéticas de
+64 × 40)
+- Foto clara: o menor escurecer, de 2 em 2%, que deixa o texto branco legível (50% para a de
+  brilho 230; 48% não basta); foto escura não escurece; branca pura e metade branca, metade preta
+  pedem 54%.
+- Detalhe concentrado no canto superior direito leva o foco para lá, com zoom de 112%; detalhe
+  espalhado por igual é empate e fica no centro, com 100%; imagem carregada ganha 6 px de
+  desfoque e a lisa, nenhum; a cor média.
+- Indicador: menos de 4,5:1 sem o escurecer; o desfoque e o escurecer sobem o contraste.
+- O foco alinha a imagem (0%, 50% ou 100%); o recorte de uma foto em retrato numa tela 16:10, no
+  centro e no alto; o zoom aproxima a partir do foco.
+
+src/shared/rules/tone.test.ts (FUN-08, 1 novo)
+- A miniatura da imagem: a camada do escurecer, o endereço e o foco; sem endereço, a cor de
+  espera.
+
+src/main/modules/boards.test.ts (FUN-01 a FUN-03, FUN-07 a FUN-09; 6 novos)
+- Cor e gradiente do protótipo, com o tom de cada um; a entrada recusa cor e gradiente fora da
+  lista.
+- Guarda JPG, PNG e WEBP com o tamanho e o nome; enviar não muda o quadro. Recusa GIF, texto e
+  mais de 25 MB sem copiar nada.
+- Aplicar a imagem grava os ajustes e o tom da cor média, que fica no arquivo; o mesmo arquivo
+  em outro quadro usa a cor guardada; o Início traz o endereço da imagem. Voltar para uma cor
+  zera os ajustes. Imagem não guardada e ajustes fora dos limites são recusados.
+
+src/main/ipc/events.test.ts (ENV-06, 2 novos)
+- Trocar o fundo por uma cor e por uma imagem não mexe no envelhecimento; boards:uploadBackground
+  classificado.
+
+src/renderer/src/features/background/BackgroundEditor.test.tsx (tela 6; a leitura dos pixels é
+trocada por uma foto clara sintética, porque o jsdom não tem canvas)
+- Abre pelo "Alterar fundo" com o fundo atual; Cancelar volta sem mudar nada.
+- FUN-01 e FUN-07: a cor aparece na prévia e só vai para o quadro no "Aplicar".
+- FUN-04 a FUN-06: a imagem enviada chega com o ajuste automático (os 4 selos "Auto", 50% de
+  escurecer, "Cards legíveis"); mexer no escurecer mostra o aviso de pouco contraste e desliga o
+  automático; "Restaurar automático" volta; o foco escolhido à mão é gravado; o quadro mostra a
+  imagem.
+- FUN-02: soltar a imagem no "Enviar imagem"; GIF mostra o aviso.
+- Reabrir com a imagem mostra os ajustes salvos e "Imagem do quadro".
+- FUN-08: a miniatura do Início com a imagem.
+
+Etapa 10 — 41 testes novos
+
+O realApi.ts ganhou o serviço de dados de verdade (createData), com a pasta de dados dentro da
+pasta temporária; fechar o banco e reiniciar o app só ficam contados (lifecycle). O tema: o
+matchMedia falso responde o prefers-color-scheme com o tema que o main passou ao "Chromium" e,
+em "Igual ao sistema", com o do "Windows" (setWindowsDark).
+
+src/main/modules/backup.test.ts (DAD-02, DAD-03, DAD-05, DAD-06, DAD-08; 8 novos, 11 no total)
+- O backup é um arquivo só (journal_mode delete, sem -wal), consistente com o banco aberto.
+- A lista: do mais recente para o mais antigo, com o tipo e o tamanho; arquivo com o nome certo
+  que não é banco e os outros arquivos da pasta ficam de fora.
+- DAD-05: os arquivos que o backup usa vão para o espelho, só os que faltam.
+- DAD-03: ficam os 10 mais recentes; a cópia provisória de um backup que caiu no meio sai. O
+  mais recente é o último gravado, mesmo com o relógio voltando (o novo não sai na rotação).
+- DAD-08: no espelho, um arquivo só sai quando nenhum backup guardado o usa.
+- Um backup de antes da etapa 10 (modo WAL) é lido sem deixar -wal e -shm na pasta.
+- DAD-06: arquivo danificado, de outro programa ou de uma versão mais nova é recusado; restaurar
+  troca o banco, apaga o -wal que sobrou e traz do espelho os arquivos que faltam.
+
+src/main/modules/data.test.ts (DAD-01, DAD-04, DAD-06, DAD-07, DAD-09; 12 novos)
+- DAD-01: ao abrir, só se o último tiver mais de 1 hora e houver quadro; de hora em hora, só com
+  alteração e no máximo um por hora; a falha vira um aviso.
+- DAD-04: a pasta escolhida recebe um backup na hora; indisponível, o backup vai para a padrão
+  e avisa uma vez; a pasta de dados do Mello é recusada; escolher a padrão volta para a padrão;
+  o aviso de "mesmo disco" e o %APPDATA% no caminho mostrado.
+- DAD-06: restaurar guarda o estado atual, fecha, troca, traz os arquivos e reinicia; com 10
+  backups, o mais antigo pode ser restaurado; backup sumido ou estragado não mexe em nada.
+- DAD-07: a pasta Mello-exportacao-AAAA-MM-DD com o dados.json de todas as tabelas, legível, e os
+  arquivos; a segunda do dia ganha " (2)".
+- DAD-09: apaga o banco e os arquivos; nas pastas de backup, só com a opção e só os nomes do
+  Mello, na pasta padrão e na escolhida.
+
+src/main/modules/files.test.ts (DAD-08, 1 novo)
+- Na abertura, sai o que nada usa (anexo removido, imagem enviada e não aplicada, arquivo sem
+  registro, cópia provisória); ficam os de anexo, capa e fundo e o que não é do Mello.
+
+src/main/db/db.test.ts (DAD-01, DAD-04; 1 novo e 1 alterado)
+- O backup antes de migrar tem o tipo "antes de atualizar o banco" e vai para a pasta escolhida,
+  com o espelho dos arquivos.
+
+src/main/modules/settings.test.ts (2 novos e 1 alterado)
+- Os padrões novos (tema escuro, sem iniciar com o Windows, pasta de backup padrão).
+- settings:set grava e devolve todas; o tema e o "Iniciar com o Windows" vão para o Windows; a
+  pasta de backup, o aviso da bandeja e valores errados são recusados.
+
+src/main/scheduler.test.ts (DAD-01, 1 novo)
+- Depois da abertura, cada rodada confere o backup de hora em hora.
+
+src/main/ipc/events.test.ts (1 alterado)
+- Os canais novos de configurações e dados classificados (não mexem em card).
+
+src/renderer/src/features/settings/SettingsPage.test.tsx (telas 7 e 15; 14 novos)
+- TEM-01: escuro por padrão; trocar o tema muda a tela na hora e fica gravado.
+- TEM-03: "Igual ao sistema" acompanha o Windows sem reiniciar.
+- TEM-04: o fundo do quadro não muda com o tema.
+- ENV-03: a prévia dos 6 níveis com o fog(); desligado, todos ficam como novos. As listas que não
+  envelhecem, agrupadas por quadro, mudam a opção da lista.
+- CAL-03, CAL-07 e CAL-09 gravados; P4: manter na bandeja e iniciar com o Windows; o menu leva à
+  seção e a marca.
+- DAD: "Fazer backup agora" e a lista (quando, tipo, tamanho) com o aviso de mesmo disco; outra
+  pasta e o aviso de indisponível; "Restaurar" com confirmação e reinício; exportar (cancelar
+  não exporta; o Explorer abre no dados.json); "Abrir pasta de dados"; "Apagar tudo" só depois
+  de digitar APAGAR, com os backups.
+
+src/renderer/src/app/AppEvents.test.tsx (2 novos e 1 alterado)
+- P4: "Mudar nas Configurações" abre "Lembretes e bandeja" com a janela aberta.
+- DAD-04: o aviso do backup automático aparece no canto, uma vez só.
+
+Etapa 11 — 36 testes novos
+
+src/main/modules/search.test.ts (BUS-01 a BUS-04; 9 novos)
+- "acao" encontra "Ação", sem diferenciar acento nem maiúscula; os espaços das pontas não contam.
+- Cards pelo título, pela descrição e pela nota, com o título primeiro; "Quadro · Lista" e a cor
+  da primeira etiqueta.
+- Tarefas pelo texto do item, com o card e a data, as por fazer antes; quadros pelo título.
+- % e _ procurados como texto; a entrada pede de 2 a 100 caracteres.
+- BUS-03: até 8 por grupo. BUS-04: arquivados, modelos, listas arquivadas, quadros fechados e
+  quadros-modelo ficam de fora, com as tarefas dos cards deles.
+
+src/main/modules/templates.test.ts (MOD-01 a MOD-05; 11 novos)
+- MOD-01: virar modelo tira o ✓, e entrar e sair não zeram o tempo; card com repetição é
+  recusado.
+- MOD-02: o modelo recusa repetição e ✓, não ganha o ✓ automático numa lista de conclusão, não
+  envelhece e fica fora do calendário.
+- MOD-03: a cópia vai para o fim da lista, sem a marca de modelo, com as etiquetas, o checklist
+  e o registro "Criado a partir do modelo"; recusa card que não é modelo, lista de outro quadro
+  e lista arquivada.
+- MOD-04: o quadro sai do Início e vai para os modelos (com as contagens) e volta; fechado, sai
+  dos modelos.
+- MOD-05: copia as listas ativas com as opções, as etiquetas e o fundo; com "Manter cards", os
+  cards ativos sem o ✓, com nível 0, as etiquetas novas e só o registro do modelo (os
+  cards-modelo continuam modelos); recusa quadro que não é modelo e título vazio.
+
+src/main/ipc/events.test.ts (1 novo)
+- Transformar em modelo não zera o envelhecimento (ENV-04); os canais novos classificados.
+
+src/renderer/src/features/search/SearchBox.test.tsx (tela 9; 6 novos)
+- BUS-01: a partir de 2 caracteres; "acao" encontra "Plano de ação", com "Casa · A fazer".
+- BUS-03: os grupos Cards, Tarefas e Quadros, com o card e a data da tarefa ("Pintar · 15 set.").
+- BUS-05: as setas escolhem (aria-activedescendant, dando a volta) e o Enter abre o card no
+  quadro dele e limpa o campo; a tarefa abre o modal do card e o quadro abre o quadro.
+- Esc fecha o painel; sem resultado, "Nada encontrado"; modelos ficam de fora.
+
+src/renderer/src/features/templates/Templates.test.tsx (telas 11 e 12; 9 novos)
+- MOD-01 e MOD-02: "Transformar em modelo" põe o selo na face e apaga o ✓ e o Repetir; "Deixar
+  de ser modelo" desfaz; com repetição, o item fica apagado com a dica.
+- MOD-03: o ícone da lista mostra os modelos do quadro e cria no fim daquela lista; sem
+  modelos, explica como criar; no menu "Criar", dentro do quadro, a cópia entra na lista do
+  modelo.
+- MOD-04 e MOD-05: o menu do quadro leva o quadro para a seção "Modelos" do Início; o diálogo
+  mostra as contagens e cria o quadro com ou sem os cards; o menu "Criar" também abre o
+  diálogo; "Abrir o modelo" abre o quadro-modelo, e o menu dele desfaz o modelo.
+
+Também mudaram: DevClock.test.tsx (a busca agora é um combobox), cardDrag.test.ts (isTemplate
+no quadro) e App.test.tsx (versão 0.11.0).
+
+Etapa 12 — 9 testes novos
+
+src/renderer/src/app/Accessibility.test.tsx (acessibilidade; 5 novos)
+- No Início, no quadro, no modal do card, no calendário de todos os quadros e nas
+  Configurações, todo botão, link, campo, caixa de marcar, rádio, controle deslizante, lista,
+  aba, diálogo e imagem tem nome para o leitor de tela. Achou a etiqueta sem nome do modal, que
+  passou a ser lida como "Etiqueta <cor>".
+
+src/main/modules/performance.test.ts (desempenho; 2 novos)
+- Um quadro com 500 cards, cada um com etiqueta e checklist: o boards:get e a busca medem o
+  tempo no terminal e precisam ficar abaixo de 2 s (nesta máquina, 76 ms e 34 ms).
+
+src/main/modules/cards.test.ts (CAR-07, LEM-04; 1 novo)
+- A cópia não dispara um lembrete que já passou; um futuro dispara.
+
+src/main/modules/recurrence.test.ts (REP-16, MOD-04; 1 novo)
+- Um quadro-modelo pausa a repetição; ao deixar de ser modelo, ela volta.
+
+Também mudou: App.test.tsx (versão 1.0.0).
+
+
+4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)
+
+O script scripts/capturar-telas.mts compila o app, abre o Electron com uma pasta de dados
+temporária (MELLO_DATA_DIR) e:
+1. confere que o banco foi criado e que o IPC responde (app:info);
+2. cria dados fictícios pelo window.mello, inclusive nota, anexos e capa (as fotos são
+   gradientes desenhados no canvas, e a janela "Abrir" do Windows é trocada por uma que devolve
+   esses arquivos);
+3. salva uma captura de cada tela da etapa, nos temas escuro e claro, em capturas/etapa-N/
+   (pasta ignorada pelo Git), inclusive com um card no meio do arraste;
+4. desde a etapa 6, numa fase final, adianta o relógio de teste pelo atalho (Ctrl+Alt+→) e mexe
+   em cada card num dia diferente, para os 5 níveis do envelhecimento aparecerem; o selo do
+   relógio sai numa captura própria e fica escondido nas outras;
+5. desde a etapa 8, a mesma fase deixa uma série semanal em aberto, para o aviso de pulada e as
+   repetições tracejadas do calendário aparecerem; a notificação do Windows é trocada por uma
+   anotação no main (nada aparece na tela), e o script lista os lembretes que dispararam e falha
+   se nenhum disparou;
+6. desde a etapa 8, encerra o app como o "Sair" da bandeja, cria dois lembretes de ontem e abre
+   o app de novo com os mesmos dados: captura o aviso dos lembretes perdidos, fecha a janela
+   para o aviso da bandeja e confere que o "Entendi" deixa a janela escondida;
+7. desde a etapa 9, antes da fase final, desenha uma foto em retrato (o céu e as montanhas do
+   protótipo, 1080 × 1920), envia pelo editor de fundo com a janela "Abrir" trocada, captura o
+   editor (gradiente, cor, imagem com o ajuste automático e o ajuste à mão), aplica a foto no
+   quadro "Casa" e captura o quadro, o calendário do quadro e o Início. A leitura dos pixels passa
+   pelo protocolo de verdade (com CORS); o script mostra no terminal o ajuste calculado;
+8. desde a etapa 10, troca o tema pela configuração de verdade em todas as telas (o Playwright
+   abre o Electron sem a emulação de tema, que forçaria o claro) e captura as Configurações
+   (telas 7 e 15) nos dois temas, com o rádio da própria tela; confere que "Igual ao sistema"
+   segue o Windows, exporta para uma pasta (a janela é trocada; o Explorer só fica anotado),
+   troca a pasta de backup e a apaga para ver o aviso; no fim, restaura um backup e apaga tudo
+   de verdade (a reabertura do app vira só sair, e o script abre de novo e confere o resultado);
+9. desde a etapa 11, antes das Configurações, cria um card-modelo, um quadro-modelo e uma tarefa
+   com "viagem"; captura a busca com os três grupos, a seção "Modelos" do Início, o diálogo do
+   quadro-modelo, o popover da lista e o menu "Criar" nos dois temas; cria um card e um quadro
+   a partir dos modelos pela tela e confere no banco; no fim, apaga o que criou, para as
+   capturas seguintes continuarem como antes;
+10. desde a etapa 12, depois do "Apagar tudo", cria um quadro com 500 cards e mede o tempo de
+    recarregar a tela até o último card aparecer, com os cards novos e com todos envelhecidos
+    (relógio +14 dias); falha acima de 10 s (nesta máquina: 1476 ms e 2862 ms);
+11. apaga a pasta temporária.
+
+O Electron do script abre com opções do Chromium que mantêm a janela desenhando mesmo coberta ou
+com o monitor desligado pelo Windows; sem elas, a captura podia esperar um quadro que não chegava
+(visto na etapa 5). Cada captura tem três tentativas.
+
+As capturas são comparadas com o .dc.html correspondente do protótipo (cores, medidas, textos,
+ícones e estados). Numa tela com escala de 125% do Windows, a captura sai 1,25 vez maior
+(1800 × 1125 para uma janela de 1440 × 900).
+
+
+5. ROTEIRO MANUAL
+
+Etapa 1 (conferido em 21/10/2026)
+[x] npm run dev abre a janela com o cabeçalho de 56 px, o logo, a busca, "Criar" e a engrenagem.
+[x] O console da tela não mostra erros, nem de CSP.
+[x] O banco é criado em %APPDATA%\Mello-dev\mello.db com as 13 tabelas e a _migrations.
+[x] Fechar e abrir de novo não reaplica a migração (o log mostra "Migrações aplicadas" só na
+    primeira vez).
+[x] Um banco "de versão mais nova" mostra o aviso "Não foi possível abrir o Mello", registra o
+    erro no log e não é alterado.
+[x] Todas as rotas abrem no app real (capturas). Os cliques no menu lateral, na barra flutuante e
+    no "Voltar" das Configurações são conferidos pelos testes de tela (App.test.tsx).
+
+Etapa 2 (conferido em 21/10/2026, no app real pelo Playwright)
+[x] Arrastar uma lista com o mouse: a lista vai inclinada, a vaga fica reservada e a nova ordem
+    fica igual na tela e no banco.
+[x] Clicar no título da lista abre a edição do nome, sem arrastar.
+[x] Arrastar pelo teclado: foco no cabeçalho da lista, espaço, seta para a direita, espaço.
+[x] Arrastar um quadro no Início muda a ordem e não abre o quadro; um clique simples abre.
+[x] Os popovers abrem presos ao botão que os abriu (menus da lista e do quadro, "Criar", "Mudar de
+    quadros" acima da barra, quadros fechados) e fecham com Esc.
+[x] Capturas da etapa 2 conferidas com as telas 1, 2, 9, 10 e 16, nos dois temas.
+
+Etapa 3 (conferido em 22/10/2026, no app real pelo Playwright)
+[x] Arrastar um card com o mouse na mesma lista e para outra: o card fica translúcido na origem,
+    a vaga aparece no destino, a lista de destino ganha a borda azul e o card vai inclinado.
+[x] Arrastar para Concluído mostra o ✓ antes de soltar e grava o ✓; voltar desmarca.
+[x] Pegar e soltar no mesmo lugar não grava nada e não abre o modal.
+[x] A ordem continua igual depois de recarregar a tela.
+[x] Teclado: espaço, setas (o card acompanha a vaga, inclusive para outra lista), espaço.
+[x] Clique e Enter no card abrem o modal; Esc, o X e o clique fora fecham.
+[x] "Adicionar um cartão": Enter adiciona e o campo continua aberto para o próximo.
+[x] Nenhum erro no console durante a conferência.
+[x] Capturas da etapa 3 conferidas com as telas 2, 3, 8, 9 e 16, nos dois temas.
+
+Etapa 4 (conferido em 23/10/2026, no app real pelo Playwright)
+[x] Descrição digitada com negrito e link salva o HTML esperado (NOT-04).
+[x] Esc no título, num item ou na descrição em edição cancela só a edição; o modal continua.
+[x] Com um popover do modal aberto, o primeiro clique fora fecha só o popover.
+[x] Reordenar item do checklist com o mouse e com o teclado (espaço, seta, espaço).
+[x] Rolagem automática no arraste: o quadro rola nas bordas (card e lista) e volta; a lista longa
+    rola no pé; depois de um arraste cancelado, o próximo não rola o quadro sozinho.
+[x] Nenhum erro no console durante a conferência.
+[x] Capturas da etapa 4 conferidas com as telas 4, 9, 14 e 16, nos dois temas.
+
+Etapa 5 (conferido em 24/10/2026, no app real pelo Playwright)
+[x] Nota digitada de verdade: "Salvando…" logo depois e "Salvo automaticamente" com o HTML no
+    banco em 1,2 s; Esc dentro da nota fecha o modal e salva o que faltava.
+[x] Anexar pela janela "Abrir" (trocada por uma que devolve os arquivos): a miniatura carrega pelo
+    protocolo mello-arquivo:// (sem erro de CSP) e mostra tamanho e data.
+[x] "Abrir" abre uma cópia só leitura, com o nome original, em %TEMP%\Mello-dev\<id>\.
+[x] Arquivo com caminho de verdade (de um <input type=file>) solto no modal é anexado; um File
+    criado pela tela não tem caminho e é ignorado.
+[x] Capa de imagem: faixa de 96 px no modal e até 160 px na face, recortada para cobrir.
+[x] Nenhum erro no console durante a conferência.
+[x] Capturas da etapa 5 conferidas com as telas 4, 14 e 16, nos dois temas.
+
+Etapa 7 (conferido em 24/10/2026, no app real pelo Playwright; feita antes da 6)
+[x] "+N mais" medido de novo ao mudar a janela: com 5 cards no dia, 1 visível a 900 px, 4 a
+    1300 px e nenhum a 700 px (só o "+5 mais").
+[x] Num dia cheio, o "+N mais" abre a lista com o mouse em cima do dia (o "Adicionar" vira só o
+    "+" à direita e não cobre mais o botão: problema achado pela própria captura).
+[x] Com o foco do teclado num item do dia, o "Adicionar" aparece.
+[x] Marcar a tarefa pelo calendário grava no banco; o card abre o modal por cima do calendário
+    do quadro e do de todos os quadros.
+[x] Nenhum erro nem aviso no console durante a conferência.
+[x] Capturas da etapa 7 conferidas com as telas 5 e 13, nos dois temas (o protótipo só tem o
+    escuro; o claro usa as variáveis --cal* claras).
+
+Etapa 6 (conferido em 26/10/2026, no app real pelo Playwright; feita depois da 7)
+[x] Desempenho: 200 cards no quadro, arraste com o mouse indo e voltando entre as listas. Cards
+    novos: 17 ms por quadro no p95. Todos no nível 5 (a maioria cards de uma linha, com as manchas
+    proporcionais): 17 ms no p95 e nenhum quadro acima de 50 ms, com contain: paint; sem ele, o
+    arraste chegava a 2 s por quadro (problema achado e corrigido na etapa).
+[x] Relógio de teste pelas teclas de verdade: 30 vezes Ctrl+Alt+→ deixa os 200 cards no nível 5;
+    Ctrl+Alt+0 volta todos ao normal e o selo some.
+[x] O contorno de foco do teclado aparece no card gasto (o contain: paint não o corta).
+[x] Nenhum erro no console durante a conferência.
+[x] Capturas da etapa 6 conferidas com as telas 2, 4 e 8, nos dois temas: os 5 níveis no
+    quadro (o tom de baixo vem do gradiente "Mello", azul claro, no lugar do bege do protótipo,
+    FUN-09), o card arrastado gasto, o indicador "Parado há 10 dias · nível 3 de 5" e o
+    "Não envelhece · lista congelada" no modal, e o selo do relógio de teste.
+[ ] No seu computador: Ctrl+Alt+→ com o npm run dev. Em alguns computadores com placa de vídeo
+    Intel, Ctrl+Alt+seta gira a tela (atalho do driver); se acontecer, o atalho do relógio
+    precisa mudar.
+
+Etapa 8 (conferido em 28/10/2026, no app real pelo Playwright)
+[x] Com o relógio de teste adiantado 14 dias, a série semanal "Compras da semana" em aberto foi
+    pulada duas vezes: o aviso no card mostra a mais recente e a próxima, e o calendário mostra
+    a pulada e as próximas tracejadas.
+[x] Os lembretes que venceram no intervalo viraram notificação (3, entre eles o "No horário" de
+    "Compras da semana"), com o título e o texto da LEM-03; a notificação foi trocada por uma
+    anotação, para não aparecer na tela durante o roteiro.
+[x] Na segunda abertura, os dois lembretes de ontem, criados com o app aberto e não disparados,
+    viraram o aviso "Você perdeu 2 lembretes".
+[x] Fechar a janela pela primeira vez mostrou o aviso da bandeja, e o "Entendi" deixou a janela
+    escondida com o app rodando; "Sair" (app.quit) encerrou.
+[x] Capturas da etapa 8 conferidas com as telas 6b, 9, 5 e 16, nos dois temas.
+[x] Data e hora (28/10/2026): o seletor do card e o da tarefa conferidos com a tela 17A
+    (horários prontos, hoje marcado, "No prazo · faltam 19 h e 12 min", "Em atraso · há 1 dia
+    e 3 h", a notificação do lembrete); "No prazo" no modal; a hora na face e no calendário
+    ("18:00 Lixar as paredes" em vermelho).
+[ ] No seu computador, com o npm run dev: um lembrete "No horário" para daqui a 2 minutos
+    aparece como notificação do Windows, e clicar nela abre o card; o ícone da bandeja aparece
+    ao lado do relógio, com "Abrir o Mello" e "Sair".
+
+Etapa 9 (conferido em 29/10/2026, no app real pelo Playwright)
+[x] A foto em retrato enviada pelo editor ganhou o ajuste automático no app real (a tela leu os
+    pixels pelo protocolo): foco inferior esquerdo, zoom 112%, escurecer 46%, sem desfoque, e o
+    tom do envelhecimento #c9b6ab, um bege perto do #d8bd9b do protótipo.
+[x] Escurecer em 0% mostrou o aviso amarelo de pouco contraste, "Ajustado à mão" e o
+    "Restaurar automático".
+[x] Capturas da etapa 9 conferidas com a tela 6 nos dois temas: o editor (prévia com a marca do
+    foco, miniatura com o recorte, os selos "Auto", o indicador), a cor e o gradiente; o quadro
+    e o calendário com a foto; a miniatura do Início.
+[ ] No seu computador: arrastar uma foto do Explorer para o "Enviar imagem" e aplicar; trocar
+    para uma cor e voltar.
+
+Etapa 10 (conferido em 29/10/2026, no app real pelo Playwright)
+[x] O tema muda pela configuração de verdade em todas as telas da captura, nos dois temas.
+    "Igual ao sistema" seguiu o Windows (escuro nesta máquina): a classe da tela e o Electron
+    concordaram. Sem a emulação do Playwright, a primeira pintura já saiu no tema escolhido.
+[x] Exportar criou Mello-exportacao-AAAA-MM-DD com as 13 tabelas, os 15 cards e os 4 arquivos,
+    e mandou o Explorer abrir no dados.json.
+[x] Escolher outra pasta fez um backup nela (com o espelho); apagar essa pasta e fazer backup
+    mostrou o aviso no canto e o aviso amarelo, com o backup na pasta padrão.
+[x] Restaurar um backup reabriu o app sem o quadro criado depois dele, com o backup "antes de
+    restaurar" no topo da lista. Com o relógio de teste adiantado 14 dias, os backups de hora
+    em hora saíram (9); com o relógio de volta, o backup novo continuou sendo o mais recente.
+[x] "Apagar tudo" (sem os backups) reabriu o app vazio, sem arquivos e com os backups guardados.
+[x] Capturas da etapa 10 conferidas com as telas 7, 8 e 15 nos dois temas: as prévias do tema,
+    os 6 níveis, as listas por quadro, o calendário, a bandeja, a pasta com os avisos, a tabela,
+    os diálogos de restaurar e de apagar tudo.
+[ ] No seu computador: trocar o tema do Windows com "Igual ao sistema" ligado e ver o Mello
+    mudar junto; escolher um HD externo ou pendrive como pasta de backup, desligar e fazer um
+    backup (o aviso), e ligar de novo.
+[ ] Etapa 12, com o app instalado: "Iniciar com o Windows" (reiniciar e ver o Mello só na
+    bandeja) e uma restauração de verdade, com o app reabrindo sozinho.
+
+Etapa 11 (conferido em 30/10/2026, no app real pelo Playwright)
+[x] A busca por "viagem" mostrou os três grupos (o card com "Casa · Ideias" e a cor da etiqueta,
+    a tarefa com "Viagem de férias · 4 nov." e o quadro com a miniatura); a seta marcou o
+    primeiro resultado.
+[x] O ícone ao lado de "Adicionar um cartão" de "Em andamento" criou a cópia do card-modelo no
+    fim da lista; o modelo continuou modelo.
+[x] O diálogo do quadro-modelo mostrou "4 listas · 6 etiquetas · 3 cards" e criou "Rotina de
+    novembro" com as 4 listas, os 3 cards e o fundo do modelo.
+[x] Capturas da etapa 11 conferidas com as telas 9, 11 e 12 nos dois temas: o painel da busca,
+    a seção "Modelos" com o selo, o diálogo, o popover da lista com o selo na face e o menu
+    "Criar" com os quadros-modelo e os cards-modelo do quadro.
+[x] O roteiro de capturas passou a pôr as datas do quadro "Estudos" dentro do mês (no dia 30,
+    hoje + 2 já era novembro, e o calendário de todos os quadros não mostrava o card).
+[ ] No seu computador: transformar um card seu em modelo e criar dois a partir dele; transformar
+    um quadro em modelo, criar um a partir dele com e sem "Manter cards" e desfazer o modelo
+    pelo "Abrir o modelo".
+
+Etapa 12 (conferido em 30/10/2026)
+[x] npm run build:win gerou dist/Mello-Setup-1.0.0.exe (115 MB), com o ícone do logo do
+    protótipo. Do better-sqlite3, só o binário do Windows x64 foi junto.
+[x] Instalação limpa (silenciosa, /S): 55 s, em %LOCALAPPDATA%\Programs\mello, sem pedir
+    administrador, com o atalho no menu Iniciar.
+[x] O app instalado abriu na versão 1.0.0, fora do modo de desenvolvimento, com os dados em
+    %APPDATA%\Mello e os ícones da bandeja e das notificações carregando.
+[x] Atualização por cima (o mesmo instalador de novo): 52 s; o quadro e o card criados antes
+    continuaram lá.
+[x] Desinstalar removeu o programa e os atalhos e deixou o banco em %APPDATA%\Mello. A pasta
+    de dados do teste foi apagada à mão no fim (ela não existia antes do teste).
+[x] Com 500 cards, a tela do quadro abriu em 1476 ms; com todos envelhecidos, em 2862 ms.
+[x] Capturas da etapa 12 conferidas nos dois temas: todas as telas de novo, contra o protótipo.
+
+Roteiro do instalador (a cada versão nova)
+1. npm run build:win (confere os tipos, compila e gera dist/Mello-Setup-<versão>.exe).
+2. Instalar a versão anterior, se quiser conferir a atualização, e criar um quadro de teste.
+3. Abrir o instalador novo. Na primeira vez, o SmartScreen avisa: "Mais informações" →
+   "Executar assim mesmo".
+4. Abrir o Mello: a versão nova aparece no rodapé das Configurações, e o quadro de teste
+   continua lá.
+5. Excluir o quadro de teste.
+
+[ ] No seu computador, com o app instalado: "Iniciar com o Windows" (ligar, reiniciar e ver o
+    Mello só na bandeja); uma notificação de lembrete de verdade, com o clique abrindo o card;
+    uma restauração de backup com o app reabrindo sozinho.
