@@ -26,6 +26,7 @@ import { api, unwrap } from '../../lib/api'
 import { cx } from '../../lib/cx'
 import { formatItemDate } from '../../lib/format'
 import { queryKeys } from '../../lib/queryKeys'
+import { useDropped } from '../../lib/useDropped'
 import styles from './CardModal.module.css'
 import { DueForm } from './DatePicker'
 import { useCardAction } from './useCardAction'
@@ -233,9 +234,10 @@ function ChecklistSection({
     id: checklist.id,
     attributes: { roleDescription: 'checklist arrastável' }
   })
-  const done = checklist.items.filter((i) => i.isDone).length
-  const pct = progress(done, checklist.items.length)
-  const shown = checklist.hideChecked ? checklist.items.filter((i) => !i.isDone) : checklist.items
+  const [items, showItems] = useDropped(checklist.items)
+  const done = items.filter((i) => i.isDone).length
+  const pct = progress(done, items.length)
+  const shown = checklist.hideChecked ? items.filter((i) => !i.isDone) : items
 
   const remove = async () => {
     const ok = await confirm({
@@ -249,8 +251,9 @@ function ChecklistSection({
   // Reordenar itens: a tela muda na hora e o main grava (índice entre todos os itens).
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return
-    const from = checklist.items.findIndex((i) => i.id === active.id)
-    const to = checklist.items.findIndex((i) => i.id === over.id)
+    const from = items.findIndex((i) => i.id === active.id)
+    const to = items.findIndex((i) => i.id === over.id)
+    showItems(arrayMove(items, from, to))
     queryClient.setQueryData<CardDetail>(
       queryKeys.card(card.id),
       (current) =>
@@ -353,11 +356,13 @@ export function Checklists({ card, now }: { card: CardDetail; now: number }) {
   const act = useCardAction(card)
   const queryClient = useQueryClient()
   const sensors = useDragSensors()
+  const [checklists, showChecklists] = useDropped(card.checklists)
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return
-    const from = card.checklists.findIndex((c) => c.id === active.id)
-    const to = card.checklists.findIndex((c) => c.id === over.id)
+    const from = checklists.findIndex((c) => c.id === active.id)
+    const to = checklists.findIndex((c) => c.id === over.id)
+    showChecklists(arrayMove(checklists, from, to))
     queryClient.setQueryData<CardDetail>(
       queryKeys.card(card.id),
       (current) => current && { ...current, checklists: arrayMove(current.checklists, from, to) }
@@ -365,7 +370,7 @@ export function Checklists({ card, now }: { card: CardDetail; now: number }) {
     void act(() => unwrap(api().checklists.move({ checklistId: String(active.id), index: to })))
   }
 
-  if (card.checklists.length === 0) return null
+  if (checklists.length === 0) return null
   return (
     <DndContext
       sensors={sensors}
@@ -373,11 +378,8 @@ export function Checklists({ card, now }: { card: CardDetail; now: number }) {
       onDragEnd={onDragEnd}
       accessibility={{ screenReaderInstructions }}
     >
-      <SortableContext
-        items={card.checklists.map((c) => c.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        {card.checklists.map((checklist) => (
+      <SortableContext items={checklists.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+        {checklists.map((checklist) => (
           <ChecklistSection key={checklist.id} card={card} checklist={checklist} now={now} />
         ))}
       </SortableContext>

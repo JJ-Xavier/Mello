@@ -1,9 +1,9 @@
 To-do list — Mello
 
-Atualizado em: 29/10/2026
-Situação: as 12 etapas concluídas em 30/10/2026 (versão 1.0.0); a etapa 12 aguarda o commit do
-          Jackson. A 7 veio antes da 6 (decisão de 24/10/2026: uma etapa de cada vez, a 7
-          primeiro).
+Atualizado em: 06/11/2026
+Situação: as 12 etapas concluídas em 30/10/2026 (versão 1.0.0). Releases pós-projeto em
+          andamento (06/11/2026, bloco no fim). A 7 veio antes da 6 (decisão de 24/10/2026:
+          uma etapa de cada vez, a 7 primeiro).
 Branches, commits e push: com o Jackson. Ao fim de cada etapa: aviso de "pronto para commit".
 Legenda: [x] feito · [ ] a fazer · [~] em andamento · [!] bloqueado. Códigos entre parênteses
 são regras do Regras.txt.
@@ -137,6 +137,18 @@ ETAPA 12 — POLIMENTO, REVISÃO GERAL E INSTALADOR
 [x] Ícone do instalador; npm run build:win; instalar e atualizar sem perder dados
 [x] Revisão geral do código; suíte completa de novo (615 testes)
 [x] Todos os documentos conferidos contra o estado final; resumo da entrega
+
+
+RELEASES PÓS-PROJETO (Docs/Release.txt, plano em Docs/PLANO.md, seção 11)
+[x] Planejamento: causas achadas, decisões de 06/11/2026 (pasta como atalho, "+" ao lado do
+    número do dia)
+[x] Release 1 — correções (1.0.1, concluída em 06/11/2026): ícone da janela (item 1);
+    arrastar card sem voltar para a origem (item 2); arrastar item do checklist sem pular
+    (item 7), com a mesma correção nas listas, nos quadros do Início e nos checklists
+[ ] Release 2 — calendário (1.1.0): dia do tamanho dos itens, sem "+N mais" (item 3); sem a
+    legenda "Riscado = finalizado" (item 8); caixa marca e texto abre o card (item 9)
+[ ] Release 3 — card (1.2.0): anexar pasta como atalho (item 4); sem o indicador de
+    envelhecimento no modal (item 5); hora digitada "2100" vira "21:00" (item 6); instalador
 
 
 PENDÊNCIAS E OBSERVAÇÕES

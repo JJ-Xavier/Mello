@@ -1,6 +1,7 @@
 // Gera os PNGs do logo do protótipo (o mesmo SVG de components/Logo.tsx) em resources/: o ícone da
 // bandeja (16 e 32 px, para telas com escala de 100% e 200%) e o das notificações (64 px). Gera
-// também o ícone do app e do instalador (build/icon.ico, P14), de 16 a 256 px. O desenho é feito
+// também o ícone do app e do instalador (build/icon.ico, P14), de 16 a 256 px, e a cópia dele em
+// resources/icon.ico, o ícone da janela (barra de tarefas, Release.txt item 1). O desenho é feito
 // pelo Chromium do próprio app, num canvas; o projeto não tem biblioteca de imagens. Os arquivos
 // ficam no Git: rodar de novo só se o logo mudar.
 //
@@ -87,8 +88,10 @@ try {
   }
   const images = []
   for (const size of ICO_SIZES) images.push({ size, png: await render(page, size) })
-  fs.writeFileSync(path.join(buildDir, 'icon.ico'), ico(images))
-  console.log(`Gerado: build/icon.ico (${ICO_SIZES.join(', ')} px)`)
+  const icon = ico(images)
+  fs.writeFileSync(path.join(buildDir, 'icon.ico'), icon)
+  fs.writeFileSync(path.join(outDir, 'icon.ico'), icon)
+  console.log(`Gerado: build/icon.ico e resources/icon.ico (${ICO_SIZES.join(', ')} px)`)
 } finally {
   await app.close()
   fs.rmSync(dataDir, { recursive: true, force: true })

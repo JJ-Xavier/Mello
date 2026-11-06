@@ -1,0 +1,13 @@
+Alterações pos projeto
+
+1- icone da barra de tarefas errado aparece o do react e nao do mello
+2- transação de card bugada (quando coloca o card dentro de outra area ele trava e faz uma animação
+de voltar para o card antigo)
+3- calendario quando tem mais de um item nao aparece os itens, o ideal seria o calendario por inteiro se 
+alocar de acordo com os itens para todos aparecerem
+4- o anexo dos cards tem que aceitar pastas e não apenas arquivos (de qualquer modalidade)
+5- remover o aviso parado a mais ou menos de um dia dos cards (não ha nescessidade de falar/demostrar o envelhecimento do card nessa area)
+6- relogio com preencimento altomatico ou seja quando eu escrever 2100 ele ja tem que entender e alterar na hora que e 21:00 
+7- quando movimento uma tarefa dentro do card para cima e para baixo ela tembem buga muito parecido com o bug da movimentação dos cards
+8- remover a escrita dento do calendario Riscado = finalizado
+9- o item dentro do calendario so e marcado se eu marcar o box da tarefa caso eu clique na tarefa eu tenho que ser jogado para o card da tarefa

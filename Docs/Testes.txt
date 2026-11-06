@@ -1,7 +1,7 @@
 Testes — Mello
 
 Status: criado na etapa 1 (21/10/2026), atualizado na etapa 12 (615 testes, versão 1.0.0, em
-30/10/2026).
+30/10/2026) e na Release 1 (616 testes, versão 1.0.1, em 06/11/2026).
 Atualizado a cada etapa.
 
 
@@ -717,6 +717,19 @@ src/main/modules/recurrence.test.ts (REP-16, MOD-04; 1 novo)
 - Um quadro-modelo pausa a repetição; ao deixar de ser modelo, ela volta.
 
 Também mudou: App.test.tsx (versão 1.0.0).
+
+Release 1 (versão 1.0.1, Docs/Release.txt itens 1, 2 e 7) — 1 teste novo
+
+src/renderer/src/lib/useDropped.test.ts (arrastar; 1 novo)
+- Depois de soltar, a ordem nova aparece na hora e continua até o cache mudar; quando ele muda,
+  vale o cache.
+
+No app real (06/11/2026), um roteiro do Playwright arrastou um card para outra lista e um item
+para o fim do checklist, anotando a posição a cada ~40 ms depois de soltar. Antes da correção:
+o desenho do card arrastado voltava até a lista de origem (~250 ms) e os itens pulavam 14 px e
+deslizavam de volta (~200 ms). Depois: o card assenta no destino e os itens já ficam no lugar
+final. O ícone da janela, lido pelo Windows (WM_GETICON) com o app aberto pelo electron.exe
+(como no npm run dev), é o logo do Mello.
 
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)

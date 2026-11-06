@@ -4,6 +4,29 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+1.0.1 — Release 1: correções (06/11/2026)
+
+Os itens 1, 2 e 7 do Docs/Release.txt (plano em Docs/PLANO.md, seção 11).
+
+Corrigido
+- Arrastar um card para outra lista: ao soltar, o desenho do card voltava voando até a lista de
+  origem antes de aparecer no destino. Os itens do checklist pulavam e deslizavam de volta. A
+  causa: o TanStack Query só avisa a tela da ordem nova depois de um setTimeout, e nesse
+  intervalo o dnd-kit desenhava a ordem antiga. Agora a ordem nova aparece na hora em que se
+  solta (hook useDropped), nos cinco arrastes: cards, listas, quadros do Início, checklists e
+  itens.
+- A barra de tarefas mostrava o ícone do Electron (o átomo) no npm run dev: a janela não tinha
+  ícone próprio. Agora usa o do Mello (resources/icon.ico, cópia do build/icon.ico, que o
+  scripts/gerar-icones.mts também gera).
+
+Testes
+- 616 no total (1 novo: useDropped.test.ts). O arraste foi medido no app real antes e depois da
+  correção (Testes.txt, Release 1).
+
+Documentação
+- Atualizados: PLANO.md (seção 11, as três releases), To-do-list.txt, Testes.txt, Pipeline.txt.
+
+
 1.0.0 — Etapa 12: polimento, revisão geral e instalador (30/10/2026)
 
 A primeira versão completa: as 12 etapas do PLANO.md estão prontas.
