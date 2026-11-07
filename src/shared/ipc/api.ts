@@ -234,8 +234,8 @@ export interface MelloApi {
   files: {
     // Abre a janela "Abrir" do Windows. Cancelar devolve uma lista vazia.
     pick(input: PickFilesInput): Promise<Result<PickedFile[]>>
-    // Arquivos soltos no modal. Pastas ficam de fora.
-    dropped(files: File[]): Promise<Result<PickedFile[]>>
+    // Arquivos soltos. Pastas só com folders (anexos do card).
+    dropped(files: File[], folders?: boolean): Promise<Result<PickedFile[]>>
   }
   attachments: {
     add(input: AddAttachmentsInput): Promise<Result<null>>
@@ -385,9 +385,10 @@ export function createApi(
     },
     files: {
       pick: call(CHANNELS.filesPick),
-      dropped: (files) =>
+      dropped: (files, folders) =>
         call<PickedFile[]>(CHANNELS.filesDropped)({
-          paths: files.map((file) => pathOf(file)).filter((path) => path !== '')
+          paths: files.map((file) => pathOf(file)).filter((path) => path !== ''),
+          folders
         })
     },
     attachments: {

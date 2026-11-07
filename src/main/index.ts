@@ -15,6 +15,7 @@ import {
   type Tray
 } from 'electron'
 import log from 'electron-log/main'
+import appIcon from '../../resources/icon.ico?asset'
 import { EVENTS, type EventPayloads, type MelloEvent } from '../shared/ipc/api'
 import type { Theme } from '../shared/ipc/settings'
 import { safeHref } from '../shared/rules/richText'
@@ -120,6 +121,8 @@ function createWindow(): BrowserWindow {
     minHeight: 640,
     show: false,
     title: 'Mello',
+    // Sem ele, a barra de tarefas mostra o ícone do Electron no npm run dev (PLANO.md 11.1, item 1).
+    icon: appIcon,
     backgroundColor: windowBackground(),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),

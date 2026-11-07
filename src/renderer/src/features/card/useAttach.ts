@@ -1,5 +1,6 @@
 // Anexar (ANX-01, ANX-05): pela janela do Windows (botões Anexo e Adicionar) ou soltando arquivos
 // do Explorer no modal (decidido em 23/10/2026). Acima de 200 MB, pede confirmação antes de copiar.
+// Pastas (Release 2): pela janela de escolher pasta ou soltas no modal; viram atalho, sem cópia.
 // `adding` conta os arquivos sendo copiados, para a seção mostrar "Anexando…".
 import { notifyManager } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -49,9 +50,11 @@ export function useAttach(card: CardDetail) {
   return {
     adding,
     choose: async () => attach(await run(() => unwrap(api().files.pick({ imagesOnly: false })))),
+    chooseFolder: async () =>
+      attach(await run(() => unwrap(api().files.pick({ imagesOnly: false, folder: true })))),
     drop: async (files: File[]) => {
-      const picked = await run(() => unwrap(api().files.dropped(files)))
-      if (picked?.length === 0) notify('Solte arquivos para anexar. Pastas não podem ser anexadas.')
+      const picked = await run(() => unwrap(api().files.dropped(files, true)))
+      if (picked?.length === 0) notify('Solte arquivos ou pastas do Explorer para anexar.')
       await attach(picked)
     }
   }

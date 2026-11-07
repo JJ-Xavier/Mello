@@ -1,9 +1,9 @@
-// Um dia do calendário: o número (hoje no círculo azul, CAL-04), os itens que cabem e o "+N mais",
-// que abre a lista completa do dia (CAL-13), e o "Adicionar" ao passar o mouse (CAL-12). Dias de
+// Um dia do calendário: o número (hoje no círculo azul, CAL-04), todos os itens (o dia cresce até
+// caber, CAL-13) e o "+" do "Adicionar" na linha do número, ao passar o mouse (CAL-12). Dias de
 // fora do mês ficam mais escuros e sem itens (CAL-03).
-import { useId, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent } from 'react'
 import { CARD_TITLE_MAX } from '../../../../shared/limits'
-import { addTarget, visibleCount, type CalendarDay } from '../../../../shared/rules/calendar'
+import { addTarget, type CalendarDay } from '../../../../shared/rules/calendar'
 import { dueDate } from '../../../../shared/rules/dates'
 import { Icon } from '../../components/Icon'
 import { Popover, PopoverHeader } from '../../components/Popover'
@@ -16,9 +16,6 @@ import { queryKeys } from '../../lib/queryKeys'
 import formStyles from '../card/CreateCardForm.module.css'
 import styles from './Calendar.module.css'
 import { CalendarItem, type DayItem, type ItemOptions } from './CalendarItems'
-
-const GAP = 4
-const MORE_HEIGHT = 24
 
 // O card novo entra na primeira lista do quadro que não é de conclusão, com a data do dia e sem
 // hora. No calendário de todos os quadros, o formulário pergunta o quadro (começa no escolhido).
@@ -136,35 +133,9 @@ interface DayCellProps {
 }
 
 export function DayCell({ day, today, items, options, boardId, preferredBoardId }: DayCellProps) {
-  const box = useRef<HTMLDivElement>(null)
-  const [fit, setFit] = useState({ shown: items.length, moreTop: 0 })
   const [adding, setAdding] = useState(false)
   const addId = useId()
-  const moreId = useId()
   const label = formatDayLong(day.day)
-
-  // CAL-13: mede onde cada item termina e mostra os que cabem; os outros continuam no lugar,
-  // invisíveis, para a próxima medida (a célula muda de altura com a janela).
-  useLayoutEffect(() => {
-    const element = box.current
-    if (!element) return
-    const measure = () => {
-      const children = [...element.querySelectorAll<HTMLElement>(':scope > [data-item]')]
-      const bottoms = children.map((child) => child.offsetTop + child.offsetHeight)
-      const shown = visibleCount(bottoms, element.clientHeight, GAP, MORE_HEIGHT)
-      const moreTop = shown === 0 ? 0 : bottoms[shown - 1]! + GAP
-      setFit((current) =>
-        current.shown === shown && current.moreTop === moreTop ? current : { shown, moreTop }
-      )
-    }
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [items])
-
-  const hiddenCount = items.length - fit.shown
 
   return (
     <div
@@ -178,54 +149,17 @@ export function DayCell({ day, today, items, options, boardId, preferredBoardId 
       </div>
       {day.inMonth && (
         <>
-          <div ref={box} className={styles.items}>
-            {items.map((item, index) => (
-              <div
-                key={item.id}
-                data-item=""
-                className={cx(styles.slot, index >= fit.shown && styles.hidden)}
-                inert={index >= fit.shown}
-                aria-hidden={index >= fit.shown || undefined}
-              >
-                <CalendarItem item={item} {...options} />
-              </div>
-            ))}
-            {hiddenCount > 0 && (
-              <button
-                type="button"
-                className={styles.more}
-                style={{ top: fit.moreTop }}
-                popoverTarget={moreId}
-              >
-                +{hiddenCount} mais
-              </button>
-            )}
-          </div>
-          <Popover id={moreId} label={`Itens de ${label}`} width={300}>
-            {(close) => (
-              <>
-                <PopoverHeader title={label} onClose={close} />
-                <div className={styles.dayList}>
-                  {items.map((item) => (
-                    <CalendarItem key={item.id} item={item} {...options} />
-                  ))}
-                </div>
-              </>
-            )}
-          </Popover>
-          {/* Num dia cheio, o "Adicionar" vira só o "+" à direita, para não cobrir o "+N mais". */}
+          {items.map((item) => (
+            <CalendarItem key={item.id} item={item} {...options} />
+          ))}
           <button
             type="button"
-            className={cx(
-              styles.add,
-              hiddenCount > 0 && styles.addCompact,
-              adding && styles.addOpen
-            )}
-            title={hiddenCount > 0 ? 'Adicionar' : undefined}
+            className={cx(styles.add, adding && styles.addOpen)}
+            title="Adicionar"
             popoverTarget={addId}
           >
             <Icon name="plus" />
-            <span className={hiddenCount > 0 ? 'visually-hidden' : undefined}>Adicionar</span>
+            <span className="visually-hidden">Adicionar</span>
           </button>
           <Popover id={addId} label={`Adicionar card em ${label}`} onToggle={setAdding}>
             {(close) => (

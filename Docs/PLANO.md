@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026, etapa 10 em 29/10/2026, etapa 11 em 30/10/2026 e etapa 12 em 30/10/2026 (versão 1.0.0)**; a etapa 12 aguarda o commit. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro).
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026, etapa 10 em 29/10/2026, etapa 11 em 30/10/2026 e etapa 12 em 30/10/2026 (versão 1.0.0)**. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro). **Releases pós-projeto** planejadas em 06/11/2026, na seção 11: Release 1 (1.0.1) concluída em 06/11/2026 e Release 2 (1.0.2, todo o resto) em 07/11/2026.
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -16,6 +16,7 @@
 8. [Como cada etapa é conferida](#8-como-cada-etapa-é-conferida)
 9. [Riscos](#9-riscos)
 10. [Documentação por etapa](#10-documentação-por-etapa)
+11. [Releases pós-projeto](#11-releases-pós-projeto)
 
 ---
 
@@ -60,7 +61,7 @@ Quando não houve resposta direta, adotei o caminho abaixo. Todas foram aprovada
 |---|---|---|
 | P1 | A "área de finalizado" é a opção **"Lista de conclusão"** no menu "…" da lista, já ligada em Concluído e Entregue. "Não envelhece" continua sendo uma opção separada. | Renomear a lista não quebra a regra, e dá para ter mais de uma área de finalizado. |
 | P2 | O calendário aberto **pelo Início** mostra todos os quadros, com seletor de quadro. Aberto **pela barra do quadro**, mostra aquele quadro. | É uma tela só, e ganha uma visão geral dos prazos. |
-| P3 | Clicar num **card** no calendário abre o modal. Clicar numa **tarefa** marca ou desmarca o item. | Pela regra FIN-01, marcar o ✓ pelo calendário não finalizaria o card. |
+| P3 | Clicar num **card** no calendário abre o modal. Clicar numa **tarefa** marca ou desmarca o item. (Release 2: a caixa marca e o texto abre o card da tarefa, seção 11.) | Pela regra FIN-01, marcar o ✓ pelo calendário não finalizaria o card. |
 | P4 | **Fechar a janela mantém o Mello na bandeja** (para lembretes e repetições), com opção para desligar. "Iniciar com o Windows" fica opcional e desligado. | Sem isso, lembrete só funciona com a janela aberta. |
 | P5 | Lembrete: as opções do protótipo (Nenhum, No horário, 1 dia antes). Data sem hora lembra às 09:00. Os perdidos com o app fechado aparecem agrupados ao abrir. | O protótipo não detalha esses casos. |
 | P6 | Modelos: card-modelo (selo "Modelo", não envelhece, fora do calendário) e quadro-modelo (copia listas, etiquetas, fundo e, se você quiser, os cards). | Não há tela de modelos no protótipo. Segue o comportamento do Trello. |
@@ -568,3 +569,53 @@ Se uma funcionalidade não ficar boa, a etapa inteira é revertida (voltando ao 
 | Qualquer migração nova | `Modelo-de-Dados.txt` |
 
 **Documentos novos:** `Docs/Arquitetura.txt` (processos, IPC, pastas, segurança, agendador), `Modelo-de-Dados.txt` (tabelas, campos, índices e histórico de migrações), `Testes.txt` (o que é testado, como rodar e o roteiro manual), `Changelog.txt` (o que mudou em cada etapa).
+
+---
+
+## 11. Releases pós-projeto
+
+Os 9 itens do antigo `Docs/Release.txt` (mudanças pedidas depois da versão 1.0.0), planejados em 06/11/2026. Com todos feitos, o arquivo foi apagado em 07/11/2026 (o texto original continua no histórico do Git); a tabela 11.1 é a referência dos itens. Viraram duas releases (eram três; em 07/11/2026 você juntou a 2 e a 3 numa só, a versão 1.0.2), cada uma com o mesmo fluxo de uma etapa (seção 8 e `Pipeline.txt`): implementação, verificações, conferência visual, documentos e o aviso de pronto para commit. A próxima só começa depois do seu commit.
+
+### 11.1 Decisões (06/11/2026)
+
+| Item | Decisão |
+|---|---|
+| 1 — ícone | O Mello instalado já tem o ícone certo no `.exe`. O ícone do Electron (o átomo, parecido com o do React) aparece no `npm run dev` e em qualquer janela sem ícone próprio. A janela passa a ter o ícone do Mello (`resources/icon.ico`, o mesmo `.ico` do instalador). |
+| 2 e 7 — arrastar | Causa achada no app real: ao soltar, o `setQueryData` do TanStack Query só avisa a tela depois de um `setTimeout`. Nesse intervalo, o dnd-kit desenha o card (ou o item) no lugar antigo, e a animação de soltar vai para lá: o card "volta" para a origem (medido: ~250 ms) e os itens do checklist pulam e deslizam de volta (~200 ms). A correção é uma só, para os cinco arrastes do app (cards, listas, quadros do Início, checklists e itens): a tela mostra a ordem nova na mesma hora, até o cache chegar. |
+| 3 — calendário | Cada dia cresce até caber todos os itens, e o calendário rola. A semana tem pelo menos a altura de hoje (a grade enche a tela quando há poucos itens). Sai o "+N mais" (CAL-13). O "Adicionar" vira um "+" no canto de cima do dia, na linha do número, ao passar o mouse (escolha de 06/11/2026), para não cobrir o último item. |
+| 4 — pastas | A pasta anexada é um **atalho**: o Mello guarda só o caminho, não copia nada (escolha de 06/11/2026). "Abrir" abre a pasta original no Explorer. Não entra no backup nem na exportação (só o caminho, no banco). Pasta movida ou apagada mostra "Pasta não encontrada". Arquivos continuam como hoje (ANX-01), de qualquer tipo. |
+| 5 — envelhecimento no modal | Sai o indicador ao lado de "Última movimentação" (as barrinhas e "Parado há… · nível N de 5", ENV-08). O envelhecimento continua na face do card, como hoje. |
+| 6 — hora digitada | O campo "Hora" aceita só os números: ao digitar o quarto número ("2100"), vira "21:00" na hora. Três números ("930") viram "09:30" ao sair do campo ou salvar. |
+| 8 — legenda | Sai o "Riscado = finalizado" da barra do calendário. O riscado continua (CAL-07). |
+| 9 — tarefa no calendário | A caixa marca e desmarca a tarefa; clicar no texto abre o card dela por cima do calendário (muda a CAL-11 e a P3). |
+
+### 11.2 Release 1 — Correções (versão 1.0.1) ✅ concluída em 06/11/2026
+
+- **Resultado:** tudo da entrega abaixo foi feito; 616 testes (1 novo), lint e tipos limpos. No app real, o card solto em outra lista assenta no destino (antes, o desenho voltava até a origem) e os itens do checklist não pulam mais; o ícone da janela, lido pelo Windows, é o do Mello. A mesma correção vale para as listas, os quadros do Início e os checklists. Detalhes no `Changelog.txt`.
+
+
+- **Entrega:** itens 1, 2 e 7. Ícone do Mello na janela (barra de tarefas); arrastar sem a volta para a origem nos cinco arrastes (um hook `useDropped` em `src/renderer/src/lib/`).
+- **Aceite:** no app real, soltar um card em outra lista e um item do checklist em outra posição não mostra nenhum quadro na posição antiga (medido pelo mesmo roteiro do Playwright que achou o erro); a barra de tarefas mostra o logo do Mello no `npm run dev`.
+- **Testes:** teste do hook (a ordem nova aparece antes de o cache avisar); a suíte inteira.
+
+### 11.3 Release 2 — Calendário e card (versão 1.0.2) ✅ concluída em 07/11/2026
+
+Em 07/11/2026 você decidiu que a 1.0.2 leva todas as mudanças que faltavam: a parte do calendário (antes 1.1.0) e a do card (antes a Release 3, 1.2.0). A parte do calendário entrou num commit antes da do card.
+
+- **Resultado:** tudo da entrega abaixo foi feito; 616 testes (10 novos, 10 retirados com o "+N mais", a legenda e o indicador do modal), lint e tipos limpos. No app real: um dia com 10 itens mostrou todos e o calendário rolou; uma pasta anexada pelo menu abriu no Explorer, sem cópia, e mostrou "Pasta não encontrada" depois de renomeada; "2100" virou "21:00" ao digitar; o modal não tem mais o indicador. A migração foi aplicada numa cópia do banco real (6 anexos, todos iguais depois). Detalhes no `Changelog.txt`.
+
+Calendário:
+- **Entrega:** itens 3, 8 e 9. Dia do tamanho dos itens com rolagem, "+" ao lado do número, sem "+N mais"; sem a legenda; tarefa com a caixa (marca) e o texto (abre o card).
+- **Aceite:** um dia com 6 itens mostra os 6; clicar na caixa marca a tarefa; clicar no texto abre o modal do card.
+- **Regras:** CAL-07 (sem a legenda), CAL-11, CAL-12 e CAL-13 reescritas.
+- **Testes:** os de `CalendarPage.test.tsx` ajustados (sem "+N mais"; caixa e texto da tarefa).
+
+Card:
+- **Entrega:** itens 4, 5 e 6. Anexar pasta pelo botão (janela de escolher pasta) e arrastando do Explorer; atalho na lista de anexos com "Abrir" (Explorer) e "Pasta não encontrada"; modal sem o indicador de envelhecimento; hora digitada sem os dois-pontos.
+- **Dados:** migração nova: `attachment.file_id` passa a aceitar nulo e ganha `folder_path` (um dos dois preenchido). `Modelo-de-Dados.txt` e `LGPD.txt` (o caminho da pasta fica no banco; o conteúdo, não).
+- **Aceite:** anexar uma pasta pelo botão e pelo arrastar, abrir no Explorer, renomear a pasta e ver "Pasta não encontrada"; "2100" vira "21:00" ao digitar.
+- **Regras:** ANX-01 e ANX-03 (pastas), ENV-08 (sem o indicador no modal), DAT-01 (hora sem dois-pontos).
+- **Testes:** migração, anexar e abrir pasta no main, `parseTimeInput` com "2100" e "930", o modal sem o indicador. Instalador novo (`npm run build:win`) no fim.
+- **Como ficou:** os botões Anexo e Adicionar abrem o menu "Anexar" (Arquivos ou Pasta). A migração `0001_anexo_pasta` foi gerada pelo drizzle-kit e corrigida à mão (ele copiava `folder_path` da tabela antiga, que não tem a coluna). O modal lê o card de novo ao abrir, para a pasta movida aparecer como "Pasta não encontrada". A hora formata também no "Horário" da repetição.
+
+Fora do plano: o canvas do protótipo não é redesenhado para essas mudanças (são pequenas e foram escolhidas aqui); a seção 11.1 é a referência.

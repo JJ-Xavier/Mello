@@ -88,7 +88,13 @@ describe('modal do card: Adicionar', () => {
     fireEvent.change(await within(menu).findByLabelText('Data de entrega'), {
       target: { value: '20/10/2020' }
     })
-    fireEvent.change(within(menu).getByLabelText('Hora'), { target: { value: '17:00' } })
+    // A hora só com números: três viram a hora ao sair do campo; o quarto, na hora.
+    const hour = within(menu).getByLabelText('Hora') as HTMLInputElement
+    fireEvent.change(hour, { target: { value: '930' } })
+    fireEvent.blur(hour)
+    expect(hour.value).toBe('09:30')
+    fireEvent.change(hour, { target: { value: '1700' } })
+    expect(hour.value).toBe('17:00')
     fireEvent.change(within(menu).getByLabelText('Lembrete'), { target: { value: 'day_before' } })
     fireEvent.click(within(menu).getByRole('button', { name: 'Salvar' }))
 

@@ -22,9 +22,9 @@ export function CoverPicker({ card, close }: { card: CardDetail; close: () => vo
   const chosen = labels.filter((l) => card.labelIds.includes(l.id))
   const { cover } = card
   // Uma miniatura por arquivo (o mesmo arquivo pode estar anexado duas vezes).
-  const images = card.attachments.filter(
-    (a, i, all) => a.isImage && all.findIndex((b) => b.fileId === a.fileId) === i
-  )
+  const images = card.attachments
+    .flatMap((a) => (a.kind === 'file' && a.isImage ? [a] : []))
+    .filter((a, i, all) => all.findIndex((b) => b.fileId === a.fileId) === i)
 
   const set = (next: SetCoverInput['cover']) =>
     void act(() => unwrap(api().cards.setCover({ cardId: card.id, cover: next })))

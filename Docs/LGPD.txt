@@ -2,9 +2,10 @@ Referente as boas praticas da LGPD e aplicacões em desenvolvimentos de softwere
 
 Status: aprovado em 21/10/2026; revisado na etapa 1 (pasta do modo de desenvolvimento), na
 etapa 5 (anexos, 24/10/2026), na etapa 8 (notificações dos lembretes, 26/10/2026), na etapa 9
-(imagens de fundo, 29/10/2026), na etapa 10 (backup, exportação e apagar tudo, 29/10/2026) e na
+(imagens de fundo, 29/10/2026), na etapa 10 (backup, exportação e apagar tudo, 29/10/2026), na
 etapa 12 (versão final 1.0.0, 30/10/2026): nada mudou no que é guardado; conferido no app
-instalado que desinstalar deixa os dados em %APPDATA%\Mello.
+instalado que desinstalar deixa os dados em %APPDATA%\Mello. Revisado na Release 2 (1.0.2,
+07/11/2026): pastas anexadas como atalho.
 
 
 1. RESUMO
@@ -37,6 +38,11 @@ vezes é guardado uma vez só. Remover um anexo tira ele do card; a cópia guard
 próxima vez que o app abre (limpeza dos arquivos sem uso). Excluir um card também não apaga na
 hora os arquivos dele. Cópias dos arquivos podem continuar nos backups (seção 4) até eles saírem
 da rotação. "Apagar tudo" apaga a pasta inteira.
+
+Pastas anexadas (Release 2): a pasta não é copiada. O Mello guarda só o caminho dela no banco (por
+exemplo, C:\Users\voce\Fotos\Viagem), e esse caminho vai junto nos backups e na exportação
+(dados.json); o conteúdo da pasta não vai. "Abrir" abre a pasta original, e remover o anexo não
+mexe nela. O caminho pode mostrar o seu nome de usuário do Windows e o nome das suas pastas.
 
 Imagens de fundo (etapa 9): a imagem escolhida no editor de fundo é copiada para a mesma pasta,
 do mesmo jeito, já no envio, para aparecer na prévia; se você cancelar, ela sai na limpeza dos

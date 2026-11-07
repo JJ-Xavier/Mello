@@ -43,6 +43,7 @@ import ui from '../../components/ui.module.css'
 import { api, unwrap } from '../../lib/api'
 import { useAction, useSettings } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
+import { useDropped } from '../../lib/useDropped'
 import { useNow } from '../../lib/useNow'
 import styles from './BoardPage.module.css'
 import {
@@ -136,7 +137,7 @@ const isCard = (active: Active) => active.data.current?.['type'] === 'card'
 // Com o filtro do quadro ativo (FLT), a tela e o arraste usam só os cards visíveis; ao soltar, a
 // posição é convertida para a lista inteira, com os cards escondidos pelo filtro.
 export function ListsArea({
-  board: fullBoard,
+  board: cached,
   filter,
   visible
 }: {
@@ -144,6 +145,7 @@ export function ListsArea({
   filter: BoardFilter
   visible: (card: CardSummary) => boolean
 }) {
+  const [fullBoard, showDropped] = useDropped(cached)
   const filtering = isFilterActive(filter)
   const board = useMemo(
     () =>
@@ -342,7 +344,9 @@ export function ListsArea({
     const saved = { ...target, index: fullIndex(all, shown, current.card.id, target.index) }
     const key = queryKeys.board(board.id)
     const latest = queryClient.getQueryData<BoardDetail>(key) ?? fullBoard
-    queryClient.setQueryData<BoardDetail>(key, applyMove(latest, current.card.id, saved, now))
+    const moved = applyMove(latest, current.card.id, saved, now)
+    showDropped(moved)
+    queryClient.setQueryData<BoardDetail>(key, moved)
     void run(
       () => unwrap(api().cards.move({ cardId: current.card.id, ...saved })),
       [key, queryKeys.card(current.card.id)]
@@ -354,10 +358,9 @@ export function ListsArea({
     if (!over || dragged.id === over.id) return
     const from = board.lists.findIndex((l) => l.id === dragged.id)
     const to = board.lists.findIndex((l) => l.id === over.id)
-    queryClient.setQueryData<BoardDetail>(queryKeys.board(board.id), {
-      ...fullBoard,
-      lists: arrayMove(fullBoard.lists, from, to)
-    })
+    const moved = { ...fullBoard, lists: arrayMove(fullBoard.lists, from, to) }
+    showDropped(moved)
+    queryClient.setQueryData<BoardDetail>(queryKeys.board(board.id), moved)
     void run(
       () => unwrap(api().lists.move({ listId: String(dragged.id), index: to })),
       [queryKeys.board(board.id)]

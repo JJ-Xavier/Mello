@@ -8,7 +8,8 @@ import {
   monthGrid,
   parseDayInput,
   parseTimeInput,
-  sortByDue
+  sortByDue,
+  typingTime
 } from './dates'
 import { cardMatches, isFilterActive, NO_FILTER } from './filter'
 import { PRIORITIES, priorityLevel, sortByPriority } from './priority'
@@ -77,6 +78,18 @@ describe('campos de data (DAT)', () => {
     expect(parseTimeInput('17:00')).toBe('17:00')
     expect(parseTimeInput('24:00')).toBeNull()
     expect(parseTimeInput('17h')).toBeNull()
+  })
+
+  it('DAT-01: a hora só com números; o quarto número já vira a hora ao digitar', () => {
+    expect(parseTimeInput('2100')).toBe('21:00')
+    expect(parseTimeInput('930')).toBe('09:30')
+    expect(parseTimeInput('2500')).toBeNull()
+    expect(parseTimeInput('21')).toBeNull()
+    expect(typingTime('21')).toBe('21')
+    expect(typingTime('930')).toBe('930')
+    expect(typingTime('2100')).toBe('21:00')
+    expect(typingTime('2500')).toBe('2500')
+    expect(typingTime('21:00')).toBe('21:00')
   })
 
   it('valida o que chega pelo IPC', () => {

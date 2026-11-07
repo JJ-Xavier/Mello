@@ -9,7 +9,8 @@ import {
   dayOf,
   formatDayInput,
   parseDayInput,
-  parseTimeInput
+  parseTimeInput,
+  typingTime
 } from '../../../../shared/rules/dates'
 import {
   nextOccurrences,
@@ -212,7 +213,8 @@ export function RepeatDialog({ card, close }: { card: CardDetail; close: () => v
             className={ui.fld}
             value={timeText}
             placeholder="hh:mm"
-            onChange={(event) => edit(setTimeText)(event.target.value)}
+            onChange={(event) => edit(setTimeText)(typingTime(event.target.value))}
+            onBlur={() => setTimeText(parseTimeInput(timeText) ?? timeText)}
           />
         </label>
         <label className={cx(ui.label, styles.grow)}>

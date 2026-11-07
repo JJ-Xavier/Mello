@@ -3,6 +3,7 @@ import path from 'node:path'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createTestDb, insertCard } from '../db/test-db'
+import type { FileAttachment } from '../../shared/ipc/files'
 import { activity, card } from '../db/schema'
 import * as attachments from './attachments'
 import * as boards from './boards'
@@ -31,7 +32,7 @@ const detail = () => cards.get(t.db, cardId)
 async function attach(...samples: [string, string | Uint8Array][]) {
   const picks = samples.map(([name, content]) => ({ path: files.sample(name, content), name }))
   await attachments.add(t.db, files.store, cardId, picks, NOW)
-  return detail().attachments
+  return detail().attachments as FileAttachment[]
 }
 
 describe('anexar (ANX-01 a ANX-03)', () => {
@@ -56,6 +57,68 @@ describe('anexar (ANX-01 a ANX-03)', () => {
     await attach(['a.txt', 'a'], ['b.txt', 'b'])
     const face = boards.get(t.db, detail().boardId).lists[0]!.cards[0]!
     expect(face.attachmentCount).toBe(2)
+  })
+})
+
+describe('pasta como atalho (ANX-01, ANX-03, Release 2)', () => {
+  function folder(name: string) {
+    const target = path.join(files.root, name)
+    fs.mkdirSync(target)
+    fs.writeFileSync(path.join(target, 'praia.jpg'), 'foto')
+    return target
+  }
+  const addFolder = (target: string) =>
+    attachments.add(
+      t.db,
+      files.store,
+      cardId,
+      [{ path: target, name: path.basename(target), folder: true }],
+      NOW
+    )
+
+  it('guarda só o caminho, sem copiar; abrir abre a pasta original', async () => {
+    const fotos = folder('Fotos da viagem')
+    await addFolder(fotos)
+    const [item] = detail().attachments
+    expect(item).toEqual({
+      kind: 'folder',
+      id: expect.any(String),
+      name: 'Fotos da viagem',
+      found: true,
+      createdAt: NOW
+    })
+    expect(files.stored()).toEqual([])
+    expect(row().lastActivityAt).toBe(NOW)
+    expect(await attachments.open(t.db, files.store, item!.id)).toEqual({ shownInFolder: false })
+    expect(files.opened).toEqual([fotos])
+  })
+
+  it('pasta movida ou apagada: "Pasta não encontrada"; remover não mexe na pasta', async () => {
+    const fotos = folder('Fotos')
+    await addFolder(fotos)
+    fs.renameSync(fotos, `${fotos} 2026`)
+    const [item] = detail().attachments
+    expect(item).toMatchObject({ kind: 'folder', found: false })
+    await expect(attachments.open(t.db, files.store, item!.id)).rejects.toThrow(
+      /Pasta não encontrada/
+    )
+    expect(files.opened).toEqual([])
+    attachments.remove(t.db, item!.id, LATER)
+    expect(detail().attachments).toEqual([])
+    expect(fs.existsSync(`${fotos} 2026`)).toBe(true)
+  })
+
+  it('copiar o card leva o atalho junto', async () => {
+    await addFolder(folder('Fotos'))
+    const source = detail()
+    const copied = cards.copy(
+      t.db,
+      { cardId, title: 'Viagem (cópia)', listId: source.listId, index: 0 },
+      LATER
+    )
+    expect(cards.get(t.db, copied.id).attachments).toEqual([
+      expect.objectContaining({ kind: 'folder', name: 'Fotos', found: true })
+    ])
   })
 })
 

@@ -107,13 +107,20 @@ export function formatDayInput(day: string): string {
   return `${date}/${month}/${year}`
 }
 
-// O campo "Hora": "17:00" ou "9:05". Devolve "HH:mm", ou null.
+// O campo "Hora": "17:00" ou "9:05", ou só os números, "2100" ou "930" (DAT-01). Devolve "HH:mm",
+// ou null.
 export function parseTimeInput(text: string): string | null {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(text.trim())
+  const match = /^(\d{1,2}):?(\d{2})$/.exec(text.trim())
   if (!match) return null
   const [hours, minutes] = [Number(match[1]), Number(match[2])]
   if (hours > 23 || minutes > 59) return null
   return `${pad(hours)}:${pad(minutes)}`
+}
+
+// DAT-01: digitando só números, o quarto já vira a hora ("2100" fica "21:00"). Antes disso, e numa
+// hora inválida ("2500"), o texto fica como foi digitado.
+export function typingTime(text: string): string {
+  return /^\d{4}$/.test(text) ? (parseTimeInput(text) ?? text) : text
 }
 
 // DAT-04: do prazo mais cedo para o mais tarde, sem data no fim; empates mantêm a ordem. Sem hora,

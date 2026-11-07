@@ -1,5 +1,5 @@
 // Calendário (CAL): a grade do mês, a ordem dos itens de um dia, a lista que recebe o card do
-// "Adicionar" e quantos itens cabem num dia. Funções puras.
+// "Adicionar". Funções puras.
 import { dayOf, monthGrid } from './dates'
 
 export type WeekStart = 'sunday' | 'monday'
@@ -72,19 +72,4 @@ export function sortDayTasks<T extends { dueDate: string; cardTitle: string }>(
 // chegam ativas e em ordem).
 export function addTarget<T extends { isDoneList: boolean }>(lists: readonly T[]): T | null {
   return lists.find((list) => !list.isDoneList) ?? null
-}
-
-// CAL-13: quantos itens do dia aparecem. bottoms[i] é onde o item i termina, medido do topo da
-// área dos itens. Se todos cabem na altura livre, todos; senão, os que cabem deixando lugar para
-// o "+N mais" (gap + moreHeight) embaixo deles.
-export function visibleCount(
-  bottoms: readonly number[],
-  available: number,
-  gap: number,
-  moreHeight: number
-): number {
-  if (bottoms.length === 0 || bottoms.at(-1)! <= available) return bottoms.length
-  let count = 0
-  while (count < bottoms.length && bottoms[count]! + gap + moreHeight <= available) count++
-  return count
 }

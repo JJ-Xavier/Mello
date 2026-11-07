@@ -23,6 +23,7 @@ import { api, unwrap } from '../../lib/api'
 import { cx } from '../../lib/cx'
 import { useAction, useBoards, useBoardTemplates, useClosedBoards } from '../../lib/queries'
 import { queryKeys } from '../../lib/queryKeys'
+import { useDropped } from '../../lib/useDropped'
 import { BoardTemplateDialog } from '../templates/BoardTemplateDialog'
 import tpl from '../templates/Templates.module.css'
 import { ClosedBoards } from './ClosedBoards'
@@ -85,10 +86,11 @@ function favoritesFirst(boards: BoardSummary[]): BoardSummary[] {
   return [...boards.filter((b) => b.isFavorite), ...boards.filter((b) => !b.isFavorite)]
 }
 
-function BoardGrid({ boards }: { boards: BoardSummary[] }) {
+function BoardGrid({ boards: cached }: { boards: BoardSummary[] }) {
   const sensors = useDragSensors()
   const queryClient = useQueryClient()
   const run = useAction()
+  const [boards, showDropped] = useDropped(cached)
   const [activeId, setActiveId] = useState<string | null>(null)
   const active = boards.find((b) => b.id === activeId)
 
@@ -103,6 +105,7 @@ function BoardGrid({ boards }: { boards: BoardSummary[] }) {
     const moving = boards[from]!
     const group = reordered.filter((b) => b.isFavorite === moving.isFavorite)
     const index = group.findIndex((b) => b.id === moving.id)
+    showDropped(reordered)
     queryClient.setQueryData(queryKeys.boards, reordered)
     void run(() => unwrap(api().boards.move({ boardId: moving.id, index })), [queryKeys.boards])
   }

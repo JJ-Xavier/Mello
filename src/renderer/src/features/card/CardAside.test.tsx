@@ -1,5 +1,7 @@
 // Modal do card, etapa 5: nota, atividade, anexos e capa.
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import fs from 'node:fs'
+import path from 'node:path'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import type { Editor } from '@tiptap/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { PNG_1X1 } from '../../../../main/modules/test-files'
@@ -33,6 +35,12 @@ async function openCard() {
 }
 
 const saved = () => unwrap(api.cards.get({ cardId }))
+
+// "Anexo" abre o menu "Anexar": Arquivos (a janela "Abrir") ou Pasta (atalho, Release 2).
+async function attachFiles(modal: HTMLElement, kind: 'Arquivos' | 'Pasta' = 'Arquivos') {
+  const menu = await openPopover(modal, 'Anexo', 'Anexar')
+  fireEvent.click(within(menu).getByRole('button', { name: kind }))
+}
 
 async function openPopover(scope: HTMLElement, button: string, popover: string) {
   fireEvent.click(within(scope).getByRole('button', { name: button }))
@@ -128,7 +136,7 @@ describe('anexos (ANX)', () => {
   it('ANX-01 e ANX-03: anexar pela janela do Windows, abrir e remover', async () => {
     files.chosen.push([files.sample('passagens.pdf', 'bilhete')])
     const modal = await openCard()
-    fireEvent.click(within(modal).getByRole('button', { name: 'Anexo' }))
+    await attachFiles(modal)
     const section = await within(modal).findByRole('region', { name: 'Anexos' })
     expect(await within(section).findByText('passagens.pdf')).toBeTruthy()
     expect(within(section).getByText('PDF')).toBeTruthy()
@@ -157,7 +165,7 @@ describe('anexos (ANX)', () => {
     expect(within(modal).queryByText('Solte para anexar ao card')).toBeNull()
   })
 
-  it('pasta solta (sem arquivo) avisa e não anexa nada', async () => {
+  it('solto sem caminho (não veio do Explorer) avisa e não anexa nada', async () => {
     const modal = await openCard()
     const target = within(modal).getByRole('heading', { name: 'Compras' })
     const dataTransfer = { types: ['Files'], files: [new File([], 'Pasta')] }
@@ -166,10 +174,41 @@ describe('anexos (ANX)', () => {
     expect((await saved()).attachments).toEqual([])
   })
 
+  it('ANX-01: pasta pelo menu vira atalho; "Abrir" abre a pasta original', async () => {
+    const fotos = path.dirname(files.sample('praia.jpg', 'foto'))
+    files.folders.push(fotos)
+    const modal = await openCard()
+    await attachFiles(modal, 'Pasta')
+    const section = await within(modal).findByRole('region', { name: 'Anexos' })
+    expect(await within(section).findByText(path.basename(fotos))).toBeTruthy()
+    expect(within(section).getByText(/^Pasta · adicionada em /)).toBeTruthy()
+    expect(within(section).queryByRole('button', { name: 'Usar como capa' })).toBeNull()
+    fireEvent.click(within(section).getByRole('button', { name: 'Abrir' }))
+    await expect.poll(() => files.opened).toEqual([fotos])
+    expect(files.stored()).toEqual([])
+  })
+
+  it('ANX-01: pasta solta do Explorer vira atalho; movida, mostra "Pasta não encontrada"', async () => {
+    const fotos = path.join(files.root, 'Fotos da viagem')
+    fs.mkdirSync(fotos)
+    const modal = await openCard()
+    const folder = new File([], 'Fotos da viagem')
+    dropPath(folder, fotos)
+    const target = within(modal).getByRole('heading', { name: 'Compras' })
+    fireEvent.drop(target, { dataTransfer: { types: ['Files'], files: [folder] } })
+    const section = await within(modal).findByRole('region', { name: 'Anexos' })
+    expect(await within(section).findByText('Fotos da viagem')).toBeTruthy()
+
+    fs.renameSync(fotos, `${fotos} 2026`)
+    cleanup()
+    const reopened = await openCard()
+    expect(await within(reopened).findByText('Pasta não encontrada')).toBeTruthy()
+  })
+
   it('programa: o botão é "Mostrar na pasta"', async () => {
     files.chosen.push([files.sample('instalador.exe', 'MZ')])
     const modal = await openCard()
-    fireEvent.click(within(modal).getByRole('button', { name: 'Anexo' }))
+    await attachFiles(modal)
     fireEvent.click(await within(modal).findByRole('button', { name: 'Mostrar na pasta' }))
     await expect.poll(() => files.shown.length).toBe(1)
     expect(files.opened).toEqual([])
@@ -180,7 +219,7 @@ describe('capa (CAP)', () => {
   it('CAP-01: imagem anexada vira capa, com o selo "Capa"; CAP-03: remover o anexo tira a capa', async () => {
     files.chosen.push([files.sample('praia.png', PNG_1X1)])
     const modal = await openCard()
-    fireEvent.click(within(modal).getByRole('button', { name: 'Anexo' }))
+    await attachFiles(modal)
     const section = await within(modal).findByRole('region', { name: 'Anexos' })
     expect(await within(section).findByRole('img', { name: 'Miniatura de praia.png' })).toBeTruthy()
     fireEvent.click(within(section).getByRole('button', { name: 'Usar como capa' }))

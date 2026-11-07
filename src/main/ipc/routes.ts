@@ -224,10 +224,14 @@ export function createRoutes({
     return null
   })
 
-  route(CHANNELS.filesPick, pickFilesInput, async ({ imagesOnly }) =>
-    picks.register(await files.system.chooseFiles({ imagesOnly }))
+  route(CHANNELS.filesPick, pickFilesInput, async ({ imagesOnly, folder }) => {
+    if (!folder) return picks.register(await files.system.chooseFiles({ imagesOnly }))
+    const chosen = await files.system.chooseFolder({ title: 'Anexar pasta', defaultPath: '' })
+    return picks.register(chosen ? [chosen] : [], true)
+  })
+  route(CHANNELS.filesDropped, droppedFilesInput, ({ paths, folders }) =>
+    picks.register(paths, folders)
   )
-  route(CHANNELS.filesDropped, droppedFilesInput, ({ paths }) => picks.register(paths))
   route(CHANNELS.attachmentsAdd, addAttachmentsInput, async ({ cardId, tokens }) => {
     await attachments.add(db, files, cardId, picks.take(tokens), now())
     return null

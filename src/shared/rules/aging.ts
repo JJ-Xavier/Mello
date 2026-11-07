@@ -3,7 +3,6 @@
 import { isFinished, type DoneListFlag } from './finished'
 
 export const DAY_MS = 86_400_000
-export const AGING_LEVELS = 5
 
 // Por que o card não envelhece (ENV-03): desligado nas Configurações, lista com "Não envelhece",
 // finalizado (FIN-01) ou modelo (MOD-02).
