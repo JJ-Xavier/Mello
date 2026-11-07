@@ -133,7 +133,7 @@ FIN-07  Um item de checklist está finalizado quando está marcado.
 Testes da tabela de eventos (ENV-05 e ENV-06, etapa 4): src/main/ipc/events.test.ts. Ele passa
 por todos os canais do IPC; um canal novo sem classificação faz o teste falhar.
 Testes do nível (ENV-01 a ENV-04, etapa 6): src/shared/rules/aging.test.ts. Do visual e do
-indicador (ENV-08, ENV-09): src/renderer/src/lib/fog.test.ts e
+modal sem o indicador (ENV-08, ENV-09): src/renderer/src/lib/fog.test.ts e
 src/renderer/src/features/board/Aging.test.tsx.
 
 ENV-01  dias_parado = parte inteira de (agora − última alteração do card) / 24 horas.
@@ -183,13 +183,11 @@ ENV-06  NÃO zeram o envelhecimento:
           - "Ordenar por prioridade" e "Ordenar por data" (reordenam a lista inteira e não são
             alteração do card). (aprovada 21/10)
 ENV-07  Card criado por repetição, cópia ou modelo nasce com nível 0.
-ENV-08  O modal mostra "Última movimentação: <data e hora>" e, ao lado, 5 barrinhas (as N
-        primeiras acesas) com "Parado há X dias · nível N de 5". Card congelado mostra
-        "Não envelhece" e o motivo (lista congelada, finalizado, modelo ou desligado).
-        (etapa 6) No primeiro dia: "Parado há menos de 1 dia". Os motivos aparecem como "lista
-        congelada", "finalizado", "modelo" e "desligado nas Configurações"; com mais de um, vale
-        o primeiro da ENV-03. No quadro, o leitor de tela ouve "parado há N dias" no card
-        envelhecido.
+ENV-08  O modal mostra só "Última movimentação: <data e hora>", sem indicador do
+        envelhecimento: ele aparece só na face do card (ENV-09). No quadro, o leitor de tela
+        ouve "parado há N dias" no card envelhecido. (Release 2, 1.0.2; da etapa 6 até a 1.0.1,
+        o modal tinha 5 barrinhas com "Parado há X dias · nível N de 5" ou "Não envelhece" e o
+        motivo)
 ENV-09  Visual: a função fog(level, seed, claro) do protótipo, com o algoritmo e as constantes
         dela, recebe o tamanho real do card (o protótipo fixava 252 × 100 px). A semente é o id do
         card, então o desenho de um card não muda a cada abertura. O tom que aparece por baixo
@@ -288,7 +286,10 @@ DAT-01  A data de entrega do card tem dia e, opcionalmente, hora. No seletor, a 
         escolhida nos horários prontos (09:00, 12:00, 18:00 e "Sem hora"); um horário pronto sem
         dia escolhido vale para hoje. Uma data que não existe (31/02) ou uma hora inválida
         (25:00) não é salva. Sem atalhos de data ("Hoje", "Amanhã"): escolhe o dia, a hora e
-        salva. (etapa 4; horários prontos e tela NovoDataHoraA.dc.html: 28/10/2026)
+        salva. (etapa 4; horários prontos e tela NovoDataHoraA.dc.html: 28/10/2026) A hora
+        também pode ser digitada só com números: o quarto número já vira a hora ("2100" fica
+        "21:00"), e três números viram a hora ao sair do campo ou salvar ("930" fica "09:30").
+        Vale também para o "Horário" da repetição. (Release 2, 1.0.2)
 DAT-02  Um card está atrasado quando não está finalizado e o prazo passou: com hora, quando o
         instante passou; sem hora, quando o dia acabou.
 DAT-03  No modal, o campo "Data de entrega" tem o selo "No prazo" (cinza), "Em atraso"
@@ -393,8 +394,15 @@ src/renderer/src/features/card/useAttach.test.ts e src/renderer/src/features/boa
 ANX-01  Aceita qualquer tipo de arquivo. Ele é copiado para a pasta de arquivos do app
         (%APPDATA%\Mello\arquivos) e o nome original é guardado.
         Anexa pela janela "Abrir" do Windows (botões Anexo e Adicionar, vários de uma vez) ou
-        arrastando arquivos do Explorer para o modal; pastas ficam de fora. A seção Anexos aparece
-        quando há anexos, do mais recente para o mais antigo. (decidido em 23/10, etapa 5)
+        arrastando arquivos do Explorer para o modal. A seção Anexos aparece quando há anexos, do
+        mais recente para o mais antigo. (decidido em 23/10, etapa 5)
+        Pastas também podem ser anexadas, como atalho: o Mello guarda só o caminho e não copia
+        nada (nem para o backup). Os botões Anexo e Adicionar abrem o menu "Anexar", com
+        "Arquivos" (a janela "Abrir") e "Pasta" (a janela de escolher pasta); soltar uma pasta do
+        Explorer no modal também anexa. A pasta aparece com o ícone de pasta e "Pasta ·
+        adicionada em <data>"; se ela foi movida, renomeada ou apagada, "Pasta não encontrada"
+        (conferido sempre que o modal abre). Remover o atalho não mexe na pasta. Uma pasta não
+        pode ser capa. (Release 2, 1.0.2: decidido em 06/11/2026)
 ANX-02  O mesmo arquivo anexado mais de uma vez é guardado uma vez só (identificado pelo hash do
         conteúdo).
 ANX-03  Imagens mostram miniatura. "Abrir" usa o programa padrão do Windows.
@@ -402,7 +410,9 @@ ANX-03  Imagens mostram miniatura. "Abrir" usa o programa padrão do Windows.
         comum, com a extensão no lugar da miniatura). "Abrir" abre uma cópia só leitura, com o
         nome original, numa pasta temporária: o arquivo guardado nunca muda, e uma edição feita no
         programa não volta para o anexo. Programas (.exe, .bat, .msi, .ps1…) não são executados:
-        o botão vira "Mostrar na pasta". (decidido em 23/10, etapa 5)
+        o botão vira "Mostrar na pasta". (decidido em 23/10, etapa 5) "Abrir" numa pasta anexada
+        abre a pasta original no Explorer; se ela não estiver mais lá, avisa "Pasta não
+        encontrada". (Release 2, 1.0.2)
 ANX-04  Remover um anexo apaga a referência. O arquivo só é apagado do disco quando nada mais o
         usa (DAD-08).
         Remover pede confirmação. (etapa 5) A limpeza dos arquivos sem uso é a da DAD-08, na
@@ -522,7 +532,7 @@ CAL-06  Não aparecem: cards arquivados, modelos, cards de lista arquivada e de 
 CAL-07  Riscado (com "Riscar itens finalizados" ligado): card finalizado (FIN-01, com o ✓ verde)
         ou tarefa marcada. Com a opção desligada, nada fica riscado. Um card com ✓ fora de uma
         lista de conclusão mostra o ✓, mas não fica riscado (FIN-04). (etapa 7) A barra do
-        calendário não tem mais a legenda "Riscado = finalizado". (Release 2, 1.1.0)
+        calendário não tem mais a legenda "Riscado = finalizado". (Release 2, 1.0.2)
 CAL-08  Card atrasado (DAT-02) mostra o relógio vermelho. Tarefa atrasada tem o texto vermelho.
         Card e tarefa com hora mostram a hora antes do título ("18:00 Pintar o quarto"), em
         vermelho no atraso. (hora: 28/10/2026)
@@ -535,9 +545,9 @@ CAL-10  Ordem dentro do dia: cards antes das tarefas. Entre cards: sem hora prim
 CAL-11  Clicar num card abre o modal dele por cima do calendário. Na tarefa, a caixa marca ou
         desmarca o item (ENV-05), e clicar no texto abre o card dela por cima do calendário, sem
         marcar. (aprovada 21/10: o protótipo também marcava o card ao clicar, mas pela regra
-        FIN-01 marcar o ✓ sozinho não finaliza; a caixa e o texto separados: Release 2, 1.1.0)
+        FIN-01 marcar o ✓ sozinho não finaliza; a caixa e o texto separados: Release 2, 1.0.2)
 CAL-12  "Adicionar" aparece ao passar o mouse num dia, como um "+" no canto de cima, na linha do
-        número (Release 2, 1.1.0; antes era um botão embaixo, que cobria o último item). Cria
+        número (Release 2, 1.0.2; antes era um botão embaixo, que cobria o último item). Cria
         um card com data de entrega naquele dia, sem hora, na primeira lista do quadro que não é
         de conclusão. No modo "todos os quadros", pergunta antes em qual quadro. O "Adicionar" abre um popover com o título do
         card (CAR-01) e diz em que lista ele vai entrar; no modo "todos os quadros", o seletor de
@@ -545,7 +555,7 @@ CAL-12  "Adicionar" aparece ao passar o mouse num dia, como um "+" no canto de c
         seja de conclusão avisa e não cria. Também aparece com o foco no dia (teclado). (etapa 7)
 CAL-13  O dia mostra todos os itens: a semana cresce até caber o dia mais cheio, e o calendário
         rola, com os dias da semana parados em cima. Cada semana tem pelo menos a altura que
-        teria sem rolar (com poucos itens, a grade enche a área, como antes). (Release 2, 1.1.0;
+        teria sem rolar (com poucos itens, a grade enche a área, como antes). (Release 2, 1.0.2;
         na etapa 7, os itens que não cabiam iam para um "+N mais", com a lista do dia)
 CAL-14  Tarefas mostram o título do card embaixo. No modo "todos os quadros", os cards mostram
         também o nome do quadro. (No modo "todos os quadros", as tarefas mostram "card ·

@@ -180,6 +180,40 @@ describe('migrações', () => {
     sqlite.close()
   })
 
+  it('0001: os anexos de antes continuam; o anexo é um arquivo ou uma pasta, nunca os dois', () => {
+    const sqlite = openSqlite(':memory:')
+    applyMigrations(sqlite, migrations.slice(0, 1), NOW)
+    insertBoard(sqlite)
+    insertList(sqlite, 'l1', 'b1')
+    sqlite
+      .prepare(
+        "INSERT INTO card (id, list_id, title, position, last_activity_at, created_at, updated_at) VALUES ('c1', 'l1', 'Card', 'a0', ?, ?, ?)"
+      )
+      .run(NOW, NOW, NOW)
+    sqlite
+      .prepare(
+        "INSERT INTO file (id, ext, mime, size, created_at) VALUES ('f1', 'pdf', 'application/pdf', 10, ?)"
+      )
+      .run(NOW)
+    sqlite
+      .prepare(
+        "INSERT INTO attachment (id, card_id, file_id, name, created_at) VALUES ('a1', 'c1', 'f1', 'nota.pdf', ?)"
+      )
+      .run(NOW)
+
+    applyMigrations(sqlite, pendingMigrations(sqlite), NOW)
+    expect(sqlite.prepare('SELECT file_id, folder_path, name FROM attachment').all()).toEqual([
+      { file_id: 'f1', folder_path: null, name: 'nota.pdf' }
+    ])
+    const insert = sqlite.prepare(
+      "INSERT INTO attachment (id, card_id, file_id, folder_path, name, created_at) VALUES (?, 'c1', ?, ?, 'x', ?)"
+    )
+    expect(() => insert.run('a2', null, 'C:\\Fotos', NOW)).not.toThrow()
+    expect(() => insert.run('a3', null, null, NOW)).toThrow(/CHECK/)
+    expect(() => insert.run('a4', 'f1', 'C:\\Fotos', NOW)).toThrow(/CHECK/)
+    sqlite.close()
+  })
+
   it('recusa um banco criado por uma versão mais nova do app', () => {
     const sqlite = migrated()
     sqlite

@@ -1,7 +1,7 @@
 {
   "name": "mello",
   "productName": "Mello",
-  "version": "1.1.0",
+  "version": "1.0.2",
   "description": "Planejador pessoal com quadros Kanban e calendário mensal, 100% local.",
   "author": "Jackson Junio",
   "license": "MIT",

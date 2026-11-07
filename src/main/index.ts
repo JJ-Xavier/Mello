@@ -121,7 +121,7 @@ function createWindow(): BrowserWindow {
     minHeight: 640,
     show: false,
     title: 'Mello',
-    // Sem ele, a barra de tarefas mostra o ícone do Electron no npm run dev (Release.txt item 1).
+    // Sem ele, a barra de tarefas mostra o ícone do Electron no npm run dev (PLANO.md 11.1, item 1).
     icon: appIcon,
     backgroundColor: windowBackground(),
     webPreferences: {

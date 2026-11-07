@@ -110,8 +110,20 @@ describe('arquivos escolhidos ou soltos', () => {
       path.join(files.dir, 'nao-existe.txt')
     ])
     expect(picked).toEqual([{ token: expect.any(String), name: 'nota.txt', size: 3 }])
-    expect(picks.take([picked[0]!.token])).toEqual([{ path: real, name: 'nota.txt', size: 3 }])
+    expect(picks.take([picked[0]!.token])).toEqual([
+      { path: real, name: 'nota.txt', size: 3, folder: false }
+    ])
     expect(() => picks.take([picked[0]!.token])).toThrow(/Escolha o arquivo de novo/)
+  })
+
+  it('pastas só quando pedidas (anexos do card, ANX-01)', async () => {
+    const picks = createPicks()
+    const folder = path.dirname(files.sample('nota.txt', 'abc'))
+    const [picked] = await picks.register([folder], true)
+    expect(picked).toEqual({ token: expect.any(String), name: path.basename(folder), size: 0 })
+    expect(picks.take([picked!.token])).toEqual([
+      { path: folder, name: path.basename(folder), size: 0, folder: true }
+    ])
   })
 
   it('as fichas mais antigas saem quando passam do limite', async () => {
@@ -158,6 +170,14 @@ describe('arquivos sem uso (DAD-08)', () => {
     fs.writeFileSync(path.join(files.dir, `${'e'.repeat(64)}.png`), 'sem registro')
     fs.writeFileSync(path.join(files.dir, '6f1c2b2e.tmp'), 'cópia que caiu no meio')
     fs.writeFileSync(path.join(files.dir, 'leia-me.txt'), 'não é do Mello')
+    // Um anexo de pasta (file_id nulo) não impede a limpeza.
+    await attachments.add(
+      t.db,
+      files.store,
+      cardId,
+      [{ path: files.root, name: 'Pasta', folder: true }],
+      NOW
+    )
 
     expect(cleanUnusedFiles(t.db, files.dir)).toEqual({ removed: 4 })
     expect(files.stored().sort()).toEqual(

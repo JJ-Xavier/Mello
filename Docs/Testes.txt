@@ -1,8 +1,8 @@
 Testes — Mello
 
 Status: criado na etapa 1 (21/10/2026), atualizado na etapa 12 (615 testes, versão 1.0.0, em
-30/10/2026), na Release 1 (616 testes, versão 1.0.1, em 06/11/2026) e na Release 2 (612 testes,
-versão 1.1.0, em 07/11/2026).
+30/10/2026), na Release 1 (616 testes, versão 1.0.1, em 06/11/2026) e na Release 2 (616 testes,
+versão 1.0.2, em 07/11/2026).
 Atualizado a cada etapa.
 
 
@@ -718,7 +718,7 @@ src/main/modules/recurrence.test.ts (REP-16, MOD-04; 1 novo)
 
 Também mudou: App.test.tsx (versão 1.0.0).
 
-Release 1 (versão 1.0.1, Docs/Release.txt itens 1, 2 e 7) — 1 teste novo
+Release 1 (versão 1.0.1, itens 1, 2 e 7 do PLANO.md, seção 11.1) — 1 teste novo
 
 src/renderer/src/lib/useDropped.test.ts (arrastar; 1 novo)
 - Depois de soltar, a ordem nova aparece na hora e continua até o cache mudar; quando ele muda,
@@ -731,7 +731,8 @@ deslizavam de volta (~200 ms). Depois: o card assenta no destino e os itens já 
 final. O ícone da janela, lido pelo Windows (WM_GETICON) com o app aberto pelo electron.exe
 (como no npm run dev), é o logo do Mello.
 
-Release 2 (versão 1.1.0, Docs/Release.txt itens 3, 8 e 9) — 1 teste novo, 5 retirados
+Release 2 (versão 1.0.2, itens 3, 4, 5, 6, 8 e 9 do PLANO.md, seção 11.1) — 10 testes novos, 10
+retirados
 
 src/renderer/src/features/calendar/CalendarPage.test.tsx (CAL-07, CAL-11, CAL-13)
 - CAL-11 (novo): o texto da tarefa abre o card dela por cima do calendário, sem marcar. A caixa
@@ -750,6 +751,45 @@ e 2 tarefas em hoje: o dia mostrou os 10 itens, a semana dele cresceu (369 px, a
 e alinhados com as colunas. O "+" apareceu com o mouse, na linha do número, e abriu o
 "Adicionar". A caixa marcou a tarefa sem abrir o card; o texto da outra abriu o modal por cima,
 sem marcá-la. Num mês sem itens, a grade encheu a área sem rolar (6 semanas de 95 px).
+
+Card (itens 4, 5 e 6):
+
+src/main/db/db.test.ts (1 novo)
+- 0001: um banco só com a 0000 e um anexo migra sem perder o anexo (folder_path nulo); o CHECK
+  aceita só arquivo ou só pasta.
+
+src/main/modules/attachments.test.ts (3 novos)
+- A pasta guarda só o caminho, sem copiar, zera o envelhecimento e "Abrir" abre a original.
+- Pasta movida: found falso e "Pasta não encontrada" ao abrir; remover não mexe na pasta.
+- Copiar o card leva o atalho.
+
+src/main/modules/files.test.ts (1 novo)
+- Pastas só entram nos escolhidos quando pedidas. A limpeza dos arquivos sem uso (DAD-08) agora
+  roda com um anexo de pasta no banco (file_id nulo).
+
+src/shared/rules/cardRules.test.ts (1 novo)
+- DAT-01: "2100" e "930" viram hora; "2500" e "21" não; typingTime formata só no quarto número.
+
+src/renderer/src/features/card/CardAside.test.tsx (2 novos)
+- Pasta pelo menu "Anexar": a linha "Pasta · adicionada em", sem "Usar como capa", e "Abrir"
+  abre a pasta; nada copiado.
+- Pasta solta do Explorer vira atalho; renomeada, o modal reaberto mostra "Pasta não
+  encontrada". Os testes de anexar arquivo passam pelo menu ("Anexo" → "Arquivos").
+
+src/renderer/src/features/board/Aging.test.tsx (1 novo, 5 retirados)
+- O modal mostra "Última movimentação" sem "Parado há" nem o nível (saíram os 5 do indicador).
+
+src/renderer/src/features/card/CardModal.test.tsx
+- DAT-01: o campo "Hora" com "930" vira "09:30" ao sair, e "1700" vira "17:00" ao digitar.
+
+No app real (07/11/2026), com a janela de escolher pasta e o "abrir" do Windows trocados por
+anotações no main: "Anexo" → "Pasta" anexou a pasta, com o ícone e "Pasta · adicionada em",
+sem nenhum arquivo copiado; "Abrir" pediu a pasta original; renomeada, o modal reaberto mostrou
+"Pasta não encontrada" e "Abrir" avisou. No campo "Hora", "210" ficou "210" e o "0" seguinte
+virou "21:00"; "930" virou "09:30" ao sair. O modal não mostra o indicador. A migração 0001
+foi aplicada numa cópia do banco do app instalado (backup online, só leitura no original, fora
+do app): os 6 anexos ficaram iguais, folder_path nulo em todos, integrity_check ok; a cópia foi
+apagada.
 
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)

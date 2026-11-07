@@ -4,9 +4,19 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
-1.1.0 — Release 2: calendário (07/11/2026)
+1.0.2 — Release 2: calendário e card (07/11/2026)
 
-Os itens 3, 8 e 9 do Docs/Release.txt (plano em Docs/PLANO.md, seção 11).
+Os itens 3, 4, 5, 6, 8 e 9 das mudanças pós-projeto (Docs/PLANO.md, seção 11). Era para
+ser a 1.1.0 (calendário) e a 1.2.0 (card); em 07/11/2026 ficou tudo na 1.0.2.
+
+Novo
+- Anexar pasta como atalho (ANX-01): os botões Anexo e Adicionar abrem o menu "Anexar", com
+  "Arquivos" e "Pasta"; soltar uma pasta do Explorer no modal também anexa. O Mello guarda só o
+  caminho, sem copiar nada. "Abrir" abre a pasta no Explorer; pasta movida, renomeada ou apagada
+  mostra "Pasta não encontrada".
+- Hora digitada só com números (DAT-01): o quarto número já vira a hora ("2100" fica "21:00");
+  três números viram a hora ao sair do campo ("930" fica "09:30"). No campo "Hora" das datas e
+  no "Horário" da repetição.
 
 Mudado
 - O dia do calendário mostra todos os itens: a semana cresce até caber o dia mais cheio e o
@@ -17,19 +27,36 @@ Mudado
 - Tarefa no calendário: a caixa marca e desmarca; clicar no texto abre o card dela por cima do
   calendário (CAL-11, muda a proposta P3).
 - Saiu a legenda "Riscado = finalizado" da barra do calendário. O riscado continua (CAL-07).
+- O modal do card não mostra mais o indicador do envelhecimento ao lado de "Última
+  movimentação" (ENV-08); o envelhecimento continua na face do card.
+- O modal lê o card de novo sempre que abre (para a pasta movida aparecer como não encontrada).
+
+Dados
+- Migração 0001_anexo_pasta: attachment.file_id passa a aceitar nulo e ganha folder_path (um dos
+  dois, sempre). Os anexos que já existem continuam iguais (conferido numa cópia do banco real).
+
+Corrigido
+- (Durante a release) a limpeza dos arquivos sem uso (DAD-08) usava "NOT IN (SELECT file_id
+  FROM attachment)": com um anexo de pasta (file_id nulo), ela deixaria de apagar qualquer coisa.
+  Agora a conta ignora os nulos, e o teste da limpeza tem um anexo de pasta.
 
 Testes
-- 612 no total: 1 novo (o texto da tarefa abre o card), 5 retirados (os 4 do visibleCount e o
-  da legenda). Conferido no app real (Testes.txt, Release 2).
+- 616 no total: 10 novos (texto da tarefa abre o card, hora só com números, migração 0001, 3 de
+  pasta no main, pastas nos escolhidos, 2 de pasta na tela, modal sem o indicador) e 10 retirados
+  (os 4 do visibleCount, o da legenda e os 5 do indicador do modal). Conferido no app real
+  (Testes.txt, Release 2).
 
 Documentação
-- Regras.txt (CAL-07, CAL-11, CAL-12, CAL-13), Arquitetura.txt (calendário), PLANO.md (seção
-  11.3 e P3), Testes.txt, To-do-list.txt. O script de capturas não procura mais o "+N mais".
+- Regras.txt (CAL-07, CAL-11, CAL-12, CAL-13, ENV-08, DAT-01, ANX-01, ANX-03), Arquitetura.txt,
+  Modelo-de-Dados.txt, LGPD.txt, PLANO.md (seção 11.3 e P3), Pipeline.txt (migração nova),
+  Testes.txt, To-do-list.txt. O script de capturas não procura mais o "+N mais".
+- Docs/Release.txt apagado: os 9 itens estão feitos, e as decisões ficam no PLANO.md, seção
+  11.1.
 
 
 1.0.1 — Release 1: correções (06/11/2026)
 
-Os itens 1, 2 e 7 do Docs/Release.txt (plano em Docs/PLANO.md, seção 11).
+Os itens 1, 2 e 7 das mudanças pós-projeto (Docs/PLANO.md, seção 11).
 
 Corrigido
 - Arrastar um card para outra lista: ao soltar, o desenho do card voltava voando até a lista de

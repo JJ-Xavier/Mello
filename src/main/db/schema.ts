@@ -212,13 +212,19 @@ export const attachment = sqliteTable(
     cardId: text('card_id')
       .notNull()
       .references(() => card.id, { onDelete: 'cascade' }),
-    fileId: text('file_id')
-      .notNull()
-      .references(() => file.id, { onDelete: 'restrict' }),
+    // Um arquivo guardado (file_id) ou o atalho de uma pasta (folder_path, o caminho no
+    // computador; a pasta não é copiada). Sempre um dos dois (Release 2, item 4).
+    fileId: text('file_id').references(() => file.id, { onDelete: 'restrict' }),
+    folderPath: text('folder_path'),
     name: text('name').notNull(),
     createdAt: integer('created_at').notNull()
   },
-  (t) => [index('attachment_card_idx').on(t.cardId), index('attachment_file_idx').on(t.fileId)]
+  (t) => [
+    index('attachment_card_idx').on(t.cardId),
+    index('attachment_file_idx').on(t.fileId),
+    // Sem o nome da tabela: a migração cria a tabela com outro nome e depois renomeia.
+    check('attachment_target_check', sql`(file_id IS NULL) <> (folder_path IS NULL)`)
+  ]
 )
 
 export const recurrence = sqliteTable(

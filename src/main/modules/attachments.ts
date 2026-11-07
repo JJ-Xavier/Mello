@@ -1,5 +1,6 @@
 // Anexos (ANX) e capa (CAP) do card. Anexar, remover e mudar a capa zeram o envelhecimento
-// (ENV-05) e não entram na atividade (ATV-02 lista o que entra).
+// (ENV-05) e não entram na atividade (ATV-02 lista o que entra). Uma pasta anexada é só um atalho:
+// o caminho fica no banco e nada é copiado (ANX-01, Release 2).
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -82,12 +83,16 @@ export function coverOf(
   return null
 }
 
-// Anexos do card, do mais recente para o mais antigo.
+const isFolder = (target: string) =>
+  fs.statSync(target, { throwIfNoEntry: false })?.isDirectory() ?? false
+
+// Anexos do card, do mais recente para o mais antigo. A pasta diz se ainda está no lugar.
 export function attachmentsOf(db: DbOrTx, cardId: string): Attachment[] {
   return db
     .select({
       id: attachment.id,
       name: attachment.name,
+      folderPath: attachment.folderPath,
       fileId: file.id,
       ext: file.ext,
       size: file.size,
@@ -97,40 +102,73 @@ export function attachmentsOf(db: DbOrTx, cardId: string): Attachment[] {
       createdAt: attachment.createdAt
     })
     .from(attachment)
-    .innerJoin(file, eq(attachment.fileId, file.id))
+    .leftJoin(file, eq(attachment.fileId, file.id))
     .where(eq(attachment.cardId, cardId))
     .orderBy(desc(attachment.createdAt), asc(attachment.name))
     .all()
-    .map(({ mime, ...row }) => {
-      const isImage = mime.startsWith('image/') && row.width !== null
-      return {
-        ...row,
-        isImage,
-        url: isImage ? fileUrl(row.fileId, row.ext) : null,
-        isProgram: PROGRAMS.has(nameExtension(row.name))
+    .flatMap(
+      ({
+        id,
+        name,
+        folderPath,
+        fileId,
+        ext,
+        size,
+        mime,
+        width,
+        height,
+        createdAt
+      }): Attachment[] => {
+        if (folderPath !== null) {
+          return [{ kind: 'folder' as const, id, name, found: isFolder(folderPath), createdAt }]
+        }
+        if (fileId === null || ext === null || size === null || mime === null) return []
+        const isImage = mime.startsWith('image/') && width !== null
+        return [
+          {
+            kind: 'file' as const,
+            id,
+            name,
+            fileId,
+            ext,
+            size,
+            width,
+            height,
+            isImage,
+            url: isImage ? fileUrl(fileId, ext) : null,
+            isProgram: PROGRAMS.has(nameExtension(name)),
+            createdAt
+          }
+        ]
       }
-    })
+    )
 }
 
 // ANX-01, ANX-02: copia os arquivos para a pasta do app (o mesmo conteúdo, uma vez só) e liga ao
-// card com o nome original.
+// card com o nome original. A pasta não é copiada: guarda só o caminho.
 export async function add(
   db: Db,
   store: FileStore,
   cardId: string,
-  picks: { path: string; name: string }[],
+  picks: { path: string; name: string; folder?: boolean }[],
   now: number
 ): Promise<void> {
   requireCard(db, cardId)
-  const stored: { fileId: string; name: string }[] = []
+  const stored: { fileId: string | null; folderPath: string | null; name: string }[] = []
   for (const pick of picks) {
+    if (pick.folder) {
+      stored.push({ fileId: null, folderPath: pick.path, name: pick.name })
+      continue
+    }
     const saved = await storeFile(db, store, pick.path, now)
-    stored.push({ fileId: saved.id, name: pick.name })
+    stored.push({ fileId: saved.id, folderPath: null, name: pick.name })
   }
   db.transaction((tx) => {
     requireCard(tx, cardId)
-    for (const { fileId, name } of stored) {
-      tx.insert(attachment).values({ id: randomUUID(), cardId, fileId, name, createdAt: now }).run()
+    for (const row of stored) {
+      tx.insert(attachment)
+        .values({ id: randomUUID(), cardId, ...row, createdAt: now })
+        .run()
     }
     touch(tx, cardId, now)
   })
@@ -145,7 +183,7 @@ export function remove(db: Db, attachmentId: string, now: number): void {
     if (!found) throw new AppError('NOT_FOUND', 'Anexo não encontrado.')
     tx.delete(attachment).where(eq(attachment.id, attachmentId)).run()
     const owner = requireCard(tx, found.cardId)
-    if (owner.coverKind === 'image' && owner.coverValue === found.fileId) {
+    if (found.fileId && owner.coverKind === 'image' && owner.coverValue === found.fileId) {
       const same = tx
         .select({ id: attachment.id })
         .from(attachment)
@@ -177,11 +215,25 @@ export function windowsName(name: string, ext: string): string {
 
 // ANX-03: abre uma cópia, só leitura, com o nome original, numa pasta temporária (decidido em
 // 23/10/2026). O arquivo guardado nunca é aberto, para não mudar. Programa: mostra na pasta.
+// Pasta: abre a original no Explorer.
 export async function open(
   db: DbOrTx,
   store: FileStore,
   attachmentId: string
 ): Promise<OpenResult> {
+  const shortcut = db
+    .select({ path: attachment.folderPath })
+    .from(attachment)
+    .where(and(eq(attachment.id, attachmentId), isNotNull(attachment.folderPath)))
+    .get()
+  if (shortcut?.path) {
+    if (!isFolder(shortcut.path)) {
+      throw new AppError('NOT_FOUND', 'Pasta não encontrada: ela foi movida, renomeada ou apagada.')
+    }
+    const error = await store.system.openPath(shortcut.path)
+    if (error) throw new AppError('CONFLICT', `Não foi possível abrir a pasta: ${error}`)
+    return { shownInFolder: false }
+  }
   const found = db
     .select({ name: attachment.name, fileId: file.id, ext: file.ext })
     .from(attachment)

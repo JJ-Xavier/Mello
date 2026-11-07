@@ -1,7 +1,7 @@
 // Gera os PNGs do logo do protótipo (o mesmo SVG de components/Logo.tsx) em resources/: o ícone da
 // bandeja (16 e 32 px, para telas com escala de 100% e 200%) e o das notificações (64 px). Gera
 // também o ícone do app e do instalador (build/icon.ico, P14), de 16 a 256 px, e a cópia dele em
-// resources/icon.ico, o ícone da janela (barra de tarefas, Release.txt item 1). O desenho é feito
+// resources/icon.ico, o ícone da janela (barra de tarefas, PLANO.md 11.1, item 1). O desenho é feito
 // pelo Chromium do próprio app, num canvas; o projeto não tem biblioteca de imagens. Os arquivos
 // ficam no Git: rodar de novo só se o logo mudar.
 //

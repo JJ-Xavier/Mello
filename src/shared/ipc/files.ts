@@ -1,15 +1,19 @@
 // Contratos de arquivos e anexos (ANX) e da imagem da capa (CAP-01).
 // Escolher (janela do Windows) ou soltar arquivos no modal não copia nada: o main guarda o caminho
 // e a tela recebe só uma ficha (token), o nome e o tamanho. Com a ficha, a tela confirma os
-// arquivos grandes (ANX-05) e então anexa. O caminho dos arquivos nunca chega à tela.
+// arquivos grandes (ANX-05) e então anexa. O caminho dos arquivos nunca chega à tela. Pastas
+// (atalhos, Release 2) só entram quando a tela pede: a janela de escolher pasta e os anexos soltos
+// no modal.
 import { z } from 'zod'
 
 const id = z.uuid()
 
-export const pickFilesInput = z.object({ imagesOnly: z.boolean() })
+// folder: a janela de escolher pasta, no lugar da de arquivos.
+export const pickFilesInput = z.object({ imagesOnly: z.boolean(), folder: z.boolean().optional() })
 // Só o preload chama: ele tira os caminhos dos arquivos soltos (webUtils), nunca a tela.
 export const droppedFilesInput = z.object({
-  paths: z.array(z.string().min(1).max(2048)).max(50)
+  paths: z.array(z.string().min(1).max(2048)).max(50),
+  folders: z.boolean().optional()
 })
 export const addAttachmentsInput = z.object({ cardId: id, tokens: z.array(id).min(1).max(50) })
 export const attachmentIdInput = z.object({ attachmentId: id })
@@ -27,7 +31,20 @@ export interface PickedFile {
   size: number
 }
 
-export interface Attachment {
+// Pasta anexada (ANX-01): só o atalho. found: a pasta ainda está no caminho guardado; senão, a
+// tela mostra "Pasta não encontrada". O caminho não chega à tela.
+export interface FolderAttachment {
+  kind: 'folder'
+  id: string
+  name: string
+  found: boolean
+  createdAt: number
+}
+
+export type Attachment = FileAttachment | FolderAttachment
+
+export interface FileAttachment {
+  kind: 'file'
   id: string
   name: string
   fileId: string

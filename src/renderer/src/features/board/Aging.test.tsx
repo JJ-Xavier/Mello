@@ -1,5 +1,5 @@
 // Envelhecimento na tela (etapa 6): o visual do card no quadro (ENV-09), o que congela (ENV-03),
-// o que zera (ENV-05) e o indicador do modal (ENV-08).
+// o que zera (ENV-05) e o modal sem o indicador (ENV-08, desde a Release 2).
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -99,41 +99,13 @@ describe('envelhecimento no quadro (ENV-09)', () => {
   })
 })
 
-describe('indicador do modal (ENV-08)', () => {
-  async function status(cardId: string) {
-    renderBoard(`?card=${cardId}`)
-    const modal = await screen.findByRole('dialog')
-    return within(modal).findByText(/^(Parado há|Não envelhece)/)
-  }
-
-  it('mostra há quantos dias e o nível, com as barrinhas acesas', async () => {
+// Release 2 (item 5): o modal não mostra mais o envelhecimento; ele fica só na face do card.
+describe('modal sem o indicador (ENV-08)', () => {
+  it('"Última movimentação" mostra só a data, sem "Parado há" nem o nível', async () => {
     const id = await idleCard('A fazer', 'Compras', 9)
-    const chip = await status(id)
-    expect(chip.textContent).toBe('Parado há 9 dias · nível 3 de 5')
-    const bars = chip.querySelector('[aria-hidden="true"]')!.children
-    expect(bars).toHaveLength(5)
-  })
-
-  it('card novo: menos de 1 dia, nível 0', async () => {
-    const id = await idleCard('A fazer', 'Compras', 0)
-    expect((await status(id)).textContent).toBe('Parado há menos de 1 dia · nível 0 de 5')
-  })
-
-  it('congelado mostra "Não envelhece" e o motivo', async () => {
-    const id = await idleCard('Concluído', 'Entregue', 20)
-    expect((await status(id)).textContent).toBe('Não envelhece · lista congelada')
-  })
-
-  it('finalizado numa lista de conclusão que envelhece', async () => {
-    await unwrap(api.lists.update({ listId: lists['Concluído']!, freezesAging: false }))
-    const id = await idleCard('Concluído', 'Entregue', 20)
-    db.update(cardTable).set({ isDone: true }).where(eq(cardTable.id, id)).run()
-    expect((await status(id)).textContent).toBe('Não envelhece · finalizado')
-  })
-
-  it('desligado nas Configurações', async () => {
-    db.insert(setting).values({ key: 'aging.enabled', value: 'false' }).run()
-    const id = await idleCard('A fazer', 'Compras', 20)
-    expect((await status(id)).textContent).toBe('Não envelhece · desligado nas Configurações')
+    renderBoard(`?card=${id}`)
+    const modal = await screen.findByRole('dialog')
+    expect(await within(modal).findByText('Última movimentação')).toBeTruthy()
+    expect(within(modal).queryByText(/Parado há|Não envelhece|nível/)).toBeNull()
   })
 })

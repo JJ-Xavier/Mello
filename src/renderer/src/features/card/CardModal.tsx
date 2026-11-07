@@ -39,8 +39,7 @@ import { useNow } from '../../lib/useNow'
 import { RepeatDialog } from '../recurrence/RepeatDialog'
 import { SkipNotice } from '../recurrence/SkipNotice'
 import { Activity } from './Activity'
-import { AgingStatus } from './AgingStatus'
-import { Attachments } from './Attachments'
+import { AttachButton, Attachments } from './Attachments'
 import { CardMenu } from './CardMenu'
 import styles from './CardModal.module.css'
 import { Checklists } from './Checklists'
@@ -290,10 +289,7 @@ function Fields({ card, now }: { card: CardDetail; now: number }) {
       )}
       <div>
         <p className={styles.lab}>Última movimentação</p>
-        <div className={styles.lastMove}>
-          {formatDateTime(card.lastActivityAt)}
-          <AgingStatus card={card} now={now} />
-        </div>
+        <div className={styles.lastMove}>{formatDateTime(card.lastActivityAt)}</div>
       </div>
     </div>
   )
@@ -461,15 +457,10 @@ function CardContent({ card, onDeleted }: { card: CardDetail; onDeleted: () => v
             <Popover id={checklistId} label="Adicionar checklist">
               {(close) => <AddChecklist card={card} close={close} />}
             </Popover>
-            <button
-              type="button"
-              className={styles.outline}
-              title="Escolha ou solte arquivos no card"
-              onClick={() => void attach.choose()}
-            >
+            <AttachButton attach={attach} className={styles.outline}>
               <Icon name="attachment" />
               Anexo
-            </button>
+            </AttachButton>
             <button
               type="button"
               className={cx(styles.outline, repeating && styles.outlineOpen)}

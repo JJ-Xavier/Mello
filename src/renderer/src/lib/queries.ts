@@ -42,7 +42,9 @@ export function useBoard(boardId: string) {
 export function useCard(cardId: string) {
   return useQuery({
     queryKey: queryKeys.card(cardId),
-    queryFn: () => unwrap(api().cards.get({ cardId }))
+    queryFn: () => unwrap(api().cards.get({ cardId })),
+    // Abrir o modal lê de novo: uma pasta anexada pode ter sido movida fora do app (ANX-01).
+    refetchOnMount: 'always'
   })
 }
 

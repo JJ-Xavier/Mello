@@ -639,7 +639,7 @@ describe('copiar, arquivar e filtrar', () => {
     })
     const detail = cards.get(t.db, copied.id)
     expect(detail.noteHtml).toBe('<p>levar protetor</p>')
-    expect(detail.attachments.map((a) => [a.name, a.fileId])).toEqual([['praia.png', fileId]])
+    expect(detail.attachments).toEqual([expect.objectContaining({ name: 'praia.png', fileId })])
     expect(t.db.select().from(file).all()).toHaveLength(1)
   })
 

@@ -12,6 +12,7 @@ import {
   parseDayInput,
   parseTimeInput,
   splitDue,
+  typingTime,
   type DueStatus
 } from '../../../../shared/rules/dates'
 import { reminderPreview } from '../../../../shared/rules/reminders'
@@ -210,9 +211,10 @@ export function DueForm({
             value={timeText}
             placeholder="hh:mm"
             onChange={(event) => {
-              setTimeText(event.target.value)
+              setTimeText(typingTime(event.target.value))
               setError('')
             }}
+            onBlur={() => setTimeText(parseTimeInput(timeText) ?? timeText)}
           />
         </label>
       </div>

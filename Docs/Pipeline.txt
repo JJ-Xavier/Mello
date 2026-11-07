@@ -117,7 +117,10 @@ npm run capturas ....... compila, abre o app com uma pasta de dados temporária,
                          Desde a etapa 11, busca, cria modelos e cria um card e um quadro a
                          partir deles pela tela, e apaga o que criou.
                          Desde a etapa 12, no fim, mede o quadro com 500 cards
-npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit)
+npm run db:generate .... gera a migração SQL depois de mudar o schema (drizzle-kit). Confira o
+                         SQL gerado (Modelo-de-Dados.txt, seção 4) e, antes de rodar os testes,
+                         apague node_modules/.vitest-cache: o Vitest guarda a lista das
+                         migrações e não vê a nova (aconteceu na Release 2)
 node scripts/gerar-icones.mts
                          gera os PNGs do logo em resources/ (bandeja e notificações), o
                          build/icon.ico (instalador) e a cópia dele em resources/icon.ico (janela,

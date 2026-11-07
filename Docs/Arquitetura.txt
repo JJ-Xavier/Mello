@@ -1,8 +1,8 @@
 Arquitetura — Mello
 
 Status: atualizado na etapa 12 (30/10/2026, versão 1.0.0) e na Release 2 (07/11/2026, versão
-1.1.0: calendário), com o que já existe no código. As partes que ainda vão ser construídas
-estão marcadas com a etapa em que entram. A etapa 7 (calendário) veio antes da 6
+1.0.2: calendário, pastas nos anexos), com o que já existe no código. As partes que ainda vão
+ser construídas estão marcadas com a etapa em que entram. A etapa 7 (calendário) veio antes da 6
 (envelhecimento), por decisão de 24/10/2026.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
 Ver também: Docs/PLANO.md, Docs/Modelo-de-Dados.txt, Docs/Definicao-da-Stack.txt,
@@ -156,7 +156,7 @@ Mello/
 │           │                lembretes perdidos)
 │           ├── features/    home/ (Início, criar quadro, fechados), board/ (barra, listas,
 │           │                cards, arrastar, filtro, menus, arquivados, useFog do
-│           │                envelhecimento), card/ (modal, indicador do envelhecimento,
+│           │                envelhecimento), card/ (modal,
 │           │                seletores, checklists, descrição, nota, atividade, anexos,
 │           │                capa, menu do card, criar card), calendar/ (página, dia,
 │           │                itens), recurrence/ (diálogo Repetir e aviso de pulada),
@@ -290,6 +290,11 @@ Detalhes das tabelas, índices e migrações: Docs/Modelo-de-Dados.txt.
   e então anexa (attachments:add) ou envia a capa (cards:uploadCover). Cada ficha vale uma vez.
   O caminho nunca chega à tela. O files:dropped é chamado só pelo preload, que tira o caminho do
   File com o webUtils do Electron: um File criado pela tela não tem caminho e é ignorado.
+  Pastas (Release 2): o files:pick com folder abre a janela de escolher pasta, e o files:dropped
+  com folders aceita pastas soltas; sem isso, pastas ficam de fora (a capa e o fundo só aceitam
+  arquivo). No attachments:add, a ficha de pasta vira uma linha de attachment com folder_path e
+  sem file_id: nada é copiado. O cards:get diz se a pasta ainda existe (found), e o modal lê o
+  card de novo ao abrir (useCard com refetchOnMount), para mostrar "Pasta não encontrada".
 - A janela "Abrir", o programa padrão e o Explorer chegam aos módulos por SystemPort
   (modules/files.ts); a versão do Electron fica em system.ts. Os testes usam uma versão falsa,
   com uma pasta temporária (modules/test-files.ts).
@@ -389,7 +394,7 @@ Estado:
   (features/board/useFog.ts, com ResizeObserver) e a classe worn, que troca a sombra pelo fundo
   e tem contain: paint (sem ela, 200 cards gastos travavam o arraste). As cores vêm das variáveis
   --fog1 a --fog5 do tema e de --aging-tone, que a página do quadro define pelo bgTone (FUN-09).
-  O modal mostra o indicador (features/card/AgingStatus.tsx).
+  O modal não mostra o envelhecimento (Release 2, ENV-08).
 
 Menus, confirmações e arrastar:
 - Popovers (components/Popover.tsx): atributo popover nativo do navegador, aberto pelo botão com
@@ -491,9 +496,12 @@ Um arquivo guardado nunca muda (o espelho do backup depende disso, DAD-05). "Abr
 só leitura e com o nome original, para %TEMP%\Mello\<id do anexo>\ (no desenvolvimento,
 %TEMP%\Mello-dev) e abre essa cópia com o programa padrão. Programas (.exe, .bat, .msi, .ps1…) não
 são executados: o Explorer abre com a cópia selecionada. As cópias são apagadas ao abrir o app.
+Uma pasta anexada (Release 2) não passa por aqui: "Abrir" abre a pasta original no Explorer
+(shell.openPath), e o Mello nunca escreve nela.
 
 Arquivos sem uso (anexo removido, card excluído, fundo enviado e não aplicado) saem na abertura
-seguinte do app (DAD-08, files.ts: cleanUnusedFiles). Os backups têm os deles no espelho da pasta
+seguinte do app (DAD-08, files.ts: cleanUnusedFiles). A conta ignora os anexos de pasta
+(file_id nulo): um nulo dentro do NOT IN faria a limpeza não apagar nada. Os backups têm os deles no espelho da pasta
 de backup (seção 14).
 
 
@@ -728,6 +736,7 @@ HISTÓRICO
              filtro e a busca, copyCard com o registro from_template.
 30/10/2026 — etapa 12 (1.0.0): instalador conferido (resources/ no pacote, ícone do logo),
              repetição pausada em quadro-modelo, lembrete vencido não dispara na cópia.
-07/11/2026 — Release 2 (1.1.0): o calendário rola e o dia mostra todos os itens (sem o
+07/11/2026 — Release 2 (1.0.2): o calendário rola e o dia mostra todos os itens (sem o
              "+N mais" medido na tela e sem o visibleCount); a tarefa tem a caixa e o link
-             para o card.
+             para o card. Anexo de pasta (atalho, migração 0001), o modal sem o indicador do
+             envelhecimento (saiu o AgingStatus) e lido de novo ao abrir.

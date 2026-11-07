@@ -20,7 +20,8 @@ import { file } from '../db/schema'
 export interface SystemPort {
   // Janela "Abrir" do Windows. Devolve os caminhos escolhidos (nenhum, se cancelar).
   chooseFiles(options: { imagesOnly: boolean }): Promise<string[]>
-  // Janela de escolher pasta (backup e exportação, etapa 10). null, se cancelar.
+  // Janela de escolher pasta (backup e exportação, etapa 10; anexar pasta, Release 2). null, se
+  // cancelar.
   chooseFolder(options: { title: string; defaultPath: string }): Promise<string | null>
   // Abre com o programa padrão. Devolve '' ou a mensagem de erro do Windows.
   openPath(target: string): Promise<string>
@@ -176,6 +177,7 @@ interface Pick {
   path: string
   name: string
   size: number
+  folder: boolean
 }
 
 // Arquivos escolhidos ou soltos, à espera de a tela confirmar (ANX-05). A tela recebe só a ficha;
@@ -183,16 +185,20 @@ interface Pick {
 export function createPicks(max = 200) {
   const picks = new Map<string, Pick>()
   return {
-    async register(paths: string[]): Promise<PickedFile[]> {
+    // folders: as pastas também entram (atalhos dos anexos, ANX-01); senão ficam de fora.
+    async register(paths: string[], folders = false): Promise<PickedFile[]> {
       const registered: PickedFile[] = []
       for (const candidate of paths) {
         if (!path.isAbsolute(candidate)) continue
         const stat = await fs.promises.stat(candidate).catch(() => null)
-        if (!stat?.isFile()) continue
+        const folder = folders && stat?.isDirectory() === true
+        if (!stat?.isFile() && !folder) continue
         const token = randomUUID()
-        const name = path.basename(candidate).slice(0, FILE_NAME_MAX)
-        picks.set(token, { path: candidate, name, size: stat.size })
-        registered.push({ token, name, size: stat.size })
+        // A raiz de um disco ("D:\\") não tem nome: fica o próprio caminho.
+        const name = (path.basename(candidate) || candidate).slice(0, FILE_NAME_MAX)
+        const size = folder ? 0 : stat!.size
+        picks.set(token, { path: candidate, name, size, folder })
+        registered.push({ token, name, size })
       }
       for (const token of picks.keys()) {
         if (picks.size <= max) break
@@ -221,12 +227,13 @@ export const STORED_NAME = /^[0-9a-f]{64}\.[a-z0-9]{1,10}$/
 const LEFTOVER = /\.(tmp|parcial)$/
 
 // DAD-08: na abertura do app, saem os arquivos que nada mais usa: o registro em file sem anexo,
-// capa ou fundo que aponte para ele, e o arquivo da pasta sem registro. Os backups guardados têm
+// capa ou fundo que aponte para ele, e o arquivo da pasta sem registro. (Um anexo de pasta tem
+// file_id nulo, e um nulo no NOT IN faria a conta não apagar nada.) Os backups guardados têm
 // os deles no espelho (backup.ts). Só mexe em nomes do Mello; o resto da pasta fica como está.
 export function cleanUnusedFiles(db: DbOrTx, dir: string): { removed: number } {
   db.run(sql`
     DELETE FROM file
-    WHERE id NOT IN (SELECT file_id FROM attachment)
+    WHERE id NOT IN (SELECT file_id FROM attachment WHERE file_id IS NOT NULL)
       AND id NOT IN (SELECT cover_value FROM card
                      WHERE cover_kind = 'image' AND cover_value IS NOT NULL)
       AND id NOT IN (SELECT bg_value FROM board WHERE bg_kind = 'image')

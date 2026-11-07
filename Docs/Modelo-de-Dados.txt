@@ -4,7 +4,8 @@ Status: criado na etapa 1 (21/10/2026); a etapa 3 (22/10/2026) registrou o conte
 activity.data, a etapa 4 (23/10/2026) a origem de description_html, a etapa 5 (24/10/2026)
 os anexos e a capa, a etapa 7 (24/10/2026) as configurações do calendário e a etapa 8
 (26/10/2026) o uso da repetição e dos lembretes, sem migração nova. A etapa 11 (30/10/2026)
-registrou o activity.data do from_template, também sem migração.
+registrou o activity.data do from_template, também sem migração. A Release 2 (07/11/2026,
+1.0.2) trouxe a migração 0001_anexo_pasta: a pasta anexada como atalho.
 Fonte no código: src/main/db/schema.ts.
 Qualquer migração nova atualiza este documento (seções 3 e 4).
 
@@ -108,8 +109,12 @@ file — arquivos guardados em <pasta de dados>\arquivos\<id>.<ext>
   (FUN-09). Fica NULL nos anexos e nas capas. (etapa 9)
 
 attachment — anexos
-  id TEXT PK | card_id → card ON DELETE CASCADE | file_id → file ON DELETE RESTRICT
+  id TEXT PK | card_id → card ON DELETE CASCADE | file_id → file ON DELETE RESTRICT (nulo na
+  pasta) | folder_path TEXT (o caminho da pasta anexada; nulo no arquivo)
   name TEXT NOT NULL (nome original) | created_at
+  CHECK attachment_target_check: (file_id IS NULL) <> (folder_path IS NULL), um dos dois sempre.
+  A pasta é só um atalho (ANX-01): o conteúdo não é copiado, e o caminho é conferido quando o card
+  é lido (found). Copiar o card copia também o atalho. (Release 2, 1.0.2)
   Copiar um card copia as linhas de attachment (apontando para os mesmos arquivos) e a capa. Card
   excluído leva os anexos (CASCADE); a linha de file e o arquivo ficam até a limpeza (DAD-08).
   (etapa 5) A limpeza é na abertura seguinte do app: sai a linha de file sem anexo, capa
@@ -199,6 +204,12 @@ Como funcionam
 - Uma migração já aplicada nunca é editada. Toda mudança vira uma migração nova, mesmo durante o
   desenvolvimento.
 - O drizzle-kit numera a partir de 0000. O plano chamava a primeira de "0001"; vale o 0000.
+- Confira o SQL gerado antes do primeiro uso: para recriar uma tabela, o drizzle-kit copia as
+  colunas novas da tabela antiga, que não as tem, e o SQLite leria o nome entre aspas como texto
+  (aconteceu na 0001, corrigida à mão para NULL). Um CHECK com o nome da tabela também quebra na
+  troca de nome; no schema, escreva o CHECK só com as colunas.
 
 Histórico
   0000_esquema_inicial ... etapa 1 (21/10/2026): as 13 tabelas e os índices acima.
+  0001_anexo_pasta ....... Release 2 (07/11/2026): attachment recriada com file_id nulo,
+                           folder_path e o CHECK; os anexos que existiam ficam iguais.
