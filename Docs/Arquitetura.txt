@@ -1,7 +1,8 @@
 Arquitetura — Mello
 
-Status: atualizado na etapa 12 (30/10/2026, versão 1.0.0), com o que já existe no código. As partes que ainda vão
-ser construídas estão marcadas com a etapa em que entram. A etapa 7 (calendário) veio antes da 6
+Status: atualizado na etapa 12 (30/10/2026, versão 1.0.0) e na Release 2 (07/11/2026, versão
+1.1.0: calendário), com o que já existe no código. As partes que ainda vão ser construídas
+estão marcadas com a etapa em que entram. A etapa 7 (calendário) veio antes da 6
 (envelhecimento), por decisão de 24/10/2026.
 Substitui o antigo Docs/Arquitetura.md (v0.2, 20/10/2026), que continua no histórico do Git.
 Ver também: Docs/PLANO.md, Docs/Modelo-de-Dados.txt, Docs/Definicao-da-Stack.txt,
@@ -143,7 +144,7 @@ Mello/
 │   │                        color.ts (paleta e texto legível), checklist.ts (CHK),
 │   │                        filter.ts (FLT), richText.ts (texto rico, NOT-04),
 │   │                        activity.ts (textos da atividade, ATV), calendar.ts (grade do
-│   │                        mês, ordem do dia, "+N mais" e lista do "Adicionar", CAL),
+│   │                        mês, ordem do dia e lista do "Adicionar", CAL),
 │   │                        recurrence.ts (ocorrências, término e resumo, REP),
 │   │                        reminders.ts (quando o lembrete dispara e o texto, LEM)
 │   └── renderer/
@@ -431,14 +432,14 @@ Menus, confirmações e arrastar:
   Na descrição em edição, o Esc sai da edição.
 - Soltar arquivos: o modal inteiro aceita arquivos arrastados do Explorer (na fase de captura,
   para o editor de texto não receber o arquivo) e mostra "Solte para anexar ao card".
-- Calendário (features/calendar/, etapa 7): CalendarPage monta a barra (mês, ‹ Hoje ›, seletor
-  de quadro, filtros, legenda) e a grade; cada dia (DayCell) mede onde os itens terminam e mostra
-  os que cabem, com o "+N mais" logo abaixo (CAL-13, shared/rules/calendar.ts, visibleCount). Os
-  que não cabem continuam no lugar, invisíveis e inertes, para a próxima medida: um
-  ResizeObserver mede de novo quando a janela muda de tamanho, sem a medida mexer no layout. O
-  "Adicionar" aparece com o mouse ou o foco no dia; num dia com "+N mais", vira só o "+" à
-  direita. O card do dia é um link para ?card=<id>, e a tarefa, um botão que chama o
-  items:toggle.
+- Calendário (features/calendar/, etapa 7; Release 2): CalendarPage monta a barra (mês,
+  ‹ Hoje ›, seletor de quadro, filtros) e a grade; cada dia (DayCell) mostra todos os itens
+  (CAL-13). A grade fica numa área que rola (container-type: size), com os dias da semana
+  parados em cima (sticky); cada semana é minmax(calc((100cqh - a linha dos dias) / N), auto):
+  sem rolar, as semanas dividem a área como antes, e a semana com o dia mais cheio cresce. Nada é
+  medido em JavaScript. O "+" do "Adicionar" fica no canto de cima do dia e aparece com o mouse
+  ou o foco. O card do dia é um link para ?card=<id>; a tarefa tem a caixa, um botão que chama o
+  items:toggle, e o texto, um link para o ?card=<id> do card dela (CAL-11).
 - Depois de uma ação, o TanStack Query entrega os dados novos à tela um instante depois
   (notifyManager). Um estado da tela que depende deles, como o "Anexando…", é desfeito na mesma
   fila (notifyManager.schedule); senão a tela mostra um quadro com o estado velho.
@@ -727,3 +728,6 @@ HISTÓRICO
              filtro e a busca, copyCard com o registro from_template.
 30/10/2026 — etapa 12 (1.0.0): instalador conferido (resources/ no pacote, ícone do logo),
              repetição pausada em quadro-modelo, lembrete vencido não dispara na cópia.
+07/11/2026 — Release 2 (1.1.0): o calendário rola e o dia mostra todos os itens (sem o
+             "+N mais" medido na tela e sem o visibleCount); a tarefa tem a caixa e o link
+             para o card.

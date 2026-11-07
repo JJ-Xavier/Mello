@@ -272,17 +272,8 @@ async function dragShot(
   await page.mouse.up()
   await page.waitForTimeout(250)
 }
-// O "+N mais" de hoje (se a janela não couber tudo) e o "Adicionar" de daqui a 3 dias.
+// O "Adicionar" de daqui a 3 dias (o "+" na linha do número, desde a Release 2).
 async function calendarPopovers(page: Page, theme: string, screen: string) {
-  const more = page.getByRole('group', { name: dayLabel(0) }).getByRole('button', { name: /mais$/ })
-  if ((await more.count()) > 0) {
-    await more.click()
-    await page.waitForTimeout(250)
-    await shot(page, `${screen}-calendario-mais`, theme)
-    await closePopovers(page)
-  } else {
-    console.log(`Captura ${screen}-calendario-mais: tudo coube no dia, sem "+N mais".`)
-  }
   // Perto do fim do mês, o dia pode cair no mês seguinte, que não tem "Adicionar".
   const later = page.getByRole('group', { name: dayLabel(3) })
   const add = later.getByRole('button', { name: 'Adicionar' })
@@ -464,7 +455,7 @@ async function seed(app: ElectronApplication, page: Page): Promise<Seeded> {
     cover: { kind: 'color', color: '#206a83' }
   })
 
-  // Telas 5 e 13: um dia cheio hoje (para o "+N mais"), tarefas do condomínio e cards do quadro
+  // Telas 5 e 13: um dia cheio hoje (o dia cresce até caber, CAL-13), tarefas do condomínio e cards do quadro
   // "Estudos" no calendário de todos os quadros.
   const dentista = await card(ideias.id, 'Dentista')
   await setLabels(dentista, [verde])
@@ -835,7 +826,7 @@ try {
     await shot(page, '09-mudar-de-quadros', theme)
     await closePopovers(page)
 
-    // Tela 5: calendário do quadro, com o "Adicionar", o "+N mais", o seletor de mês e o modal.
+    // Tela 5: calendário do quadro, com o "Adicionar", o seletor de mês e o modal.
     // O mouse fica na borda da janela: parado sobre um dia, ele mostraria o "Adicionar".
     await go(page, `#/boards/${casa.id}/calendar`)
     await page.getByRole('link', { name: /Consertar a torneira/ }).waitFor()

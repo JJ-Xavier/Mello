@@ -5,8 +5,7 @@ import {
   monthRange,
   shiftMonth,
   sortDayCards,
-  sortDayTasks,
-  visibleCount
+  sortDayTasks
 } from './calendar'
 
 const days = (weeks: { day: string; inMonth: boolean }[][]) => weeks.flat().map((d) => d.day)
@@ -141,28 +140,5 @@ describe('"Adicionar" (CAL-12)', () => {
     expect(addTarget(lists)?.id).toBe('a')
     expect(addTarget([{ id: 'c', isDoneList: true }])).toBeNull()
     expect(addTarget([])).toBeNull()
-  })
-})
-
-describe('"+N mais" (CAL-13)', () => {
-  // Itens de 30 px com 4 px entre eles terminam em 30, 64 e 98.
-  it('todos cabem: aparecem todos, sem o "+N mais"', () => {
-    expect(visibleCount([30, 64], 64, 4, 24)).toBe(2)
-    expect(visibleCount([30, 64, 98], 98, 4, 24)).toBe(3)
-    expect(visibleCount([], 64, 4, 24)).toBe(0)
-  })
-
-  it('não cabem: os que cabem deixando lugar para o "+N mais"', () => {
-    // Com 70 px, o segundo item até caberia (64), mas aí o "+N mais" (4 + 24) não cabe.
-    expect(visibleCount([30, 64, 98], 70, 4, 24)).toBe(1)
-    expect(visibleCount([30, 64, 98], 92, 4, 24)).toBe(2)
-  })
-
-  it('um dia baixo demais mostra só o "+N mais"', () => {
-    expect(visibleCount([40, 64], 30, 4, 24)).toBe(0)
-  })
-
-  it('sem medidas (tudo 0 px, como nos testes da tela), aparecem todos', () => {
-    expect(visibleCount([0, 0, 0], 0, 4, 24)).toBe(3)
   })
 })

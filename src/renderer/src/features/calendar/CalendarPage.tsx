@@ -35,9 +35,6 @@ interface MonthView {
   month: number
 }
 
-// Dia sem itens. Uma lista só, para o dia não medir de novo a cada renderização (CAL-13).
-const NO_ITEMS: DayItem[] = []
-
 function currentMonth(now = clockNow()): MonthView {
   const date = new Date(now)
   return { year: date.getFullYear(), month: date.getMonth() + 1 }
@@ -285,31 +282,36 @@ function MonthGrid({ settings, boardId, allBoards, scope, close, scopeLabel }: M
           </button>
         </div>
         <div className={styles.spacer} />
-        {strike && <span className={styles.legend}>Riscado = finalizado</span>}
         {close}
       </div>
-      <div className={styles.weekdays} aria-hidden="true">
-        {weekdayNames(weekStart).map((name) => (
-          <div key={name} className={styles.weekday}>
-            {name}
-          </div>
-        ))}
-      </div>
-      <div
-        className={styles.grid}
-        style={{ gridTemplateRows: `repeat(${weeks.length}, minmax(0, 1fr))` }}
-      >
-        {weeks.flat().map((day) => (
-          <DayCell
-            key={day.day}
-            day={day}
-            today={day.day === today}
-            items={day.inMonth ? (byDay.get(day.day) ?? NO_ITEMS) : NO_ITEMS}
-            options={options}
-            boardId={allBoards ? null : boardId}
-            preferredBoardId={boardId}
-          />
-        ))}
+      {/* CAL-13: cada semana tem pelo menos a sua parte da altura (sem itens, a grade enche a
+          tela) e cresce até caber os itens do dia; aí o calendário rola. */}
+      <div className={styles.scroll}>
+        <div className={styles.weekdays} aria-hidden="true">
+          {weekdayNames(weekStart).map((name) => (
+            <div key={name} className={styles.weekday}>
+              {name}
+            </div>
+          ))}
+        </div>
+        <div
+          className={styles.grid}
+          style={{
+            gridTemplateRows: `repeat(${weeks.length}, minmax(calc((100cqh - var(--weekdays)) / ${weeks.length}), auto))`
+          }}
+        >
+          {weeks.flat().map((day) => (
+            <DayCell
+              key={day.day}
+              day={day}
+              today={day.day === today}
+              items={(day.inMonth && byDay.get(day.day)) || []}
+              options={options}
+              boardId={allBoards ? null : boardId}
+              preferredBoardId={boardId}
+            />
+          ))}
+        </div>
       </div>
     </section>
   )

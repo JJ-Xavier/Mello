@@ -1,7 +1,8 @@
 Testes — Mello
 
 Status: criado na etapa 1 (21/10/2026), atualizado na etapa 12 (615 testes, versão 1.0.0, em
-30/10/2026) e na Release 1 (616 testes, versão 1.0.1, em 06/11/2026).
+30/10/2026), na Release 1 (616 testes, versão 1.0.1, em 06/11/2026) e na Release 2 (612 testes,
+versão 1.1.0, em 07/11/2026).
 Atualizado a cada etapa.
 
 
@@ -45,10 +46,9 @@ testadas em funções puras (cardDrag.test.ts). O arrastar de cards pelo teclado
 testado na tela (BoardCards.test.tsx).
 
 Calendário (desde a etapa 7): os testes da tela fixam "hoje" trocando só o Date
-(vi.useFakeTimers({ toFake: ['Date'] })), e os temporizadores continuam de verdade. Como no jsdom
-tudo mede 0 px (e então todos os itens cabem no dia), o "+N mais" é testado com medidas falsas
-num teste só, além da função pura (visibleCount), e conferido no app real mudando o tamanho da
-janela.
+(vi.useFakeTimers({ toFake: ['Date'] })), e os temporizadores continuam de verdade. Desde a
+Release 2, o dia mostra todos os itens e o calendário rola (CAL-13): o jsdom não faz layout, então
+a altura das semanas e a rolagem são conferidas no app real.
 
 Limites de tempo dos testes da tela (desde a etapa 3): 5 s para os findBy… e o expect.poll e
 20 s por teste. Cada teste monta o app inteiro com o banco de verdade, e os limites padrão (1 s e
@@ -730,6 +730,26 @@ o desenho do card arrastado voltava até a lista de origem (~250 ms) e os itens 
 deslizavam de volta (~200 ms). Depois: o card assenta no destino e os itens já ficam no lugar
 final. O ícone da janela, lido pelo Windows (WM_GETICON) com o app aberto pelo electron.exe
 (como no npm run dev), é o logo do Mello.
+
+Release 2 (versão 1.1.0, Docs/Release.txt itens 3, 8 e 9) — 1 teste novo, 5 retirados
+
+src/renderer/src/features/calendar/CalendarPage.test.tsx (CAL-07, CAL-11, CAL-13)
+- CAL-11 (novo): o texto da tarefa abre o card dela por cima do calendário, sem marcar. A caixa
+  continua marcando e desmarcando (o teste antigo, agora pela caixa).
+- CAL-13: um dia com 6 cards mostra os 6, sem "+N mais"; o "Adicionar" é o "+" com a dica.
+- CAL-07: sem a legenda "Riscado = finalizado" (saiu o teste da legenda com a opção desligada).
+- CAL-05, CAL-09, CAL-10 e a hora antes do texto: ajustados ao texto da tarefa, que agora é um
+  link ("Abrir card <card>, tarefa <texto>").
+
+src/shared/rules/calendar.test.ts
+- Saíram os 4 testes do "+N mais" (CAL-13), com a função visibleCount.
+
+No app real (07/11/2026, 1440 × 900, temas escuro e claro), um roteiro do Playwright pôs 8 cards
+e 2 tarefas em hoje: o dia mostrou os 10 itens, a semana dele cresceu (369 px, as outras com
+114 px) e o calendário rolou (854 px de conteúdo em 600), com os dias da semana parados em cima
+e alinhados com as colunas. O "+" apareceu com o mouse, na linha do número, e abriu o
+"Adicionar". A caixa marcou a tarefa sem abrir o card; o texto da outra abriu o modal por cima,
+sem marcá-la. Num mês sem itens, a grade encheu a área sem rolar (6 semanas de 95 px).
 
 
 4. CONFERÊNCIA VISUAL E PONTA A PONTA (npm run capturas)

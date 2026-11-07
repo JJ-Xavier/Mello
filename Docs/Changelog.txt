@@ -4,6 +4,29 @@ O que mudou em cada etapa e em cada versão. A versão do package.json sobe a ca
 etapa N); a primeira versão completa, ao fim da etapa 12, é a 1.0.0.
 
 
+1.1.0 — Release 2: calendário (07/11/2026)
+
+Os itens 3, 8 e 9 do Docs/Release.txt (plano em Docs/PLANO.md, seção 11).
+
+Mudado
+- O dia do calendário mostra todos os itens: a semana cresce até caber o dia mais cheio e o
+  calendário rola, com os dias da semana parados em cima. Sem itens, a grade enche a área como
+  antes. Saiu o "+N mais" e a lista do dia (CAL-13).
+- O "Adicionar" é um "+" no canto de cima do dia, na linha do número, ao passar o mouse; antes
+  era um botão embaixo, que cobria o último item (CAL-12).
+- Tarefa no calendário: a caixa marca e desmarca; clicar no texto abre o card dela por cima do
+  calendário (CAL-11, muda a proposta P3).
+- Saiu a legenda "Riscado = finalizado" da barra do calendário. O riscado continua (CAL-07).
+
+Testes
+- 612 no total: 1 novo (o texto da tarefa abre o card), 5 retirados (os 4 do visibleCount e o
+  da legenda). Conferido no app real (Testes.txt, Release 2).
+
+Documentação
+- Regras.txt (CAL-07, CAL-11, CAL-12, CAL-13), Arquitetura.txt (calendário), PLANO.md (seção
+  11.3 e P3), Testes.txt, To-do-list.txt. O script de capturas não procura mais o "+N mais".
+
+
 1.0.1 — Release 1: correções (06/11/2026)
 
 Os itens 1, 2 e 7 do Docs/Release.txt (plano em Docs/PLANO.md, seção 11).

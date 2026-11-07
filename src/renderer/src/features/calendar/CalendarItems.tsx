@@ -1,8 +1,9 @@
 // Os itens de um dia do calendário (Calendario.dc.html e NovoCalendarioTodos.dc.html). Card:
 // etiquetas, ✓, relógio de atraso (CAL-08), a hora, título, ↻, prioridade e, em todos os quadros,
 // o nome do quadro (CAL-14); clicar abre o modal por cima (CAL-11). Tarefa: caixa de marcar, a
-// hora, texto e o card de origem (CAL-14); clicar marca ou desmarca (CAL-11). Repetição que não virou card
-// (REP-14): tracejada, com o aviso embaixo; clicar abre o card mais recente da série.
+// hora, texto e o card de origem (CAL-14); a caixa marca ou desmarca, o texto abre o card dela por
+// cima (CAL-11). Repetição que não virou card (REP-14): tracejada, com o aviso embaixo; clicar abre
+// o card mais recente da série.
 import { Link } from 'react-router'
 import type { CalendarCard, CalendarRepeat, CalendarTask } from '../../../../shared/ipc/calendar'
 import { isOverdue, splitDue } from '../../../../shared/rules/dates'
@@ -127,15 +128,21 @@ function TaskItem({ task, now, strike, allBoards }: { task: CalendarTask } & Ite
       [queryKeys.card(task.cardId), queryKeys.board(task.boardId)]
     )
   return (
-    <button
-      type="button"
-      className={styles.task}
-      aria-pressed={task.isDone}
-      aria-label={`${task.isDone ? 'Desmarcar' : 'Concluir'} tarefa ${task.text}`}
-      onClick={() => void toggle()}
-    >
-      <TaskBox done={task.isDone} />
-      <span className={styles.taskText}>
+    <div className={styles.task}>
+      <button
+        type="button"
+        className={styles.taskCheck}
+        aria-pressed={task.isDone}
+        aria-label={`${task.isDone ? 'Desmarcar' : 'Concluir'} tarefa ${task.text}`}
+        onClick={() => void toggle()}
+      >
+        <TaskBox done={task.isDone} />
+      </button>
+      <Link
+        to={{ search: `?card=${task.cardId}` }}
+        className={styles.taskText}
+        aria-label={`Abrir card ${task.cardTitle}, tarefa ${task.text}`}
+      >
         <span className={cx(styles.text, late && styles.lateText, struck && styles.struck)}>
           {hourOf(task.dueDate) && <span className={styles.time}>{hourOf(task.dueDate)} </span>}
           {task.text}
@@ -143,8 +150,8 @@ function TaskItem({ task, now, strike, allBoards }: { task: CalendarTask } & Ite
         <span className={cx(styles.sub, struck && styles.struckLine)}>
           {allBoards ? `${task.cardTitle} · ${task.boardTitle}` : task.cardTitle}
         </span>
-      </span>
-    </button>
+      </Link>
+    </div>
   )
 }
 

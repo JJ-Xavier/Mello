@@ -89,14 +89,18 @@ describe('calendário do quadro (tela 5)', () => {
     const twentieth = await day('ter., 20 de outubro')
     const link = await within(twentieth).findByRole('link', { name: /Pagar o condomínio/ })
     expect(link.getAttribute('aria-label')).toBe('Abrir card Pagar o condomínio, em atraso')
-    const tarefa = within(await day('sex., 23 de outubro')).getByRole('button', {
-      name: 'Concluir tarefa Separar o boleto'
+    const friday = await day('sex., 23 de outubro')
+    expect(
+      within(friday).getByRole('button', { name: 'Concluir tarefa Separar o boleto' })
+    ).toBeTruthy()
+    const tarefa = within(friday).getByRole('link', {
+      name: 'Abrir card Pagar o condomínio, tarefa Separar o boleto'
     })
-    expect(tarefa.textContent).toContain('Pagar o condomínio')
+    expect(tarefa.textContent).toBe('Separar o boletoPagar o condomínio')
     expect(screen.queryByText('Fora do mês')).toBeNull()
   })
 
-  it('CAL-07: riscado só para o finalizado (lista de conclusão e ✓); legenda "Riscado = finalizado"', async () => {
+  it('CAL-07: riscado só para o finalizado (lista de conclusão e ✓), sem a legenda', async () => {
     const finished = await card('Revisão', '2026-10-15')
     await unwrap(api.cards.move({ cardId: finished, listId: lists['Concluído']!, index: 0 }))
     const checked = await card('Só com ✓', '2026-10-16')
@@ -113,13 +117,7 @@ describe('calendário do quadro (tela 5)', () => {
         name: 'Abrir card Só com ✓, em atraso'
       })
     ).toBeTruthy()
-    expect(screen.getByText('Riscado = finalizado')).toBeTruthy()
-  })
-
-  it('CAL-07: com "Riscar itens finalizados" desligado, a legenda some', async () => {
-    store('calendar.strikeDone', false)
-    boardCalendar()
-    await screen.findByRole('region', { name: 'Calendário de outubro de 2026' })
+    // Release 2 (item 8): a legenda "Riscado = finalizado" saiu da barra.
     expect(screen.queryByText('Riscado = finalizado')).toBeNull()
   })
 
@@ -136,7 +134,7 @@ describe('calendário do quadro (tela 5)', () => {
     expect(screen.getByRole('region', { name: 'Calendário de outubro de 2026' })).toBeTruthy()
   })
 
-  it('CAL-11: clicar na tarefa marca e desmarca o item e zera o envelhecimento (ENV-05)', async () => {
+  it('CAL-11: a caixa da tarefa marca e desmarca o item e zera o envelhecimento (ENV-05)', async () => {
     const id = await card('Reforma', null)
     const itemId = await task(id, 'Comprar tinta', '2026-10-21')
     vi.setSystemTime(new Date(2026, 9, 21, 11, 0))
@@ -158,6 +156,21 @@ describe('calendário do quadro (tela 5)', () => {
     ).toBeTruthy()
   })
 
+  it('CAL-11: o texto da tarefa abre o card dela por cima do calendário, sem marcar', async () => {
+    const id = await card('Reforma', null)
+    await task(id, 'Comprar tinta', '2026-10-21')
+    boardCalendar()
+    const today = await day('qua., 21 de outubro')
+    fireEvent.click(
+      await within(today).findByRole('link', { name: 'Abrir card Reforma, tarefa Comprar tinta' })
+    )
+    expect(await screen.findByRole('dialog', { name: 'Reforma' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Calendário de outubro de 2026' })).toBeTruthy()
+    expect(
+      within(today).getByRole('button', { name: 'Concluir tarefa Comprar tinta' })
+    ).toBeTruthy()
+  })
+
   it('CAL-10: cards antes das tarefas, sem hora antes da hora; CAL-08: atrasados', async () => {
     const id = await card('Com hora', '2026-10-19T09:00')
     await card('Dia inteiro', '2026-10-19')
@@ -167,11 +180,11 @@ describe('calendário do quadro (tela 5)', () => {
     const items = (await within(cell).findAllByRole('link')).map((l) =>
       l.getAttribute('aria-label')
     )
-    expect(items).toEqual(['Abrir card Dia inteiro, em atraso', 'Abrir card Com hora, em atraso'])
-    const order = [...cell.querySelectorAll('a, button[aria-pressed]')].map((e) =>
-      e.getAttribute('aria-label')
-    )
-    expect(order.at(-1)).toBe('Concluir tarefa Tarefa do dia')
+    expect(items).toEqual([
+      'Abrir card Dia inteiro, em atraso',
+      'Abrir card Com hora, em atraso',
+      'Abrir card Com hora, tarefa Tarefa do dia'
+    ])
   })
 
   it('a hora vem antes do título do card e da tarefa; as tarefas em ordem de horário', async () => {
@@ -182,7 +195,9 @@ describe('calendário do quadro (tela 5)', () => {
     const cell = await day('sex., 23 de outubro')
     const link = await within(cell).findByRole('link', { name: 'Abrir card Dentista' })
     expect(link.textContent).toBe('15:00Dentista')
-    const tasks = [...cell.querySelectorAll('button[aria-pressed]')].map((b) => b.textContent)
+    const tasks = within(cell)
+      .getAllByRole('link', { name: /tarefa/ })
+      .map((l) => l.textContent)
     expect(tasks).toEqual(['Comprar remédioDentista', '14:00 Levar examesDentista'])
   })
 
@@ -203,7 +218,7 @@ describe('calendário do quadro (tela 5)', () => {
     expect(await within(cell).findByRole('button', { name: /Revisar/ })).toBeTruthy()
     fireEvent.click(cards)
     expect(cards.getAttribute('aria-pressed')).toBe('false')
-    expect(within(cell).queryByRole('link', { name: /Prova/ })).toBeNull()
+    expect(within(cell).queryByRole('link', { name: 'Abrir card Prova' })).toBeNull()
     expect(within(cell).getByRole('button', { name: /Revisar/ })).toBeTruthy()
   })
 
@@ -267,41 +282,17 @@ describe('calendário do quadro (tela 5)', () => {
     expect(created?.dueAt).toBe('2026-10-23')
   })
 
-  it('CAL-13: "+N mais" quando os itens não cabem, com a lista completa do dia', async () => {
-    for (const title of ['Um', 'Dois', 'Três']) await card(title, '2026-10-22')
-    // O jsdom não mede nada: cada item tem 30 px, a 34 px um do outro, e cabem 70 px.
-    const items = (element: Element) =>
-      element.parentElement?.querySelectorAll(':scope > [data-item]')
-    const restore = [
-      mock('offsetHeight', function (this: HTMLElement) {
-        return this.hasAttribute('data-item') ? 30 : 0
-      }),
-      mock('offsetTop', function (this: HTMLElement) {
-        return this.hasAttribute('data-item') ? [...items(this)!].indexOf(this) * 34 : 0
-      }),
-      mock('clientHeight', function (this: HTMLElement) {
-        return this.querySelector(':scope > [data-item]') ? 70 : 0
-      })
-    ]
-    try {
-      boardCalendar()
-      const cell = await day('qui., 22 de outubro')
-      const more = await within(cell).findByRole('button', { name: '+2 mais' })
-      expect(within(cell).getAllByRole('link')).toHaveLength(1)
-      // O "Adicionar" vira só o "+" (com o nome e a dica), para não cobrir o "+N mais".
-      expect(within(cell).getByRole('button', { name: 'Adicionar' }).getAttribute('title')).toBe(
-        'Adicionar'
-      )
-      fireEvent.click(more)
-      const list = await screen.findByRole('dialog', { name: 'Itens de qui., 22 de outubro' })
-      expect(
-        within(list)
-          .getAllByRole('link')
-          .map((l) => l.getAttribute('aria-label'))
-      ).toEqual(['Abrir card Dois', 'Abrir card Três', 'Abrir card Um'])
-    } finally {
-      for (const undo of restore) undo()
-    }
+  it('CAL-13: o dia mostra todos os itens, sem "+N mais"; o "Adicionar" é o "+" com a dica', async () => {
+    const titles = ['Um', 'Dois', 'Três', 'Quatro', 'Cinco', 'Seis']
+    for (const title of titles) await card(title, '2026-10-22')
+    boardCalendar()
+    const cell = await day('qui., 22 de outubro')
+    await within(cell).findByRole('link', { name: /Seis/ })
+    expect(within(cell).getAllByRole('link')).toHaveLength(6)
+    expect(within(cell).queryByRole('button', { name: /mais$/ })).toBeNull()
+    expect(within(cell).getByRole('button', { name: 'Adicionar' }).getAttribute('title')).toBe(
+      'Adicionar'
+    )
   })
 
   it('CAL-06: card arquivado fica de fora', async () => {
@@ -407,14 +398,3 @@ describe('calendário de todos os quadros (tela 13)', () => {
     expect(within(cell).queryByRole('link', { name: /Prova/ })).toBeNull()
   })
 })
-
-// Troca uma medida do HTMLElement só neste teste e devolve como desfazer.
-function mock(
-  name: 'offsetHeight' | 'offsetTop' | 'clientHeight',
-  get: (this: HTMLElement) => number
-) {
-  const proto = name === 'clientHeight' ? Element.prototype : HTMLElement.prototype
-  const original = Object.getOwnPropertyDescriptor(proto, name)!
-  Object.defineProperty(proto, name, { configurable: true, get })
-  return () => Object.defineProperty(proto, name, original)
-}

@@ -1,6 +1,6 @@
 # Plano de implementação do Mello
 
-> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026, etapa 10 em 29/10/2026, etapa 11 em 30/10/2026 e etapa 12 em 30/10/2026 (versão 1.0.0)**. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro). **Releases pós-projeto** (Docs/Release.txt) planejadas em 06/11/2026, na seção 11.
+> **Status:** planejamento aprovado em 21/10/2026 (plano, propostas P1 a P17 e telas novas 10 a 16). **Etapas 1 e 2 concluídas em 21/10/2026, etapa 3 em 22/10/2026, etapa 4 em 23/10/2026, etapa 5 em 24/10/2026, etapa 7 em 24/10/2026, etapa 6 em 26/10/2026, etapa 8 em 28/10/2026 etapa 9 em 29/10/2026, etapa 10 em 29/10/2026, etapa 11 em 30/10/2026 e etapa 12 em 30/10/2026 (versão 1.0.0)**. A 7 foi feita antes da 6, por decisão de 24/10/2026 (uma etapa de cada vez, a 7 primeiro). **Releases pós-projeto** (Docs/Release.txt) planejadas em 06/11/2026, na seção 11: Release 1 concluída em 06/11/2026 e Release 2 em 07/11/2026.
 > **Fonte da verdade visual:** [Mello — Protótipo de Telas](https://claude.ai/artifact/Jg9Y5yXZyw5fn8E7CdMuy9) (versão `1792610028-933e`; as telas 10 a 16, na área "Telas novas", foram aprovadas em 21/10/2026).
 > **Regras de negócio completas:** [Regras.txt](Regras.txt). Os códigos citados aqui (`ENV-05`, `REP-08`…) são de lá.
 
@@ -61,7 +61,7 @@ Quando não houve resposta direta, adotei o caminho abaixo. Todas foram aprovada
 |---|---|---|
 | P1 | A "área de finalizado" é a opção **"Lista de conclusão"** no menu "…" da lista, já ligada em Concluído e Entregue. "Não envelhece" continua sendo uma opção separada. | Renomear a lista não quebra a regra, e dá para ter mais de uma área de finalizado. |
 | P2 | O calendário aberto **pelo Início** mostra todos os quadros, com seletor de quadro. Aberto **pela barra do quadro**, mostra aquele quadro. | É uma tela só, e ganha uma visão geral dos prazos. |
-| P3 | Clicar num **card** no calendário abre o modal. Clicar numa **tarefa** marca ou desmarca o item. | Pela regra FIN-01, marcar o ✓ pelo calendário não finalizaria o card. |
+| P3 | Clicar num **card** no calendário abre o modal. Clicar numa **tarefa** marca ou desmarca o item. (Release 2: a caixa marca e o texto abre o card da tarefa, seção 11.) | Pela regra FIN-01, marcar o ✓ pelo calendário não finalizaria o card. |
 | P4 | **Fechar a janela mantém o Mello na bandeja** (para lembretes e repetições), com opção para desligar. "Iniciar com o Windows" fica opcional e desligado. | Sem isso, lembrete só funciona com a janela aberta. |
 | P5 | Lembrete: as opções do protótipo (Nenhum, No horário, 1 dia antes). Data sem hora lembra às 09:00. Os perdidos com o app fechado aparecem agrupados ao abrir. | O protótipo não detalha esses casos. |
 | P6 | Modelos: card-modelo (selo "Modelo", não envelhece, fora do calendário) e quadro-modelo (copia listas, etiquetas, fundo e, se você quiser, os cards). | Não há tela de modelos no protótipo. Segue o comportamento do Trello. |
@@ -598,7 +598,10 @@ Os 9 itens do `Docs/Release.txt` (mudanças pedidas depois da versão 1.0.0), pl
 - **Aceite:** no app real, soltar um card em outra lista e um item do checklist em outra posição não mostra nenhum quadro na posição antiga (medido pelo mesmo roteiro do Playwright que achou o erro); a barra de tarefas mostra o logo do Mello no `npm run dev`.
 - **Testes:** teste do hook (a ordem nova aparece antes de o cache avisar); a suíte inteira.
 
-### 11.3 Release 2 — Calendário (versão 1.1.0)
+### 11.3 Release 2 — Calendário (versão 1.1.0) ✅ concluída em 07/11/2026
+
+- **Resultado:** tudo da entrega abaixo foi feito; 612 testes (1 novo, 5 retirados com o "+N mais" e a legenda), lint e tipos limpos. No app real, um dia com 10 itens mostrou todos, a semana cresceu e o calendário rolou com os dias da semana parados em cima; num mês vazio, a grade enche a área sem rolar. Detalhes no `Changelog.txt`.
+
 
 - **Entrega:** itens 3, 8 e 9. Dia do tamanho dos itens com rolagem, "+" ao lado do número, sem "+N mais"; sem a legenda; tarefa com a caixa (marca) e o texto (abre o card).
 - **Aceite:** um dia com 6 itens mostra os 6; clicar na caixa marca a tarefa; clicar no texto abre o modal do card.
