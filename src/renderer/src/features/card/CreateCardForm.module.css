@@ -1,0 +1,25 @@
+/* "Criar card" no menu "Criar": quadro, lista, título e o botão, no visual do "Mover card". */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* O título pode ter várias linhas na tela: o campo cresce com o texto (field-sizing). */
+.title {
+  height: auto;
+  field-sizing: content;
+  min-block-size: 64px;
+  max-block-size: 8lh;
+  padding: 8px 10px;
+  line-height: 20px;
+  resize: none;
+}
+
+.title:focus {
+  padding: 7px 9px;
+}
+
+.submit {
+  align-self: flex-start;
+}

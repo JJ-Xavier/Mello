@@ -1,0 +1,174 @@
+/* Texto rico (Card.dc.html: descrição e nota). */
+.rich {
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--strong);
+  overflow-wrap: anywhere;
+}
+
+.rich :global(.ProseMirror) {
+  outline: none;
+}
+
+.rich :global(.ProseMirror) > :first-child {
+  margin-top: 0;
+}
+
+.rich :global(.ProseMirror) > :last-child {
+  margin-bottom: 0;
+}
+
+.rich p {
+  margin: 0 0 8px;
+}
+
+.rich h3 {
+  margin: 12px 0 6px;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+}
+
+.rich ul {
+  margin: 0 0 8px;
+  padding-left: 22px;
+}
+
+.rich li > p {
+  margin: 0;
+}
+
+.rich a {
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Lista de tarefas: a caixa de marcar ao lado do texto (.chk do protótipo). No editor, o <li> do
+   TipTap não tem data-type (só o HTML guardado tem); por isso o seletor parte da lista. */
+.rich ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.rich ul[data-type='taskList'] > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.rich ul[data-type='taskList'] > li > label {
+  position: relative;
+  flex: none;
+  display: flex;
+  margin-top: 3px;
+}
+
+.rich ul[data-type='taskList'] > li > label input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.rich ul[data-type='taskList'] > li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* A barra (role="toolbar") da nota no protótipo. */
+.toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.tool {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font:
+    700 14px Inter,
+    sans-serif;
+}
+
+.tool:hover {
+  background: var(--btn);
+}
+
+.toolActive,
+.toolActive:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.editable {
+  min-height: 120px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 2px solid var(--accent);
+}
+
+/* Texto de exemplo do editor vazio (Placeholder do TipTap). */
+.rich :global(p.is-editor-empty:first-child)::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted);
+}
+
+/* A nota (Card.dc.html): a barra com a linha embaixo e o texto direto na coluna, rolando. */
+.noteEditor {
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+}
+
+.noteEditor .toolbar {
+  flex: none;
+  padding: 0 0 8px;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+}
+
+.noteText {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  line-height: 21px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--a5) transparent;
+}
+
+/* O texto inteiro é clicável, não só as linhas escritas. */
+.noteText :global(.ProseMirror) {
+  min-height: 100%;
+}
+
+.linkForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.linkActions {
+  display: flex;
+  gap: 8px;
+}

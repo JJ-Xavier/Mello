@@ -1,0 +1,7 @@
+# Finais de linha LF no repositório e na pasta de trabalho, igual ao .editorconfig e ao Prettier.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.icns binary
+*.jpg binary
+*.woff2 binary

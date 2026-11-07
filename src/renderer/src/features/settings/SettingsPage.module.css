@@ -1,0 +1,610 @@
+/* Configurações (Config.dc.html e NovoConfig.dc.html): menu de seções à esquerda e as seções
+   numa coluna que rola. */
+.page {
+  height: 100%;
+  display: flex;
+  min-height: 0;
+}
+
+.nav {
+  width: 256px;
+  flex: none;
+  box-sizing: border-box;
+  padding: 32px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--line);
+}
+
+.title {
+  margin: 0 12px 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--strong);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--txt);
+  text-align: left;
+  font:
+    400 14px Inter,
+    sans-serif;
+  cursor: pointer;
+}
+
+.navItem:hover {
+  background: var(--btn);
+}
+
+.navActive,
+.navActive:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.box {
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scroll-margin-top: 32px;
+}
+
+.h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--strong);
+}
+
+.lead {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Liga/desliga: o .sw de Config.dc.html (centrado) e o de NovoConfig.dc.html (com a explicação
+   embaixo). */
+.sw {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--strong);
+  cursor: pointer;
+}
+
+.sw input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.swTop {
+  align-items: flex-start;
+}
+
+.swTop input {
+  margin-top: 1px;
+}
+
+.sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--muted);
+}
+
+.version {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Aparência */
+.themes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 720px;
+}
+
+.theme {
+  position: relative;
+  padding: 10px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strong);
+  cursor: pointer;
+}
+
+.theme:has(input:checked) {
+  border-color: var(--accent);
+}
+
+.theme:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.theme input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.preview {
+  height: 96px;
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.previewList {
+  width: 34%;
+  border-radius: 5px;
+}
+
+/* Envelhecimento */
+.headRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.headRow > div {
+  flex: 1;
+}
+
+.levels {
+  display: grid;
+  grid-template-columns: repeat(3, 252px);
+  gap: 20px 24px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--list);
+}
+
+.level {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sample {
+  position: relative;
+  width: 252px;
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--strong);
+  contain: paint;
+}
+
+.sampleIn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px 10px;
+}
+
+.bars {
+  display: flex;
+  gap: 4px;
+}
+
+.bar {
+  width: 40px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.sampleTitle {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.sampleMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sampleCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.levelName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.levelDays {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resets {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.resets li:last-child {
+  color: var(--muted);
+}
+
+/* Listas que não envelhecem, agrupadas pelo quadro. */
+.boardName {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* Calendário */
+.select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--strong);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+/* Dados e backup */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.folderRow {
+  display: flex;
+  gap: 8px;
+  max-width: 760px;
+}
+
+.folderField {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--strong);
+  font:
+    400 14px Inter,
+    sans-serif;
+}
+
+.pri,
+.sec {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pri {
+  background: var(--accent);
+  color: var(--accent-txt);
+  font:
+    600 14px Inter,
+    sans-serif;
+}
+
+.sec {
+  background: var(--btn);
+  color: var(--strong);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.pri:hover:not(:disabled),
+.sec:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.pri:disabled,
+.sec:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.warn {
+  display: flex;
+  gap: 10px;
+  max-width: 760px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--warn-box);
+  color: var(--warn-txt);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.warnIcon {
+  display: inline-flex;
+  margin-top: 2px;
+  color: var(--cal-note);
+}
+
+.backupsHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.backupsHead > div {
+  flex: 1;
+}
+
+.small {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--muted);
+}
+
+.table {
+  max-width: 760px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 200px 180px 100px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.tableHead {
+  min-height: 34px;
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.when {
+  color: var(--strong);
+}
+
+.rowAction {
+  justify-self: end;
+}
+
+.empty {
+  margin: 0;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.lnk {
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--btn);
+  color: var(--strong);
+  font:
+    500 13px Inter,
+    sans-serif;
+  cursor: pointer;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 760px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.tileText {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--muted);
+}
+
+.dangerZone {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 760px;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+}
+
+.dangerZone > div {
+  flex: 1;
+}
+
+.danger {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--danger);
+  color: var(--danger-on);
+  font:
+    600 14px Inter,
+    sans-serif;
+  cursor: pointer;
+}
+
+.danger:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* "Apagar tudo?" (NovoConfig.dc.html), num <dialog> modal. */
+.dialog {
+  width: 460px;
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--pop);
+  border: 1px solid var(--line);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+  color: var(--txt);
+}
+
+:global(.tema-claro) .dialog {
+  box-shadow: var(--shadow-pop);
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dialog::backdrop {
+  background: rgba(5, 8, 12, 0.68);
+}
+
+.dialogTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--strong);
+}
+
+.dialogText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--txt);
+}
+
+.typeLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--txt);
+}
+
+.typeField {
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--strong);
+  font:
+    600 14px Inter,
+    sans-serif;
+  letter-spacing: 0.06em;
+  outline: none;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

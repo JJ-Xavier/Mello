@@ -1,0 +1,28 @@
+# Dependências e builds
+node_modules/
+out/
+dist/
+
+# Dados do usuário (nunca entram no repositório, ver Docs/LGPD.txt)
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+arquivos/
+backups/
+Mello-exportacao-*/
+capturas/
+
+# Segredos, por precaução (o app não usa nenhum)
+.env
+.env.*
+*.pem
+*.key
+
+# Logs e caches
+*.log
+logs/
+.eslintcache
+*.tsbuildinfo
+.DS_Store
+Thumbs.db

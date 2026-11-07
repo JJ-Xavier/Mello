@@ -1,0 +1,17 @@
+/* PRI-01: a cor do ícone muda com o tema. */
+.icon {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:global(.tema-escuro) .icon {
+  color: var(--prio-dark);
+}
+
+:global(.tema-claro) .icon {
+  color: var(--prio-light);
+}

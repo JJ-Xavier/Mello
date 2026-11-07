@@ -1,0 +1,8 @@
+node_modules
+out
+dist
+capturas
+package-lock.json
+src/main/db/migrations
+Docs
+Assets

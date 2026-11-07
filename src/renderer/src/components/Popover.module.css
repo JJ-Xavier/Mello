@@ -1,0 +1,74 @@
+/* Popover dos menus do protótipo (.pop de Estados.dc.html). Usa o popover nativo do navegador
+   (camada de cima, fecha com Esc e com clique fora) e fica preso ao botão que o abriu pelo
+   posicionamento por âncora (a âncora implícita vem do popovertarget). */
+.pop {
+  width: 304px;
+  max-height: calc(100vh - 32px);
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--pop);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-pop);
+  color: var(--txt);
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  inset: auto;
+  margin: 6px 0;
+  position-area: block-end span-inline-end;
+  position-try-fallbacks:
+    flip-block,
+    flip-inline,
+    flip-block flip-inline;
+}
+
+.pop:popover-open {
+  display: flex;
+}
+
+.belowEnd {
+  position-area: block-end span-inline-start;
+}
+
+.above {
+  position-area: block-start center;
+  position-try-fallbacks: flip-block;
+}
+
+.head {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--txt);
+}
+
+.headButton {
+  position: absolute;
+  top: 0;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.headButton:hover {
+  background: var(--pop-hover);
+}
+
+.close {
+  right: 0;
+}
+
+.back {
+  left: 0;
+}

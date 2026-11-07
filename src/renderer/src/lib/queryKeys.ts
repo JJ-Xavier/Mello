@@ -1,0 +1,22 @@
+// Chaves do TanStack Query, na hierarquia dos dados. Invalidar uma chave curta invalida todas as
+// que começam com ela (ex.: ['board', id] cobre ['board', id, 'archived']; ['boards'] cobre os
+// fechados).
+export const queryKeys = {
+  appInfo: ['app', 'info'] as const,
+  boards: ['boards'] as const,
+  closedBoards: ['boards', 'closed'] as const,
+  boardTemplates: ['boards', 'templates'] as const,
+  board: (boardId: string) => ['board', boardId] as const,
+  archived: (boardId: string) => ['board', boardId, 'archived'] as const,
+  labels: (boardId: string) => ['board', boardId, 'labels'] as const,
+  matching: (boardId: string, keyword: string) => ['board', boardId, 'matching', keyword] as const,
+  card: (cardId: string) => ['card', cardId] as const,
+  // Mês do calendário, de um quadro ou de todos ('all'). calendarAll cobre todos os meses.
+  calendarAll: ['calendar'] as const,
+  calendar: (scope: string, year: number, month: number) =>
+    ['calendar', scope, year, month] as const,
+  settings: ['settings'] as const,
+  // Os backups da pasta atual e os avisos dela (Dados e backup).
+  backups: ['data', 'backups'] as const,
+  search: (text: string) => ['search', text] as const
+}

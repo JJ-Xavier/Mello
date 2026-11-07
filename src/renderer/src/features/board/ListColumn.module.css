@@ -1,0 +1,228 @@
+/* Lista (Quadro.dc.html): 272 px, fundo --list, borda azul quando é o destino do arraste. */
+.list {
+  width: 272px;
+  flex: none;
+  max-height: 100%;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--list);
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Lista onde o card arrastado vai cair (Arrasto.dc.html). */
+.target {
+  border-color: var(--accent);
+}
+
+/* Vaga reservada enquanto a lista está sendo arrastada. */
+.placeholder {
+  background: var(--slot);
+}
+
+.placeholder > * {
+  visibility: hidden;
+}
+
+.overlay {
+  transform: rotate(3deg);
+  box-shadow: 0 12px 24px rgba(9, 30, 66, 0.45);
+  cursor: grabbing;
+}
+
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 10px;
+  cursor: grab;
+  border-radius: 8px;
+}
+
+.header:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strong);
+}
+
+.titleButton {
+  max-width: 100%;
+  padding: 2px 4px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.titleButton:hover {
+  background: var(--btn);
+}
+
+.titleInput {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--strong);
+  font:
+    600 14px Inter,
+    sans-serif;
+  outline: none;
+}
+
+.count {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.menuButton {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menuButton:hover {
+  background: var(--btn);
+}
+
+/* Cards: rolam dentro da lista quando ela passa da altura do quadro. O respiro de 2 px deixa a
+   sombra e o contorno de foco dos cards à vista. */
+.cards {
+  flex: 0 1 auto;
+  min-height: 0;
+  margin: -2px;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--a5) transparent;
+}
+
+.footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.addCard {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--txt);
+  font:
+    500 14px Inter,
+    sans-serif;
+}
+
+.addCard:hover {
+  background: var(--btn);
+}
+
+/* "Adicionar um cartão" aberto (Estados.dc.html, "Novo card"). */
+.addCardForm {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Cresce com o texto (field-sizing), a partir da altura do protótipo. */
+.addCardInput {
+  width: 100%;
+  field-sizing: content;
+  min-block-size: 64px;
+  max-block-size: 10lh;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--strong);
+  font:
+    400 14px Inter,
+    sans-serif;
+  line-height: 20px;
+  resize: none;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.addCardInput:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.formRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cancel {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel:hover {
+  background: var(--btn);
+}
+
+.template {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template:hover {
+  background: var(--btn);
+}
+
+.templateOpen,
+.templateOpen:hover {
+  background: var(--nav-active);
+  color: var(--accent);
+}
