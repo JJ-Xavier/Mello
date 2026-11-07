@@ -39,6 +39,12 @@ Corrigido
 - (Durante a release) a limpeza dos arquivos sem uso (DAD-08) usava "NOT IN (SELECT file_id
   FROM attachment)": com um anexo de pasta (file_id nulo), ela deixaria de apagar qualquer coisa.
   Agora a conta ignora os nulos, e o teste da limpeza tem um anexo de pasta.
+- Ícone do Electron na barra de tarefas do Mello instalado (item 1, que a 1.0.1 só tinha
+  resolvido no npm run dev): a causa era um atalho Electron.lnk no menu Iniciar, com a mesma
+  identificação do Mello (com.jjxavier.mello) e apontando para o electron.exe do projeto. Ele
+  foi criado em 28/10/2026, quando o npm run dev mostrou uma notificação antes de o Mello estar
+  instalado. Sem esse atalho, a barra mostra o logo (conferido em 07/11/2026). Não era código:
+  o .exe, a janela e o Mello.lnk já tinham o ícone certo.
 
 Testes
 - 616 no total: 10 novos (texto da tarefa abre o card, hora só com números, migração 0001, 3 de
