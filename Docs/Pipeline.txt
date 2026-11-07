@@ -75,6 +75,13 @@ terminal normal ela não existe. Se "npm run dev" não abrir a janela, confira c
 "echo %ELECTRON_RUN_AS_NODE%" (cmd) ou "$env:ELECTRON_RUN_AS_NODE" (PowerShell) e, se houver
 valor, apague a variável ou use outro terminal. O script de capturas já a remove sozinho.
 
+Ícone do Electron na barra de tarefas do Mello: o npm run dev usa a mesma identificação do app
+instalado (com.jjxavier.mello). Se ele mostrar uma notificação sem o Mello instalado, um atalho
+Electron.lnk com essa identificação pode aparecer no menu Iniciar
+(%APPDATA%\Microsoft\Windows\Start Menu\Programs), e a barra de tarefas passa a mostrar o átomo
+do Electron também no Mello instalado. É só apagar esse atalho (aconteceu em 28/10/2026, achado
+em 07/11/2026).
+
 Pastas de dados: o "npm run dev" usa %APPDATA%\Mello-dev; o app instalado usa %APPDATA%\Mello.
 Assim, o desenvolvimento nunca mexe nos dados reais.
 
